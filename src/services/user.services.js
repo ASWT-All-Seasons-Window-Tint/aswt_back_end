@@ -36,6 +36,16 @@ class UserService {
     return await User.find({ isDeleted: undefined }).select("-password");
   }
 
+  async addSignInLocation(email, signInLocations) {
+    return await User.findOneAndUpdate(
+      { email },
+      {
+        $push: { signInLocations },
+      },
+      { new: true }
+    );
+  }
+
   async updateUserById(id, user) {
     return await User.findByIdAndUpdate(
       id,

@@ -10,18 +10,25 @@ const {
 class AuthController {
   //Create a new user
   async logIn(req, res) {
-    // checking if the user exist
+    const { email, password } = req.body;
 
-    const user = await userService.getUserByEmail(req.body.email);
-
-    if (!user) return res.status(400).send(errorMessage("user"));
-
+    const user = req.user;
     //checks if the password is valid
-    const validPassword = await bcrypt.compare(
-      req.body.password,
-      user.password
-    );
+    const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) return res.status(400).send(loginError());
+
+    // Check if the user is a staff member
+    if (user.role === "staff") {
+      const { description, coordinates } = req.body.signInLocations;
+      // Create a new signed-in location entry
+      const newSignInLocation = {
+        timestamp: new Date(),
+        description,
+        coordinates,
+      };
+
+      await userService.addSignInLocation(email, newSignInLocation);
+    }
 
     const token = user.generateAuthToken();
 

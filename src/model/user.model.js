@@ -52,6 +52,30 @@ const userSchema = new mongoose.Schema({
   isAdmin: {
     type: Boolean,
   },
+  signInLocations: [
+    {
+      timestamp: {
+        type: Date,
+        required: true,
+      },
+      timestamp: {
+        type: String,
+        minlength: 5,
+        maxlength: 255,
+        required: true,
+      },
+      coordinates: {
+        latitude: { type: Number, required: true },
+        longitude: { type: Number, required: true },
+      },
+    },
+  ],
+});
+
+userSchema.pre("find", function () {
+  if (!this.getQuery().role || this.getQuery().role !== "staff") {
+    this.select("-signInLocations");
+  }
 });
 
 userSchema.methods.generateAuthToken = function () {
@@ -115,6 +139,21 @@ function validatePatch(user) {
       is: "customer",
       then: Joi.forbidden(),
     }),
+    signInLocations: Joi.array()
+      .items(
+        Joi.object({
+          timestamp: Joi.date().required(),
+          coordinates: Joi.object({
+            latitude: Joi.number().required(),
+            longitude: Joi.number().required(),
+          }).required(),
+        })
+      )
+      .when("role", {
+        is: "staff",
+        then: Joi.optional(),
+        otherwise: Joi.forbidden(),
+      }),
   });
 
   return schema.validate(user);
