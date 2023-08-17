@@ -13,7 +13,10 @@ module.exports = (validator) => {
         .send({ success: false, message: error.details[0].message });
 
     const user = await userServices.getUserByEmail(req.body.email);
-    if (!user) return res.status(404).send(errorMessage("user"));
+    if (!user)
+      return res
+        .status(404)
+        .send({ success: false, message: "Credentials not found" });
 
     req.user = user;
 
