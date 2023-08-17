@@ -19,6 +19,16 @@ router.post(
   validateMiddleware(validate),
   asyncMiddleware(userController.register)
 );
+router.post(
+  "/request-reset",
+  validateMiddleware(validatePatch),
+  asyncMiddleware(userController.passwordResetRequest)
+);
+router.get(
+  "/reset-password/:token",
+
+  asyncMiddleware(userController.passwordReset)
+);
 
 router.get("/", asyncMiddleware(userController.fetchAllUsers));
 

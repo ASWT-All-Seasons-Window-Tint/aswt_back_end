@@ -19,14 +19,18 @@ const constants = {
     UNAUTHORIZE(operate) {
       return `You cannot ${operate} a resource created by another user`;
     },
-    NOT_FOUND(resource, resourceId) {
-      return `We can't find ${resource} with the given ${resourceId} ID`;
+    NOT_FOUND(resource) {
+      return `We can't find ${resource} with the given ID`;
     },
     SUCCESFUL_LOGIN: "Sucessfully logged in",
     LOGIN_FAILURE: "Unable to login. Username or password incorrect",
   },
-  errorMessage(data) {
-    return { message: this.MESSAGES.NOT_FOUND, success: false, data };
+
+  errorMessage: (data) => {
+    return {
+      message: `We can't find ${data} with the given ID`,
+      success: false,
+    };
   },
   errorAlreadyExists(resource) {
     return {

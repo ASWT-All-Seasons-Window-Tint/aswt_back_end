@@ -1,4 +1,5 @@
 const _ = require("lodash");
+const jwt = require("jsonwebtoken");
 const { User } = require("../model/user.model");
 const userService = require("../services/user.services");
 const { MESSAGES } = require("../common/constants.common");
@@ -6,7 +7,9 @@ const propertiesToPick = require("../common/propertiesToPick.common");
 const { errorMessage, successMessage } = require("../common/messages.common");
 const generateRandomAvatar = require("../utils/generateRandomAvatar.utils");
 const departmentServices = require("../services/department.services");
+const { transporter, mailOptions } = require("../utils/email.utils");
 require("dotenv").config();
+const bcrypt = require("bcrypt");
 
 class UserController {
   async getStatus(req, res) {
@@ -85,6 +88,56 @@ class UserController {
     res.send(successMessage(MESSAGES.FETCHED, users));
   }
 
+  //get all users in the user collection/table
+  async passwordResetRequest(req, res) {
+    const user = await userService.getUserByEmail(req.body.email);
+
+    let token = jwt.sign({ id: user._id }, process.env.jwtPrivateKey, {
+      expiresIn: "1h",
+    });
+
+    user.resetToken = token;
+    await user.save();
+
+    transporter.sendMail(
+      mailOptions(user.email, user.firstName, token),
+      (error, info) => {
+        if (error) {
+          return "Error occurred:", error;
+        } else {
+          console.log("Email sent successfully:", info.response);
+        }
+      }
+    );
+
+    res.send({ message: "email sent", success: true });
+  }
+
+  async passwordReset(req, res) {
+    let token = req.params.token;
+
+    // Verify token
+    jwt.verify(token, process.env.jwtPrivateKey, async (err, decoded) => {
+      if (err) {
+        return res.status(400).json({ error: "Invalid or expired link" });
+      }
+
+      // Find user by id and update password
+      let user = await userService.getUserById(decoded.id);
+      if (!user) return res.status(400).json({ error: "User not found" });
+
+      // Validate and save new password
+      const newPassword = req.params.password;
+
+      const salt = await bcrypt.genSalt(10);
+      user.password = await bcrypt.hash(newPassword, salt);
+
+      user.resetToken = undefined;
+      user.save();
+
+      res.json({ message: "Password updated", success: true });
+    });
+  }
   //Update/edit user data
   async updateUserProfile(req, res) {
     let user = await userService.getUserById(req.params.id);
