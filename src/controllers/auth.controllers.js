@@ -6,13 +6,14 @@ const {
   loginError,
   errorMessage,
 } = require("../common/messages.common");
+const propertiesToPick = require("../common/propertiesToPick.common");
 
 class AuthController {
   //Create a new user
   async logIn(req, res) {
     const { email, password } = req.body;
 
-    const user = req.user;
+    let user = req.user;
     //checks if the password is valid
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) return res.status(400).send(loginError());
@@ -31,10 +32,11 @@ class AuthController {
     }
 
     const token = user.generateAuthToken();
+    user = _.pick(user, propertiesToPick);
 
     // sends token as response to the client after validation
     // Token is used to check if client is logged in or not, it's presence means logged in and vice-versa
-    res.send(loginSuccess(token));
+    res.send(loginSuccess(token, user));
   }
 }
 
