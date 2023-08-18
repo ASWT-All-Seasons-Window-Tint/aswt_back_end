@@ -91,6 +91,12 @@ class UserController {
   //get all users in the user collection/table
   async passwordResetRequest(req, res) {
     const user = await userService.getUserByEmail(req.body.email);
+    if (!user)
+      return res.status(404).send({
+        success: false,
+        message:
+          "We could not find an account associated with the email address you provided",
+      });
 
     let token = jwt.sign({ id: user._id }, process.env.jwtPrivateKey, {
       expiresIn: "1h",
@@ -110,7 +116,10 @@ class UserController {
       }
     );
 
-    res.send({ message: "email sent", success: true });
+    res.send({
+      message: "We've sent you a password reset email",
+      success: true,
+    });
   }
 
   async passwordReset(req, res) {
