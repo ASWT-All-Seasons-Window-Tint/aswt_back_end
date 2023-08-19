@@ -16,7 +16,7 @@ module.exports = (validator) => {
     if (!user)
       return res
         .status(404)
-        .send({ success: false, message: errorMessage("user") });
+        .send({ success: false, message: "Credentials not found" });
 
     req.user = user;
 

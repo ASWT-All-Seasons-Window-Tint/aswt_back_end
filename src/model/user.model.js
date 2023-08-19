@@ -70,6 +70,9 @@ const userSchema = new mongoose.Schema({
       },
     },
   ],
+  resetToken: {
+    type: String,
+  },
 });
 
 userSchema.pre("find", function () {
@@ -132,7 +135,6 @@ function validatePatch(user) {
     role: Joi.string()
       .min(4)
       .max(255)
-      .required()
       .valid("staff", "manager", "customer")
       .insensitive(),
     departments: Joi.array().items(Joi.objectId().required()).when("role", {

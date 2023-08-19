@@ -26,8 +26,8 @@ const loginError = () => {
   return { message: MESSAGES.LOGIN_FAILURE, success: false };
 };
 
-const loginSuccess = (data) => {
-  return { message: MESSAGES.SUCCESFUL_LOGIN, success: true, token: data };
+const loginSuccess = (token, user) => {
+  return { message: MESSAGES.SUCCESFUL_LOGIN, success: true, token, user };
 };
 
 exports.errorMessage = errorMessage;

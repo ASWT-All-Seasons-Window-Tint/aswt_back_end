@@ -17,24 +17,24 @@ const mailGenerator = new Mailgen({
   theme: "default",
   product: {
     // Appears in header & footer of e-mails
-    name: "Geek",
+    name: "ASWT",
     link: "https://mailgen.js/",
     // Optional product logo
     // logo: 'https://mailgen.js/img/logo.png'
   },
 });
 
-const email = (firstName) => {
+const email = (firstName, token) => {
   return {
     body: {
       name: firstName,
-      intro: "Welcome to Geek! We're very excited to have you on board.",
+      intro: "This is a Password reset Mail",
       action: {
-        instructions: "To get started with Geek, please click here:",
+        instructions: "Click this link to reset your password:",
         button: {
           color: "#22BC66", // Optional action button color
-          text: "Confirm your account",
-          link: "https://mailgen.js/confirm?s=d9729feb74992cc3482b350163a1a010",
+          text: "Reset your password",
+          link: `http://localhost:3000/api/v1/users/reset-password/${token}/12345879`,
         },
       },
       outro:
@@ -43,14 +43,15 @@ const email = (firstName) => {
   };
 };
 
-const emailBody = (firstName) => mailGenerator.generate(email(firstName));
+const emailBody = (firstName, token) =>
+  mailGenerator.generate(email(firstName, token));
 
-const mailOptions = (receiversEmail, firstName) => {
+const mailOptions = (receiversEmail, firstName, token) => {
   return {
     from: emailId,
     to: receiversEmail,
-    subject: `Welcome to Geek!`,
-    html: emailBody(firstName),
+    subject: `Your password reset link`,
+    html: emailBody(firstName, token),
   };
 };
 
