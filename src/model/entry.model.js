@@ -2,24 +2,12 @@ const mongoose = require("mongoose");
 const Joi = require("joi");
 
 const entrySchema = new mongoose.Schema({
-  customerName: {
-    type: String,
-    minlength: 4,
-    maxlength: 50,
-    trim: true,
-    required: true,
-  },
-  customerEmail: {
+  customerId: {
     type: String,
     minlength: 5,
     maxlength: 255,
     trim: true,
-  },
-  phone: {
-    type: String,
-    minlength: 5,
-    maxlength: 255,
-    trim: true,
+    ref: "user",
   },
   numberOfVehicles: {
     type: Number,
@@ -39,9 +27,7 @@ const Entry = mongoose.model("Entry", entrySchema);
 
 function validate(entry) {
   const schema = Joi.object({
-    customerName: Joi.string().min(4).max(255).required(),
-    customerEmail: Joi.string().email().min(4).max(255).required(),
-    phone: Joi.string().min(4).max(255).required(),
+    customerId: Joi.string().email().min(4).max(255).required(),
     numberOfVehicles: Joi.number().min(1).max(100000).required(),
     vehiclesLeft: Joi.number(),
   });
@@ -51,9 +37,7 @@ function validate(entry) {
 
 function validatePatch(entry) {
   const schema = Joi.object({
-    customerName: Joi.string().min(4).max(255),
-    customerEmail: Joi.string().email().min(4).max(255),
-    phone: Joi.string().min(4).max(255),
+    customerId: Joi.string().email().min(4).max(255),
     numberOfVehicles: Joi.number().min(1).max(100000),
     vehiclesLeft: Joi.number(),
   });
