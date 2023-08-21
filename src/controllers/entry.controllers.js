@@ -1,5 +1,6 @@
 const { Entry } = require("../model/entry.model");
 const entryService = require("../services/entry.services");
+const userService = require("../services/user.services");
 const { errorMessage, successMessage } = require("../common/messages.common");
 const { MESSAGES, errorAlreadyExists } = require("../common/constants.common");
 
@@ -11,6 +12,13 @@ class EntryController {
   //Create a new entry
   async createEntry(req, res) {
     const { customerId, numberOfVehicles } = req.body;
+
+    const [customer] = await userService.getUserByRoleAndId(
+      customerId,
+      "customer"
+    );
+
+    if (!customer) return res.status(400).send(errorMessage("customer"));
 
     let entry = new Entry({
       customerId,

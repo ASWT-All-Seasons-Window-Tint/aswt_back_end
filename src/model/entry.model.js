@@ -3,7 +3,7 @@ const Joi = require("joi");
 
 const entrySchema = new mongoose.Schema({
   customerId: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
     minlength: 5,
     maxlength: 255,
     trim: true,
@@ -21,13 +21,54 @@ const entrySchema = new mongoose.Schema({
     type: Date,
     required: true,
   },
+  invoice: {
+    name: {
+      type: String,
+      minlength: 5,
+      maxlength: 255,
+    },
+    carDetails: [
+      {
+        vin: Number,
+        year: Number,
+        make: {
+          type: String,
+          minlength: 5,
+          maxlength: 255,
+        },
+        colour: {
+          type: String,
+          minlength: 5,
+          maxlength: 255,
+        },
+        serviceDone: {
+          type: String,
+          minlength: 5,
+          maxlength: 255,
+        },
+        note: {
+          type: String,
+          minlength: 5,
+          maxlength: 512,
+        },
+        price: {
+          type: Number,
+          default: 0,
+        },
+      },
+    ],
+    totalPrice: {
+      type: Number,
+      default: 0,
+    },
+  },
 });
 
 const Entry = mongoose.model("Entry", entrySchema);
 
 function validate(entry) {
   const schema = Joi.object({
-    customerId: Joi.string().email().min(4).max(255).required(),
+    customerId: Joi.objectId().required(),
     numberOfVehicles: Joi.number().min(1).max(100000).required(),
     vehiclesLeft: Joi.number(),
   });
