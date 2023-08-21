@@ -5,7 +5,7 @@ const error = require("../middleware/error.middleware");
 const auth = require("../routes/auth.routes");
 const users = require("../routes/user.routes");
 const departments = require("../routes/department.routes");
-const entries = require("../routes/entries.route");
+const entries = require("../routes/entry.routes");
 
 module.exports = function (app) {
   app.use(cors());
