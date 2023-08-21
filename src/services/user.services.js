@@ -15,12 +15,16 @@ class UserService {
     return await User.findById(userId);
   }
 
+  async getUserByRoleAndId(userId, role) {
+    return await User.find({ _id: userId, role });
+  }
+
   async getUserByEmail(email) {
-    return await User.findOne({ email, isDeleted: undefined });
+    return await User.findOne({ email });
   }
 
   async getUserByUsername(userName) {
-    return await User.findOne({ userName, isDeleted: undefined });
+    return await User.findOne({ userName });
   }
 
   async getStaffsByDepartments(departmentIds) {
@@ -33,7 +37,7 @@ class UserService {
   }
 
   async getAllUsers() {
-    return await User.find({ isDeleted: undefined }).select("-password");
+    return await User.find({}).select("-password");
   }
 
   async addSignInLocation(email, signInLocations) {
