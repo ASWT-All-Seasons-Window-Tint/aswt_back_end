@@ -2,7 +2,11 @@ const validateMiddleware = require("../middleware/validate.middleware");
 const admin = require("../middleware/admin.middleware");
 const auth = require("../middleware/auth.middleware");
 const manager = require("../middleware/manager.middleware");
-const { validate, validatePatch } = require("../model/entry.model");
+const {
+  validate,
+  validatePatch,
+  validateAddInvoicePatch,
+} = require("../model/entry.model");
 const express = require("express");
 const router = express.Router();
 const asyncMiddleware = require("../middleware/async.middleware");
@@ -27,6 +31,12 @@ router.put(
   "/:id",
   [validateObjectId, auth, admin || manager, validateMiddleware(validatePatch)],
   asyncMiddleware(entryController.updateEntry)
+);
+
+router.put(
+  "/add-car/:id",
+  [validateObjectId, auth, validateMiddleware(validateAddInvoicePatch)],
+  asyncMiddleware(entryController.addInvoice)
 );
 
 router.delete(

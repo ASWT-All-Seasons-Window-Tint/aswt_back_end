@@ -1,4 +1,6 @@
+const mongoose = require("mongoose");
 const { Entry } = require("../model/entry.model");
+const serviceServices = require("./service.services");
 
 class EntryService {
   //Create new entry
@@ -7,7 +9,31 @@ class EntryService {
   }
 
   async getEntryById(entryId) {
-    return await Entry.findById(entryId);
+    return await Entry.aggregate([
+      {
+        $match: {
+          _id: new mongoose.Types.ObjectId(entryId),
+        },
+      },
+
+      {
+        $project: {
+          customerId: 1,
+          numberOfVehicles: 1,
+          vehiclesLeft: 1,
+          entryDate: 1,
+
+          // Keep existing invoice projection
+          invoice: {
+            name: "$invoice.name",
+            carDetails: "$invoice.carDetails",
+            totalPrice: {
+              $sum: "$invoice.carDetails.price",
+            },
+          },
+        },
+      },
+    ]);
   }
 
   async validateEntryIds(entryIds) {
@@ -28,8 +54,53 @@ class EntryService {
     return await Entry.findOne({ name: caseInsensitiveName });
   }
 
-  async getAllEntrys() {
-    return await Entry.find().sort({ _id: -1 });
+  async getAllEntries() {
+    return await Entry.aggregate([
+      {
+        $project: {
+          customerId: 1,
+          numberOfVehicles: 1,
+          vehiclesLeft: 1,
+          entryDate: 1,
+
+          // Keep existing invoice projection
+          invoice: {
+            name: "$invoice.name",
+            carDetails: "$invoice.carDetails",
+            totalPrice: {
+              $sum: "$invoice.carDetails.price",
+            },
+          },
+        },
+      },
+    ]);
+  }
+
+  getServiceAndEntry = async (carDetails, entryId) => {
+    const results = {};
+
+    results.service = await serviceServices.getServiceById(
+      carDetails.serviceId
+    );
+
+    results.entry = await this.getEntryById(entryId);
+
+    return results;
+  };
+
+  getPriceForService(service, customerId, category) {
+    const [customerDealershipPrice] = service.dealershipPrices.filter(
+      (dealershipPrice) =>
+        dealershipPrice.custumerId.toString() == customerId.toString()
+    );
+
+    const categoryInLowercase = category.toLowerCase();
+
+    const price = customerDealershipPrice
+      ? customerDealershipPrice.price
+      : service.defaultPrice[categoryInLowercase];
+
+    return price;
   }
 
   async updateEntryById(id, entry) {

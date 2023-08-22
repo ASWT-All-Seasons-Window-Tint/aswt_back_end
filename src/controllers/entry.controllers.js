@@ -1,6 +1,7 @@
 const { Entry } = require("../model/entry.model");
 const entryService = require("../services/entry.services");
 const userService = require("../services/user.services");
+const serviceService = require("../services/service.services");
 const { errorMessage, successMessage } = require("../common/messages.common");
 const { MESSAGES, errorAlreadyExists } = require("../common/constants.common");
 
@@ -18,7 +19,7 @@ class EntryController {
       "customer"
     );
 
-    if (!customer) return res.status(400).send(errorMessage("customer"));
+    if (!customer) return res.status(404).send(errorMessage("customer"));
 
     let entry = new Entry({
       customerId,
@@ -32,9 +33,38 @@ class EntryController {
     res.send(successMessage(MESSAGES.CREATED, entry));
   }
 
+  async addInvoice(req, res) {
+    const { getServiceAndEntry, updateEntryById, getPriceForService } =
+      entryService;
+
+    const { id: entryId } = req.params;
+    const { name, carDetails } = req.body.invoice;
+
+    const { service, entry } = await getServiceAndEntry(carDetails, entryId);
+
+    if (!entry[0]) return res.status(404).send(errorMessage("entry"));
+    if (!service) return res.status(404).send(errorMessage("service"));
+
+    const price = getPriceForService(
+      service,
+      entry[0].customerId,
+      carDetails.category
+    );
+
+    carDetails.price = price;
+    carDetails.category = categoryInLowercase;
+
+    entry.invoice.name = name;
+    entry.invoice.carDetails.push(carDetails);
+
+    const updatedEntry = await updateEntryById(entryId, entry);
+
+    res.send(successMessage(MESSAGES.UPDATED, updatedEntry));
+  }
+
   //get entry from the database, using their email
   async getEntryById(req, res) {
-    const entry = await entryService.getEntryById(req.params.id);
+    const [entry] = await entryService.getEntryById(req.params.id);
     if (!entry) return res.status(404).send(errorMessage("entry"));
 
     res.send(successMessage(MESSAGES.FETCHED, entry));
