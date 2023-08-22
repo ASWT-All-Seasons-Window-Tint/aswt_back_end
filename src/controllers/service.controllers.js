@@ -1,6 +1,5 @@
 const { Service } = require("../model/service.model");
 const serviceService = require("../services/service.services");
-const serviceService = require("../services/service.services");
 const { errorMessage, successMessage } = require("../common/messages.common");
 const { MESSAGES, errorAlreadyExists } = require("../common/constants.common");
 
@@ -11,11 +10,11 @@ class ServiceController {
 
   //Create a new service
   async createService(req, res) {
-    const { type, category, defaultPrice } = req.body;
+    const { type, name, defaultPrice } = req.body;
 
     let service = new Service({
       type,
-      category,
+      name,
       defaultPrice,
     });
 

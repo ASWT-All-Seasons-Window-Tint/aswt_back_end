@@ -8,7 +8,7 @@ const serviceSchema = new mongoose.Schema({
     maxlength: 255,
     required: true,
   },
-  category: {
+  name: {
     type: String,
     minlength: 5,
     maxlength: 20,
@@ -31,8 +31,8 @@ const Service = mongoose.model("Service", serviceSchema);
 
 function validate(service) {
   const schema = Joi.object({
-    type: Joi.string().min(5).max(255).required(),
-    category: Joi.string().valid("installation", "removal").required(),
+    name: Joi.string().min(5).max(255).required(),
+    type: Joi.string().valid("installation", "removal").required(),
     defaultPrice: Joi.object({
       suv: Joi.number().min(1).required(),
       truck: Joi.number().min(1).required(),
@@ -45,7 +45,8 @@ function validate(service) {
 
 function validatePatch(service) {
   const schema = Joi.object({
-    type: Joi.string().min(5).max(255),
+    name: Joi.string().min(5).max(255),
+    type: Joi.string().valid("installation", "removal"),
     defaultPrice: Joi.object({
       suv: Joi.number().min(1),
       truck: Joi.number().min(1),

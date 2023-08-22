@@ -76,6 +76,16 @@ class EntryService {
     ]);
   }
 
+  async checkDuplicateEntry(entryId, vin, serviceId) {
+    return await Entry.findOne({
+      $and: [
+        { _id: entryId },
+        { "invoice.carDetails.serviceId": serviceId },
+        { "invoice.carDetails.vin": vin },
+      ],
+    });
+  }
+
   getServiceAndEntry = async (carDetails, entryId) => {
     const results = {};
 
@@ -87,6 +97,16 @@ class EntryService {
 
     return results;
   };
+
+  getTotalprice(invoice) {
+    invoice.totalPrice = 0;
+
+    invoice.carDetails.forEach((detail) => {
+      invoice.totalPrice += detail.price;
+    });
+
+    return invoice.totalPrice;
+  }
 
   getPriceForService(service, customerId, category) {
     const [customerDealershipPrice] = service.dealershipPrices.filter(

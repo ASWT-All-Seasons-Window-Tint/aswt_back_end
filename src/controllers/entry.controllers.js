@@ -34,28 +34,40 @@ class EntryController {
   }
 
   async addInvoice(req, res) {
-    const { getServiceAndEntry, updateEntryById, getPriceForService } =
-      entryService;
+    const {
+      getServiceAndEntry,
+      updateEntryById,
+      getPriceForService,
+      getTotalprice,
+      checkDuplicateEntry,
+    } = entryService;
 
     const { id: entryId } = req.params;
     const { name, carDetails } = req.body.invoice;
+    const { category, serviceId, vin } = carDetails;
 
-    const { service, entry } = await getServiceAndEntry(carDetails, entryId);
+    let [isCarServiceAdded, { service, entry }] = await Promise.all([
+      checkDuplicateEntry(entryId, vin, serviceId),
+      getServiceAndEntry(carDetails, entryId),
+    ]);
 
-    if (!entry[0]) return res.status(404).send(errorMessage("entry"));
+    entry = entry[0];
+
+    if (!entry) return res.status(404).send(errorMessage("entry"));
     if (!service) return res.status(404).send(errorMessage("service"));
+    if (isCarServiceAdded)
+      return res
+        .status(400)
+        .send({ message: "Duplicate entry", succes: false });
 
-    const price = getPriceForService(
-      service,
-      entry[0].customerId,
-      carDetails.category
-    );
+    const price = getPriceForService(service, entry.customerId, category);
 
     carDetails.price = price;
-    carDetails.category = categoryInLowercase;
+    carDetails.category = category.toLowerCase();
 
     entry.invoice.name = name;
     entry.invoice.carDetails.push(carDetails);
+    entry.invoice.totalPrice = getTotalprice(entry.invoice);
 
     const updatedEntry = await updateEntryById(entryId, entry);
 

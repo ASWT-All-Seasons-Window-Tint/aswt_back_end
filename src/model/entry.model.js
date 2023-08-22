@@ -70,14 +70,6 @@ const entrySchema = new mongoose.Schema({
 
 const Entry = mongoose.model("Entry", entrySchema);
 
-entrySchema.pre("save", function () {
-  this.totalPrice = 0;
-
-  this.carDetails.forEach((detail) => {
-    this.totalPrice += detail.price;
-  });
-});
-
 function validate(entry) {
   const schema = Joi.object({
     customerId: Joi.objectId().required(),
