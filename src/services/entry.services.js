@@ -15,10 +15,23 @@ class EntryService {
           _id: new mongoose.Types.ObjectId(entryId),
         },
       },
-
+      {
+        $lookup: {
+          from: "users",
+          localField: "customerId",
+          foreignField: "_id",
+          as: "customer",
+        },
+      },
       {
         $project: {
-          customerId: 1,
+          customerName: {
+            $concat: [
+              { $arrayElemAt: ["$customer.firstName", 0] },
+              " ",
+              { $arrayElemAt: ["$customer.lastName", 0] },
+            ],
+          },
           numberOfVehicles: 1,
           vehiclesLeft: 1,
           entryDate: 1,
@@ -191,8 +204,23 @@ class EntryService {
   async getAllEntries() {
     return await Entry.aggregate([
       {
+        $lookup: {
+          from: "users",
+          localField: "customerId",
+          foreignField: "_id",
+          as: "customer",
+        },
+      },
+
+      {
         $project: {
-          customerId: 1,
+          customerName: {
+            $concat: [
+              { $arrayElemAt: ["$customer.firstName", 0] },
+              " ",
+              { $arrayElemAt: ["$customer.lastName", 0] },
+            ],
+          },
           numberOfVehicles: 1,
           vehiclesLeft: 1,
           entryDate: 1,
