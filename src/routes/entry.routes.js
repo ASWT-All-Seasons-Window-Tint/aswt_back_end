@@ -18,7 +18,7 @@ const staffMiddleware = require("../middleware/staff.middleware");
 
 router.post(
   "/",
-  [auth, admin || manager, validateMiddleware(validate)],
+  [auth, adminOrManagerMiddleware, validateMiddleware(validate)],
   asyncMiddleware(entryController.createEntry)
 );
 
@@ -48,7 +48,6 @@ router.get(
 
 router.put(
   "/:id",
-
   [
     validateObjectId,
     auth,
