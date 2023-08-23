@@ -1,6 +1,7 @@
 const { Entry } = require("../model/entry.model");
 const entryService = require("../services/entry.services");
 const userService = require("../services/user.services");
+const serviceService = require("../services/service.services");
 const { errorMessage, successMessage } = require("../common/messages.common");
 const { MESSAGES, errorAlreadyExists } = require("../common/constants.common");
 
@@ -18,7 +19,7 @@ class EntryController {
       "customer"
     );
 
-    if (!customer) return res.status(400).send(errorMessage("customer"));
+    if (!customer) return res.status(404).send(errorMessage("customer"));
 
     let entry = new Entry({
       customerId,
@@ -32,10 +33,75 @@ class EntryController {
     res.send(successMessage(MESSAGES.CREATED, entry));
   }
 
+  async addInvoice(req, res) {
+    const {
+      getServiceAndEntry,
+      updateEntryById,
+      getPriceForService,
+      getTotalprice,
+      checkDuplicateEntry,
+      getVehiclesLeft,
+    } = entryService;
+
+    const { id: entryId } = req.params;
+    const { name, carDetails } = req.body.invoice;
+    const { category, serviceId, vin } = carDetails;
+
+    let [isCarServiceAdded, { service, entry }] = await Promise.all([
+      checkDuplicateEntry(entryId, vin, serviceId),
+      getServiceAndEntry(carDetails, entryId),
+    ]);
+
+    entry = entry[0];
+
+    if (!entry) return res.status(404).send(errorMessage("entry"));
+    if (!service) return res.status(404).send(errorMessage("service"));
+    if (isCarServiceAdded)
+      return res
+        .status(400)
+        .send({ message: "Duplicate entry", succes: false });
+
+    const price = getPriceForService(service, entry.customerId, category);
+
+    carDetails.price = price;
+    carDetails.category = category.toLowerCase();
+    carDetails.staffId = req.user._id;
+
+    entry.invoice.name = name;
+    entry.invoice.carDetails.push(carDetails);
+
+    const vehiclesLeft = getVehiclesLeft(entry);
+
+    entry.vehiclesLeft = vehiclesLeft;
+    entry.invoice.totalPrice = getTotalprice(entry.invoice);
+
+    const updatedEntry = await updateEntryById(entryId, entry);
+
+    res.send(successMessage(MESSAGES.UPDATED, updatedEntry));
+  }
+
   //get entry from the database, using their email
   async getEntryById(req, res) {
-    const entry = await entryService.getEntryById(req.params.id);
+    const [entry] = await entryService.getEntryById(req.params.id);
     if (!entry) return res.status(404).send(errorMessage("entry"));
+
+    res.send(successMessage(MESSAGES.FETCHED, entry));
+  }
+
+  async getCarsDoneByStaffPerEntryId(req, res) {
+    const { entryId, staffId } = req.params;
+    const entry = await entryService.getCarsDoneByStaff(entryId, staffId);
+
+    // if (!entry) return res.status(404).send(errorMessage("entry"));
+
+    res.send(successMessage(MESSAGES.FETCHED, entry));
+  }
+
+  async getCarsDoneByStaff(req, res) {
+    const { staffId } = req.params;
+    const entry = await entryService.getCarsDoneByStaff(null, staffId);
+
+    // if (!entry) return res.status(404).send(errorMessage("entry"));
 
     res.send(successMessage(MESSAGES.FETCHED, entry));
   }
