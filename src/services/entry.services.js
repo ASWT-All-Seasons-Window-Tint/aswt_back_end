@@ -54,6 +54,140 @@ class EntryService {
     return await Entry.findOne({ name: caseInsensitiveName });
   }
 
+  getCarsDoneByStaff = async (entryId, staffId) => {
+    const match = {};
+    if (entryId) {
+      match._id = new mongoose.Types.ObjectId(entryId);
+    }
+
+    const pipeline = [
+      {
+        $match: match,
+      },
+      {
+        $project: {
+          customerId: 1,
+          numberOfVehicles: 1,
+          vehiclesLeft: 1,
+          filteredDetails: {
+            $filter: {
+              input: "$invoice.carDetails",
+              as: "car",
+              cond: {
+                $eq: ["$$car.staffId", new mongoose.Types.ObjectId(staffId)],
+              },
+            },
+          },
+        },
+      },
+
+      {
+        $lookup: {
+          from: "users",
+          localField: "customerId",
+          foreignField: "_id",
+          as: "customer",
+        },
+      },
+
+      {
+        $project: {
+          customerName: {
+            $concat: [
+              { $arrayElemAt: ["$customer.firstName", 0] },
+              " ",
+              { $arrayElemAt: ["$customer.lastName", 0] },
+            ],
+          },
+          numberOfVehicles: 1,
+          vehiclesLeft: 1,
+          invoice: {
+            name: 1,
+            carDetails: {
+              $map: {
+                input: "$filteredDetails",
+                as: "car",
+                in: {
+                  vin: "$$car.vin",
+                  year: "$$car.year",
+                  make: "$$car.make",
+                  colour: "$$car.colour",
+                  staffId: "$$car.staffId",
+                },
+              },
+            },
+          },
+        },
+      },
+    ];
+
+    return Entry.aggregate(pipeline);
+  };
+  // async getCarsDoneByStaffPerEntryId(entryId, staffId) {
+  //   return await Entry.aggregate([
+  //     {
+  //       $match: {
+  //         _id: new mongoose.Types.ObjectId(entryId),
+  //       },
+  //     },
+  //     {
+  //       $project: {
+  //         customerId: 1,
+  //         numberOfVehicles: 1,
+  //         vehiclesLeft: 1,
+  //         filteredDetails: {
+  //           $filter: {
+  //             input: "$invoice.carDetails",
+  //             as: "car",
+  //             cond: {
+  //               $eq: ["$$car.staffId", new mongoose.Types.ObjectId(staffId)],
+  //             },
+  //           },
+  //         },
+  //       },
+  //     },
+
+  //     {
+  //       $lookup: {
+  //         from: "users",
+  //         localField: "customerId",
+  //         foreignField: "_id",
+  //         as: "customer",
+  //       },
+  //     },
+
+  //     {
+  //       $project: {
+  //         customerName: {
+  //           $concat: [
+  //             { $arrayElemAt: ["$customer.firstName", 0] },
+  //             " ",
+  //             { $arrayElemAt: ["$customer.lastName", 0] },
+  //           ],
+  //         },
+  //         numberOfVehicles: 1,
+  //         vehiclesLeft: 1,
+  //         invoice: {
+  //           name: 1,
+  //           carDetails: {
+  //             $map: {
+  //               input: "$filteredDetails",
+  //               as: "car",
+  //               in: {
+  //                 vin: "$$car.vin",
+  //                 year: "$$car.year",
+  //                 make: "$$car.make",
+  //                 colour: "$$car.colour",
+  //                 staffId: "$$car.staffId",
+  //               },
+  //             },
+  //           },
+  //         },
+  //       },
+  //     },
+  //   ]);
+  // }
+
   async getAllEntries() {
     return await Entry.aggregate([
       {
@@ -106,6 +240,16 @@ class EntryService {
     });
 
     return invoice.totalPrice;
+  }
+
+  getVehiclesLeft(entry) {
+    if (entry.vehiclesLeft === 0) return 0;
+    let vehiclesLeft = entry.numberOfVehicles;
+
+    const vehiclesAdded = entry.invoice.carDetails.length;
+    vehiclesLeft = vehiclesLeft - vehiclesAdded;
+
+    return vehiclesLeft;
   }
 
   getPriceForService(service, customerId, category) {

@@ -40,6 +40,7 @@ class EntryController {
       getPriceForService,
       getTotalprice,
       checkDuplicateEntry,
+      getVehiclesLeft,
     } = entryService;
 
     const { id: entryId } = req.params;
@@ -64,9 +65,14 @@ class EntryController {
 
     carDetails.price = price;
     carDetails.category = category.toLowerCase();
+    carDetails.staffId = req.user._id;
 
     entry.invoice.name = name;
     entry.invoice.carDetails.push(carDetails);
+
+    const vehiclesLeft = getVehiclesLeft(entry);
+
+    entry.vehiclesLeft = vehiclesLeft;
     entry.invoice.totalPrice = getTotalprice(entry.invoice);
 
     const updatedEntry = await updateEntryById(entryId, entry);
@@ -78,6 +84,24 @@ class EntryController {
   async getEntryById(req, res) {
     const [entry] = await entryService.getEntryById(req.params.id);
     if (!entry) return res.status(404).send(errorMessage("entry"));
+
+    res.send(successMessage(MESSAGES.FETCHED, entry));
+  }
+
+  async getCarsDoneByStaffPerEntryId(req, res) {
+    const { entryId, staffId } = req.params;
+    const entry = await entryService.getCarsDoneByStaff(entryId, staffId);
+
+    // if (!entry) return res.status(404).send(errorMessage("entry"));
+
+    res.send(successMessage(MESSAGES.FETCHED, entry));
+  }
+
+  async getCarsDoneByStaff(req, res) {
+    const { staffId } = req.params;
+    const entry = await entryService.getCarsDoneByStaff(null, staffId);
+
+    // if (!entry) return res.status(404).send(errorMessage("entry"));
 
     res.send(successMessage(MESSAGES.FETCHED, entry));
   }

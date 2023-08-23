@@ -12,6 +12,7 @@ const router = express.Router();
 const asyncMiddleware = require("../middleware/async.middleware");
 const validateObjectId = require("../middleware/validateObjectId.middleware");
 const entryController = require("../controllers/entry.controllers");
+const validateObjectIdWithXArgMiddleware = require("../middleware/validateObjectIdWithXArg.middleware");
 
 router.post(
   "/",
@@ -25,6 +26,18 @@ router.get(
   "/:id",
   validateObjectId,
   asyncMiddleware(entryController.getEntryById)
+);
+
+router.get(
+  "/entry/:entryId/staff/:staffId",
+  validateObjectIdWithXArgMiddleware(["entryId", "staffId"]),
+  asyncMiddleware(entryController.getCarsDoneByStaffPerEntryId)
+);
+
+router.get(
+  "/staff/:staffId",
+  validateObjectIdWithXArgMiddleware(["staffId"]),
+  asyncMiddleware(entryController.getCarsDoneByStaff)
 );
 
 router.put(

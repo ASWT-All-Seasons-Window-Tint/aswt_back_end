@@ -4,18 +4,18 @@ const Joi = require("joi");
 const entrySchema = new mongoose.Schema({
   customerId: {
     type: mongoose.Schema.Types.ObjectId,
-    minlength: 5,
-    maxlength: 255,
-    trim: true,
     ref: "user",
+    required: true,
   },
   numberOfVehicles: {
     type: Number,
     trim: true,
+    required: true,
   },
   vehiclesLeft: {
     type: Number,
     trim: true,
+    required: true,
   },
   entryDate: {
     type: Date,
@@ -58,6 +58,11 @@ const entrySchema = new mongoose.Schema({
           type: String,
           minlength: 3,
           maxlength: 10,
+        },
+        staffId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "user",
+          default: null,
         },
       },
     ],
