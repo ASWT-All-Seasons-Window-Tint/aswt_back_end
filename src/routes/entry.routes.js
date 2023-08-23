@@ -13,6 +13,8 @@ const asyncMiddleware = require("../middleware/async.middleware");
 const validateObjectId = require("../middleware/validateObjectId.middleware");
 const entryController = require("../controllers/entry.controllers");
 const validateObjectIdWithXArgMiddleware = require("../middleware/validateObjectIdWithXArg.middleware");
+const adminOrManagerMiddleware = require("../middleware/adminOrManager.middleware");
+const staffMiddleware = require("../middleware/staff.middleware");
 
 router.post(
   "/",
@@ -24,37 +26,52 @@ router.get("/", asyncMiddleware(entryController.fetchAllEntries));
 
 router.get(
   "/:id",
+  auth,
+  adminOrManagerMiddleware,
   validateObjectId,
   asyncMiddleware(entryController.getEntryById)
 );
 
 router.get(
   "/entry/:entryId/staff/:staffId",
+  auth,
   validateObjectIdWithXArgMiddleware(["entryId", "staffId"]),
   asyncMiddleware(entryController.getCarsDoneByStaffPerEntryId)
 );
 
 router.get(
   "/staff/:staffId",
+  auth,
   validateObjectIdWithXArgMiddleware(["staffId"]),
   asyncMiddleware(entryController.getCarsDoneByStaff)
 );
 
 router.put(
   "/:id",
-  [validateObjectId, auth, admin || manager, validateMiddleware(validatePatch)],
+
+  [
+    validateObjectId,
+    auth,
+    adminOrManagerMiddleware,
+    validateMiddleware(validatePatch),
+  ],
   asyncMiddleware(entryController.updateEntry)
 );
 
 router.put(
   "/add-car/:id",
-  [validateObjectId, auth, validateMiddleware(validateAddInvoicePatch)],
+  [
+    validateObjectId,
+    auth,
+    staffMiddleware,
+    validateMiddleware(validateAddInvoicePatch),
+  ],
   asyncMiddleware(entryController.addInvoice)
 );
 
 router.delete(
   "/:id",
-  [validateObjectId, auth, admin],
+  [auth, admin, validateObjectId],
   asyncMiddleware(entryController.deleteEntry)
 );
 module.exports = router;
