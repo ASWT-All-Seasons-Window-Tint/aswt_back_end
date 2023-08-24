@@ -29,6 +29,7 @@ class EntryController {
     });
 
     entry = await entryService.createEntry(entry);
+    entry.id = entry._id;
 
     res.send(successMessage(MESSAGES.CREATED, entry));
   }
@@ -76,6 +77,7 @@ class EntryController {
     entry.invoice.totalPrice = getTotalprice(entry.invoice);
 
     const updatedEntry = await updateEntryById(entryId, entry);
+    updatedEntry.id = updatedEntry._id;
 
     res.send(successMessage(MESSAGES.UPDATED, updatedEntry));
   }
@@ -85,6 +87,8 @@ class EntryController {
     const [entry] = await entryService.getEntryById(req.params.id);
     if (!entry) return res.status(404).send(errorMessage("entry"));
 
+    entry.id = entry._id;
+
     res.send(successMessage(MESSAGES.FETCHED, entry));
   }
 
@@ -92,23 +96,28 @@ class EntryController {
     const { entryId, staffId } = req.params;
     const entry = await entryService.getCarsDoneByStaff(entryId, staffId);
 
-    // if (!entry) return res.status(404).send(errorMessage("entry"));
+    if (!entry) return res.status(404).send(errorMessage("entry"));
+
+    entry[0].id = entry[0]._id;
 
     res.send(successMessage(MESSAGES.FETCHED, entry));
   }
 
   async getCarsDoneByStaff(req, res) {
     const { staffId } = req.params;
-    const entry = await entryService.getCarsDoneByStaff(null, staffId);
+    const entries = await entryService.getCarsDoneByStaff(null, staffId);
 
-    // if (!entry) return res.status(404).send(errorMessage("entry"));
+    if (!entries) return res.status(404).send(errorMessage("entry"));
 
-    res.send(successMessage(MESSAGES.FETCHED, entry));
+    entries.map((entry) => (entry.id = entry._id));
+
+    res.send(successMessage(MESSAGES.FETCHED, entries));
   }
 
   //get all entries in the entry collection/table
   async fetchAllEntries(req, res) {
     const entries = await entryService.getAllEntries();
+    entries.map((entry) => (entry.id = entry._id));
 
     res.send(successMessage(MESSAGES.FETCHED, entries));
   }
@@ -125,6 +134,8 @@ class EntryController {
       req.params.id,
       updatedEntry
     );
+
+    updatedEntry.id = updatedEntry._id;
 
     res.send(successMessage(MESSAGES.UPDATED, updatedEntry));
   }
