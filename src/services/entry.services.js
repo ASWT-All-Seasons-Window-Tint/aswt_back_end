@@ -24,6 +24,41 @@ class EntryService {
         },
       },
       {
+        $unwind: "$invoice.carDetails", // Unwind the carDetails array
+      },
+      {
+        $lookup: {
+          from: "services", // Replace "services" with your actual service collection name
+          localField: "invoice.carDetails.serviceId",
+          foreignField: "_id",
+          as: "service",
+        },
+      },
+      {
+        $addFields: {
+          "invoice.carDetails.serviceName": {
+            $arrayElemAt: ["$service.name", 0],
+          },
+        },
+      },
+      {
+        $group: {
+          _id: "$_id",
+          root: { $first: "$$ROOT" }, // Preserve the original fields
+          invoice: { $push: "$invoice" }, // Group back the invoice array
+        },
+      },
+      {
+        $replaceRoot: {
+          newRoot: {
+            $mergeObjects: [
+              "$root",
+              { invoice: { $arrayElemAt: ["$invoice", 0] } },
+            ],
+          },
+        },
+      },
+      {
         $project: {
           customerName: {
             $concat: [
@@ -35,8 +70,6 @@ class EntryService {
           numberOfVehicles: 1,
           vehiclesLeft: 1,
           entryDate: 1,
-
-          // Keep existing invoice projection
           invoice: {
             name: "$invoice.name",
             carDetails: "$invoice.carDetails",
@@ -102,6 +135,14 @@ class EntryService {
           as: "customer",
         },
       },
+      {
+        $lookup: {
+          from: "services",
+          localField: "filteredDetails.serviceId",
+          foreignField: "_id",
+          as: "services",
+        },
+      },
 
       {
         $project: {
@@ -126,10 +167,35 @@ class EntryService {
                   make: "$$car.make",
                   colour: "$$car.colour",
                   staffId: "$$car.staffId",
+                  serviceName: {
+                    $first: {
+                      $map: {
+                        input: "$services",
+                        as: "service",
+                        in: {
+                          $cond: [
+                            {
+                              $eq: [
+                                "$$service._id",
+                                { $toObjectId: "$$car.serviceId" },
+                              ],
+                            },
+                            "$$service.name",
+                            false,
+                          ],
+                        },
+                      },
+                    },
+                  },
                 },
               },
             },
           },
+        },
+      },
+      {
+        $match: {
+          "invoice.carDetails": { $ne: [] },
         },
       },
     ];
@@ -211,6 +277,23 @@ class EntryService {
           as: "customer",
         },
       },
+      {
+        $lookup: {
+          from: "users",
+          localField: "invoice.carDetails.staffId",
+          foreignField: "_id",
+          as: "staff",
+        },
+      },
+
+      {
+        $lookup: {
+          from: "services",
+          localField: "invoice.carDetails.serviceId",
+          foreignField: "_id",
+          as: "services",
+        },
+      },
 
       {
         $project: {
@@ -228,7 +311,91 @@ class EntryService {
           // Keep existing invoice projection
           invoice: {
             name: "$invoice.name",
-            carDetails: "$invoice.carDetails",
+            carDetails: {
+              $map: {
+                input: "$invoice.carDetails",
+                as: "car",
+                in: {
+                  $mergeObjects: [
+                    {
+                      $arrayToObject: {
+                        $filter: {
+                          input: { $objectToArray: "$$car" },
+                          as: "item",
+                          cond: { $ne: ["$$item.k", "serviceId"] },
+                        },
+                      },
+                    },
+                    {
+                      serviceName: {
+                        $first: {
+                          $filter: {
+                            input: {
+                              $map: {
+                                input: "$services",
+                                as: "service",
+                                in: {
+                                  $cond: [
+                                    {
+                                      $eq: [
+                                        "$$service._id",
+                                        { $toObjectId: "$$car.serviceId" },
+                                      ],
+                                    },
+                                    "$$service.name",
+                                    false,
+                                  ],
+                                },
+                              },
+                            },
+                            as: "item",
+                            cond: {
+                              $ne: ["$$item", false],
+                            },
+                          },
+                        },
+                      },
+                    },
+                    {
+                      staffName: {
+                        $first: {
+                          $filter: {
+                            input: {
+                              $map: {
+                                input: "$staff",
+                                as: "staff",
+                                in: {
+                                  $cond: [
+                                    {
+                                      $eq: [
+                                        "$$staff._id",
+                                        { $toObjectId: "$$car.staffId" },
+                                      ],
+                                    },
+                                    {
+                                      $concat: [
+                                        "$$staff.firstName",
+                                        " ",
+                                        "$$staff.lastName",
+                                      ],
+                                    },
+                                    null,
+                                  ],
+                                },
+                              },
+                            },
+                            as: "item",
+                            cond: {
+                              $ne: ["$$item", null],
+                            },
+                          },
+                        },
+                      },
+                    },
+                  ],
+                },
+              },
+            },
             totalPrice: {
               $sum: "$invoice.carDetails.price",
             },
