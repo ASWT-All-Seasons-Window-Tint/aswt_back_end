@@ -1,31 +1,38 @@
 const mongoose = require("mongoose");
 const Joi = require("joi");
+const addVirtualidUtils = require("../utils/addVirtualId.utils");
 
-const serviceSchema = new mongoose.Schema({
-  type: {
-    type: String,
-    minlength: 5,
-    maxlength: 255,
-    required: true,
-  },
-  name: {
-    type: String,
-    minlength: 5,
-    maxlength: 20,
-    required: true,
-  },
-  defaultPrice: {
-    suv: { type: Number, min: 1, required: true },
-    truck: { type: Number, min: 1, required: true },
-    sedan: { type: Number, min: 1, required: true },
-  },
-  dealershipPrices: [
-    {
-      custumerId: { type: mongoose.Schema.Types.ObjectId, required: true },
-      price: { type: Number, min: 1, required: true },
+const serviceSchema = new mongoose.Schema(
+  {
+    type: {
+      type: String,
+      minlength: 5,
+      maxlength: 255,
+      required: true,
     },
-  ],
-});
+    name: {
+      type: String,
+      minlength: 5,
+      maxlength: 20,
+      required: true,
+    },
+    defaultPrice: {
+      suv: { type: Number, min: 1, required: true },
+      truck: { type: Number, min: 1, required: true },
+      sedan: { type: Number, min: 1, required: true },
+    },
+    dealershipPrices: [
+      {
+        custumerId: { type: mongoose.Schema.Types.ObjectId, required: true },
+        price: { type: Number, min: 1, required: true },
+      },
+    ],
+  },
+  { toJSON: { virtuals: true } },
+  { toObject: { virtuals: true } }
+);
+
+addVirtualidUtils(serviceSchema);
 
 const Service = mongoose.model("Service", serviceSchema);
 

@@ -28,6 +28,9 @@ class EntryController {
       vehiclesLeft: numberOfVehicles,
     });
 
+    const invoiceNumber = await Entry.getNextInvoiceNumber();
+    entry.invoice.name = invoiceNumber;
+
     entry = await entryService.createEntry(entry);
     entry.id = entry._id;
 
@@ -45,7 +48,7 @@ class EntryController {
     } = entryService;
 
     const { id: entryId } = req.params;
-    const { name, carDetails } = req.body.invoice;
+    const { carDetails } = req.body;
     const { category, serviceId, vin } = carDetails;
 
     let [isCarServiceAdded, { service, entry }] = await Promise.all([
@@ -68,7 +71,6 @@ class EntryController {
     carDetails.category = category.toLowerCase();
     carDetails.staffId = req.user._id;
 
-    entry.invoice.name = name;
     entry.invoice.carDetails.push(carDetails);
 
     const vehiclesLeft = getVehiclesLeft(entry);
@@ -79,7 +81,9 @@ class EntryController {
     const updatedEntry = await updateEntryById(entryId, entry);
     updatedEntry.id = updatedEntry._id;
 
-    res.send(successMessage(MESSAGES.UPDATED, updatedEntry));
+    delete carDetails.price;
+
+    res.send(successMessage(MESSAGES.UPDATED, carDetails));
   }
 
   //get entry from the database, using their email
@@ -94,11 +98,11 @@ class EntryController {
 
   async getCarsDoneByStaffPerEntryId(req, res) {
     const { entryId, staffId } = req.params;
-    const entry = await entryService.getCarsDoneByStaff(entryId, staffId);
+    const [entry] = await entryService.getCarsDoneByStaff(entryId, staffId);
 
     if (!entry) return res.status(404).send(errorMessage("entry"));
 
-    entry[0].id = entry[0]._id;
+    entry.id = entry._id;
 
     res.send(successMessage(MESSAGES.FETCHED, entry));
   }
