@@ -12,9 +12,9 @@ class ServiceController {
 
   //Create a new service
   async createService(req, res) {
-    const { type, name, defaultPrice } = req.body;
+    const { type, name, defaultPrices } = req.body;
 
-    const categoryNames = defaultPrice.map((categoryName) =>
+    const categoryNames = defaultPrices.map((categoryName) =>
       categoryName.category.toLowerCase()
     );
 
@@ -28,7 +28,7 @@ class ServiceController {
         success: false,
       });
 
-    const defaultPriceInLowerCase = defaultPrice.map((categoryName) => {
+    const defaultPricesInLowerCase = defaultPrices.map((categoryName) => {
       return {
         category: categoryName.category.toLowerCase(),
         price: categoryName.price,
@@ -38,7 +38,7 @@ class ServiceController {
     let service = new Service({
       type,
       name,
-      defaultPrice: defaultPriceInLowerCase,
+      defaultPrices: defaultPricesInLowerCase,
     });
 
     service = await serviceService.createService(service);

@@ -16,7 +16,7 @@ const serviceSchema = new mongoose.Schema(
       maxlength: 255,
       required: true,
     },
-    defaultPrice: [
+    defaultPrices: [
       {
         category: { type: String, min: 3, required: true },
         price: { type: Number, min: 1, required: true },
@@ -41,7 +41,7 @@ function validate(service) {
   const schema = Joi.object({
     name: Joi.string().min(3).max(255).required(),
     type: Joi.string().valid("installation", "removal").required(),
-    defaultPrice: Joi.array()
+    defaultPrices: Joi.array()
       .items(
         Joi.object({
           category: Joi.string().required(),

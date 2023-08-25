@@ -137,20 +137,17 @@ function validatePatch(entry) {
 
 function validateAddInvoicePatch(entry) {
   const schema = Joi.object({
-    invoice: Joi.object({
-      name: Joi.string().min(4).max(255).required(),
-      carDetails: Joi.object({
-        vin: Joi.number().required(),
-        year: Joi.number().min(1000).required(),
-        colour: Joi.string().min(3).required(),
-        serviceId: Joi.objectId().required(),
-        make: Joi.string().min(3).max(255).required(),
-        note: Joi.string().min(5).max(255),
-        category: Joi.string()
-          .valid("suv", "sedan", "truck")
-          .insensitive()
-          .required(),
-      }).required(),
+    carDetails: Joi.object({
+      vin: Joi.number().required(),
+      year: Joi.number().min(1000).required(),
+      colour: Joi.string().min(3).required(),
+      serviceId: Joi.objectId().required(),
+      make: Joi.string().min(3).max(255).required(),
+      note: Joi.string().min(5).max(255),
+      category: Joi.string()
+        .valid("suv", "sedan", "truck")
+        .insensitive()
+        .required(),
     }).required(),
   });
 
