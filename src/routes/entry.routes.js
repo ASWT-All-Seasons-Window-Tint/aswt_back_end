@@ -6,6 +6,7 @@ const {
   validate,
   validatePatch,
   validateAddInvoicePatch,
+  validateModifyPrice,
 } = require("../model/entry.model");
 const express = require("express");
 const router = express.Router();
@@ -66,6 +67,12 @@ router.put(
     validateMiddleware(validateAddInvoicePatch),
   ],
   asyncMiddleware(entryController.addInvoice)
+);
+
+router.put(
+  "/modify-price/:id",
+  [validateObjectId, auth, admin, validateMiddleware(validateModifyPrice)],
+  asyncMiddleware(entryController.modifyPrice)
 );
 
 router.delete(

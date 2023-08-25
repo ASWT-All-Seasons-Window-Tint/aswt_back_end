@@ -138,6 +138,7 @@ class EntryService {
                         },
                       },
                     },
+                    { serviceId: "$$car.serviceId" },
                   ],
                 },
               },
@@ -517,8 +518,6 @@ class EntryService {
   }
 
   getPriceForService(service, customerId, category) {
-    console.log(service.dealershipPrices, customerId);
-
     const [customerDealershipPrice] = service.dealershipPrices.filter(
       (dealershipPrice) =>
         dealershipPrice.customerId.toString() == customerId.toString()
@@ -528,8 +527,6 @@ class EntryService {
       (item) => item.category === category.toLowerCase()
     );
     const defaultPrice = defaultPriceObject ? defaultPriceObject.price : null;
-
-    console.log(defaultPrice);
 
     const price = customerDealershipPrice
       ? customerDealershipPrice.price
@@ -543,6 +540,22 @@ class EntryService {
       id,
       {
         $set: entry,
+      },
+      { new: true }
+    );
+  }
+
+  async modifyPrice(entryId, vin, serviceId, price) {
+    return await Entry.updateOne(
+      {
+        _id: entryId, // entry document id
+        "invoice.carDetails.vin": vin,
+        "invoice.carDetails.serviceId": serviceId,
+      },
+      {
+        $set: {
+          "invoice.carDetails.$.price": price, // new price
+        },
       },
       { new: true }
     );

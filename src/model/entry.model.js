@@ -118,18 +118,6 @@ function validatePatch(entry) {
     customerId: Joi.string().email().min(4).max(255),
     numberOfVehicles: Joi.number().min(1).max(100000),
     vehiclesLeft: Joi.number(),
-    invoice: Joi.object({
-      name: Joi.string().min(4).max(255),
-      carDetails: Joi.array().items(
-        Joi.object({
-          vin: Joi.number(),
-          year: Joi.number().min(1000),
-          colour: Joi.string().min(3),
-          serviceId: Joi.objectId(),
-          category: Joi.string().valid("suv", "sedan", "truck").insensitive(),
-        })
-      ),
-    }),
   });
 
   return schema.validate(entry);
@@ -154,7 +142,18 @@ function validateAddInvoicePatch(entry) {
   return schema.validate(entry);
 }
 
-exports.validateAddInvoicePatch = validateAddInvoicePatch;
-exports.validatePatch = validatePatch;
+function validateModifyPrice(entry) {
+  const schema = Joi.object({
+    vin: Joi.number().required(),
+    price: Joi.number().required(),
+    serviceId: Joi.objectId(),
+  });
+
+  return schema.validate(entry);
+}
+
 exports.validate = validate;
+exports.validatePatch = validatePatch;
+exports.validateModifyPrice = validateModifyPrice;
+exports.validateAddInvoicePatch = validateAddInvoicePatch;
 exports.Entry = Entry;
