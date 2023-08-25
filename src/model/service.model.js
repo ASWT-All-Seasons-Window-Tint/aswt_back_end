@@ -24,7 +24,7 @@ const serviceSchema = new mongoose.Schema(
     ],
     dealershipPrices: [
       {
-        custumerId: { type: mongoose.Schema.Types.ObjectId, required: true },
+        customerId: { type: mongoose.Schema.Types.ObjectId, required: true },
         price: { type: Number, min: 1, required: true },
       },
     ],
@@ -63,6 +63,16 @@ function validatePatch(service) {
   return schema.validate(service);
 }
 
+function validateAddDealershipPrice(service) {
+  const schema = Joi.object({
+    customerId: Joi.objectId().required(),
+    price: Joi.number().min(1).required(),
+  });
+
+  return schema.validate(service);
+}
+
 exports.validatePatch = validatePatch;
+exports.validateAddDealershipPrice = validateAddDealershipPrice;
 exports.validate = validate;
 exports.Service = Service;

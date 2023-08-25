@@ -65,6 +65,7 @@ class EntryController {
         .status(400)
         .send({ message: "Duplicate entry", succes: false });
 
+    console.log(entry);
     const price = getPriceForService(service, entry.customerId, category);
 
     carDetails.price = price;

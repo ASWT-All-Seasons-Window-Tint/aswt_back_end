@@ -53,7 +53,7 @@ class EntryService {
           numberOfVehicles: 1,
           vehiclesLeft: 1,
           entryDate: 1,
-
+          customerId: 1,
           // Keep existing invoice projection
           invoice: {
             name: "$invoice.name",
@@ -517,9 +517,11 @@ class EntryService {
   }
 
   getPriceForService(service, customerId, category) {
+    console.log(service.dealershipPrices, customerId);
+
     const [customerDealershipPrice] = service.dealershipPrices.filter(
       (dealershipPrice) =>
-        dealershipPrice.custumerId.toString() == customerId.toString()
+        dealershipPrice.customerId.toString() == customerId.toString()
     );
 
     const defaultPriceObject = service.defaultPrices.find(

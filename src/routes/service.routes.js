@@ -3,12 +3,16 @@ const admin = require("../middleware/admin.middleware");
 const adminOrManager = require("../middleware/adminOrManager.middleware");
 const auth = require("../middleware/auth.middleware");
 const manager = require("../middleware/manager.middleware");
-const { validate, validatePatch } = require("../model/service.model");
 const express = require("express");
 const router = express.Router();
 const asyncMiddleware = require("../middleware/async.middleware");
 const validateObjectId = require("../middleware/validateObjectId.middleware");
 const serviceController = require("../controllers/service.controllers");
+const {
+  validate,
+  validatePatch,
+  validateAddDealershipPrice,
+} = require("../model/service.model");
 
 router.post(
   "/",
@@ -30,11 +34,16 @@ router.put(
   asyncMiddleware(serviceController.updateService)
 );
 
-// router.put(
-//   "/add-car/:id",
-//   [validateObjectId, auth, validateMiddleware(validateAddInvoicePatch)],
-//   asyncMiddleware(serviceController.addInvoice)
-// );
+router.put(
+  "/add-dealership-price/:id",
+  [
+    validateObjectId,
+    auth,
+    adminOrManager,
+    validateMiddleware(validateAddDealershipPrice),
+  ],
+  asyncMiddleware(serviceController.addDealershipPrice)
+);
 
 router.delete(
   "/:id",
