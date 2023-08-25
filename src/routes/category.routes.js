@@ -1,37 +1,39 @@
 const validateMiddleware = require("../middleware/validate.middleware");
 const admin = require("../middleware/admin.middleware");
 const auth = require("../middleware/auth.middleware");
-const { validate, validatePatch } = require("../model/department.model");
+const { validate, validatePatch } = require("../model/category.model");
 const express = require("express");
 const router = express.Router();
 const asyncMiddleware = require("../middleware/async.middleware");
 const validateObjectId = require("../middleware/validateObjectId.middleware");
-const departmentController = require("../controllers/department.controllers");
+const categoryController = require("../controllers/category.controllers");
 
 router.post(
   "/",
   auth,
   admin,
   validateMiddleware(validate),
-  asyncMiddleware(departmentController.createDepartment)
+  asyncMiddleware(categoryController.createCategory)
 );
 
-router.get("/", asyncMiddleware(departmentController.fetchAllDepartments));
+router.get("/", asyncMiddleware(categoryController.fetchAllCategories));
 
 router.get(
   "/:id",
   validateObjectId,
-  asyncMiddleware(departmentController.getDepartmentById)
+  auth,
+  admin,
+  asyncMiddleware(categoryController.getCategoryById)
 );
 
 router.put(
   "/:id",
   validateObjectId,
-  // auth is used to make authenticate a department.
+  // auth is used to make authenticate a category.
   auth,
   admin,
   validateMiddleware(validatePatch),
-  asyncMiddleware(departmentController.updateDepartment)
+  asyncMiddleware(categoryController.updateCategory)
 );
 
 router.delete(
@@ -39,6 +41,6 @@ router.delete(
   validateObjectId,
   auth,
   admin,
-  asyncMiddleware(departmentController.deleteDepartment)
+  asyncMiddleware(categoryController.deleteCategory)
 );
 module.exports = router;

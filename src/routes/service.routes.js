@@ -1,5 +1,6 @@
 const validateMiddleware = require("../middleware/validate.middleware");
 const admin = require("../middleware/admin.middleware");
+const adminOrManager = require("../middleware/adminOrManager.middleware");
 const auth = require("../middleware/auth.middleware");
 const manager = require("../middleware/manager.middleware");
 const { validate, validatePatch } = require("../model/service.model");
@@ -11,7 +12,7 @@ const serviceController = require("../controllers/service.controllers");
 
 router.post(
   "/",
-  [auth, admin || manager, validateMiddleware(validate)],
+  [auth, validateMiddleware(validate), adminOrManager],
   asyncMiddleware(serviceController.createService)
 );
 

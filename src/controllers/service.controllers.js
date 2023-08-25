@@ -2,6 +2,8 @@ const { Service } = require("../model/service.model");
 const serviceService = require("../services/service.services");
 const { errorMessage, successMessage } = require("../common/messages.common");
 const { MESSAGES, errorAlreadyExists } = require("../common/constants.common");
+const categoryServices = require("../services/category.services");
+const { Category } = require("../model/category.model");
 
 class ServiceController {
   async getStatus(req, res) {
@@ -12,10 +14,31 @@ class ServiceController {
   async createService(req, res) {
     const { type, name, defaultPrice } = req.body;
 
+    const categoryNames = defaultPrice.map((categoryName) =>
+      categoryName.category.toLowerCase()
+    );
+
+    let missingNames = await categoryServices.validateCategoryNames(
+      categoryNames
+    );
+
+    if (missingNames.length > 0)
+      return res.status(400).send({
+        message: `These categories: ${missingNames} are not recognize`,
+        success: false,
+      });
+
+    const defaultPriceInLowerCase = defaultPrice.map((categoryName) => {
+      return {
+        category: categoryName.category.toLowerCase(),
+        price: categoryName.price,
+      };
+    });
+
     let service = new Service({
       type,
       name,
-      defaultPrice,
+      defaultPrice: defaultPriceInLowerCase,
     });
 
     service = await serviceService.createService(service);
