@@ -23,12 +23,7 @@ router.post(
   asyncMiddleware(entryController.createEntry)
 );
 
-router.get(
-  "/",
-  auth,
-  adminOrManagerMiddleware,
-  asyncMiddleware(entryController.fetchAllEntries)
-);
+router.get("/", auth, asyncMiddleware(entryController.fetchAllEntries));
 
 router.get(
   "/all/",
@@ -46,7 +41,6 @@ router.get(
 router.get(
   "/:id",
   auth,
-  adminOrManagerMiddleware,
   validateObjectId,
   asyncMiddleware(entryController.getEntryById)
 );

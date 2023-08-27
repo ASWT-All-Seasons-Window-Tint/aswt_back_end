@@ -88,7 +88,11 @@ class EntryController {
 
   //get entry from the database, using their email
   async getEntryById(req, res) {
-    const [entry] = await entryService.getEntryById(req.params.id);
+    const { getAllEntriesWithoutInvoice, getEntryById } = entryService;
+    const [entry] =
+      req.user.role === "staff"
+        ? await getAllEntriesWithoutInvoice(req.params.id)
+        : await getEntryById(req.params.id);
     if (!entry) return res.status(404).send(errorMessage("entry"));
 
     entry.id = entry._id;
@@ -120,7 +124,12 @@ class EntryController {
 
   //get all entries in the entry collection/table
   async fetchAllEntries(req, res) {
-    const entries = await entryService.getAllEntries();
+    const { getAllEntriesWithoutInvoice, getAllEntries } = entryService;
+
+    const entries =
+      req.user.role === "staff"
+        ? await getAllEntriesWithoutInvoice()
+        : await getAllEntries();
     entries.map((entry) => (entry.id = entry._id));
 
     res.send(successMessage(MESSAGES.FETCHED, entries));
