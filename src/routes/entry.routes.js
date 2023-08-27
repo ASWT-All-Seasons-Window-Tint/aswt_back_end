@@ -23,7 +23,12 @@ router.post(
   asyncMiddleware(entryController.createEntry)
 );
 
-router.get("/", asyncMiddleware(entryController.fetchAllEntries));
+router.get(
+  "/",
+  auth,
+  adminOrManagerMiddleware,
+  asyncMiddleware(entryController.fetchAllEntries)
+);
 
 router.get(
   "/:id",
