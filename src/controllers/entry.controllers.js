@@ -126,6 +126,21 @@ class EntryController {
     res.send(successMessage(MESSAGES.FETCHED, entries));
   }
 
+  async getAllEntriesWithoutInvoice(req, res) {
+    const entries = await entryService.getAllEntriesWithoutInvoice();
+    entries.map((entry) => (entry.id = entry._id));
+
+    res.send(successMessage(MESSAGES.FETCHED, entries));
+  }
+  async getAllEntryByIdWithoutInvoice(req, res) {
+    const entry = await entryService.getAllEntriesWithoutInvoice(req.params.id);
+    if (!entry) return res.status(404).send(errorMessage("entry"));
+
+    entry.id = entry._id;
+
+    res.send(successMessage(MESSAGES.FETCHED, entry));
+  }
+
   //Update/edit entry data
   async updateEntry(req, res) {
     const entry = await entryService.getEntryById(req.params.id);
