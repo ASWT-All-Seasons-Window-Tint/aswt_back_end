@@ -124,12 +124,9 @@ class EntryController {
 
   //get all entries in the entry collection/table
   async fetchAllEntries(req, res) {
-    const { getAllEntriesWithoutInvoice, getAllEntries } = entryService;
+    const { getAllEntries } = entryService;
 
-    const entries =
-      req.user.role === "staff"
-        ? await getAllEntriesWithoutInvoice()
-        : await getAllEntries();
+    const entries = await getAllEntries();
     entries.map((entry) => (entry.id = entry._id));
 
     res.send(successMessage(MESSAGES.FETCHED, entries));
