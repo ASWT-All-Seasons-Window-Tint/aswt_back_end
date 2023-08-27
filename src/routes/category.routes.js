@@ -22,7 +22,6 @@ router.get(
   "/:id",
   validateObjectId,
   auth,
-  admin,
   asyncMiddleware(categoryController.getCategoryById)
 );
 

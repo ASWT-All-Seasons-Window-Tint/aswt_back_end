@@ -10,12 +10,13 @@ const asyncMiddleware = require("../middleware/async.middleware");
 const validateObjectId = require("../middleware/validateObjectId.middleware");
 const userController = require("../controllers/user.controllers");
 const managerMiddleware = require("../middleware/manager.middleware");
+const adminOrManagerMiddleware = require("../middleware/adminOrManager.middleware");
 
 // This is used for registering a new user.
 router.post(
   "/",
   auth,
-  admin,
+  adminOrManagerMiddleware,
   validateMiddleware(validate),
   asyncMiddleware(userController.register)
 );
@@ -30,7 +31,7 @@ router.get(
   asyncMiddleware(userController.passwordReset)
 );
 
-router.get("/", asyncMiddleware(userController.fetchAllUsers));
+router.get("/", auth, admin, asyncMiddleware(userController.fetchAllUsers));
 
 router.get(
   "/staffs",
@@ -42,6 +43,8 @@ router.get(
 router.get(
   "/:id",
   validateObjectId,
+  auth,
+  admin,
   asyncMiddleware(userController.gethUserById)
 );
 
