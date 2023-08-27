@@ -31,6 +31,19 @@ router.get(
 );
 
 router.get(
+  "/all/",
+  auth,
+  asyncMiddleware(entryController.getAllEntriesWithoutInvoice)
+);
+
+router.get(
+  "/all/:id",
+  auth,
+  validateObjectId,
+  asyncMiddleware(entryController.getAllEntryByIdWithoutInvoice)
+);
+
+router.get(
   "/:id",
   auth,
   adminOrManagerMiddleware,

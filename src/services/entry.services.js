@@ -8,6 +8,42 @@ class EntryService {
     return await entry.save();
   }
 
+  async getAllEntriesWithoutInvoice(entryId) {
+    const match = entryId ? { _id: new mongoose.Types.ObjectId(entryId) } : {};
+
+    return await Entry.aggregate([
+      {
+        $match: match,
+      },
+
+      {
+        $lookup: {
+          from: "users",
+          localField: "customerId",
+          foreignField: "_id",
+          as: "customer",
+        },
+      },
+
+      {
+        $project: {
+          customerName: {
+            $concat: [
+              { $arrayElemAt: ["$customer.firstName", 0] },
+              " ",
+              { $arrayElemAt: ["$customer.lastName", 0] },
+            ],
+          },
+          numberOfVehicles: 1,
+          vehiclesLeft: 1,
+          entryDate: 1,
+
+          // Keep existing invoice projection
+        },
+      },
+    ]);
+  }
+
   async getEntryById(entryId) {
     return await Entry.aggregate([
       {
