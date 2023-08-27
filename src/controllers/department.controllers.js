@@ -33,7 +33,10 @@ class DepartmentController {
 
   //get all departments in the department collection/table
   async fetchAllDepartments(req, res) {
-    const departments = await departmentService.getAllDepartments();
+    const departments =
+      req.user.role === "manager"
+        ? await departmentService.getDepartmentsForManager(req.user.departments)
+        : await departmentService.getAllDepartments();
 
     res.send(successMessage(MESSAGES.FETCHED, departments));
   }

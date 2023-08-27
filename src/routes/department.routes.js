@@ -16,11 +16,16 @@ router.post(
   asyncMiddleware(departmentController.createDepartment)
 );
 
-router.get("/", asyncMiddleware(departmentController.fetchAllDepartments));
+router.get(
+  "/",
+  auth,
+  asyncMiddleware(departmentController.fetchAllDepartments)
+);
 
 router.get(
   "/:id",
   validateObjectId,
+  auth,
   asyncMiddleware(departmentController.getDepartmentById)
 );
 

@@ -22,6 +22,12 @@ class DepartmentService {
     return missingIds;
   }
 
+  async getDepartmentsForManager(departmentIds) {
+    return await Department.find({
+      _id: { $in: departmentIds },
+    });
+  }
+
   async getDepartmentByName(name) {
     const caseInsensitiveName = new RegExp(name, "i");
 
