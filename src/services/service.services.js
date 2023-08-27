@@ -49,6 +49,12 @@ class ServiceService {
     );
   }
 
+  async getServiceByCustomer(customerId, serviceId) {
+    return Service.findOne({
+      $and: [{ _id: serviceId }, { "dealershipPrices.customerId": customerId }],
+    });
+  }
+
   async deleteService(id) {
     return await Service.findByIdAndRemove(id);
   }

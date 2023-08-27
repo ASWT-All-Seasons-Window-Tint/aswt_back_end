@@ -34,7 +34,7 @@ const constants = {
   },
   errorAlreadyExists(resource) {
     return {
-      message: `The ${resource} has already been created`,
+      message: `The ${resource} has been already created.`,
       success: false,
     };
   },

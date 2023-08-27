@@ -1,7 +1,10 @@
 const { Service } = require("../model/service.model");
 const serviceService = require("../services/service.services");
+const userService = require("../services/user.services");
 const { errorMessage, successMessage } = require("../common/messages.common");
 const { MESSAGES, errorAlreadyExists } = require("../common/constants.common");
+const categoryServices = require("../services/category.services");
+const { Category } = require("../model/category.model");
 
 class ServiceController {
   async getStatus(req, res) {
@@ -10,12 +13,33 @@ class ServiceController {
 
   //Create a new service
   async createService(req, res) {
-    const { type, name, defaultPrice } = req.body;
+    const { type, name, defaultPrices } = req.body;
+
+    const categoryNames = defaultPrices.map((categoryName) =>
+      categoryName.category.toLowerCase()
+    );
+
+    let missingNames = await categoryServices.validateCategoryNames(
+      categoryNames
+    );
+
+    if (missingNames.length > 0)
+      return res.status(400).send({
+        message: `These categories: ${missingNames} are not recognize`,
+        success: false,
+      });
+
+    const defaultPricesInLowerCase = defaultPrices.map((categoryName) => {
+      return {
+        category: categoryName.category.toLowerCase(),
+        price: categoryName.price,
+      };
+    });
 
     let service = new Service({
       type,
       name,
-      defaultPrice,
+      defaultPrices: defaultPricesInLowerCase,
     });
 
     service = await serviceService.createService(service);
@@ -48,6 +72,34 @@ class ServiceController {
     const entries = await serviceService.getAllServices();
 
     res.send(successMessage(MESSAGES.FETCHED, entries));
+  }
+
+  async addDealershipPrice(req, res) {
+    const { customerId, price } = req.body;
+
+    const [service, [customer], customerDealership] = await Promise.all([
+      serviceService.getServiceById(req.params.id),
+      userService.getUserByRoleAndId(customerId, "customer"),
+      serviceService.getServiceByCustomer(customerId, req.params.id),
+    ]);
+    if (!service) return res.status(404).send(errorMessage("service"));
+    if (!customer) return res.status(404).send(errorMessage("customer"));
+    if (customerDealership)
+      return res.status(400).send({
+        message: "The customer already have a dealership for this service",
+        success: false,
+      });
+
+    const dealershipPrice = { customerId, price };
+
+    service.dealershipPrices.push(dealershipPrice);
+
+    const updatedService = await serviceService.updateServiceById(
+      req.params.id,
+      service
+    );
+
+    res.send(successMessage(MESSAGES.UPDATED, updatedService));
   }
 
   //Update/edit service data

@@ -144,6 +144,22 @@ class EntryController {
     res.send(successMessage(MESSAGES.UPDATED, updatedEntry));
   }
 
+  async modifyPrice(req, res) {
+    const { serviceId, price, vin } = req.body;
+
+    const entry = await entryService.getEntryById(req.params.id);
+    if (!entry) return res.status(404).send(errorMessage("entry"));
+
+    const updatedEntry = entryService.modifyPrice(
+      req.params.id,
+      vin,
+      serviceId,
+      price
+    );
+
+    res.send(successMessage(MESSAGES.UPDATED, updatedEntry));
+  }
+
   //Delete entry account entirely from the database
   async deleteEntry(req, res) {
     const entry = await entryService.getEntryById(req.params.id);

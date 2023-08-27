@@ -5,6 +5,7 @@ const error = require("../middleware/error.middleware");
 const auth = require("../routes/auth.routes");
 const users = require("../routes/user.routes");
 const departments = require("../routes/department.routes");
+const categories = require("../routes/category.routes");
 const entries = require("../routes/entry.routes");
 const services = require("../routes/service.routes");
 
@@ -16,6 +17,7 @@ module.exports = function (app) {
   app.use("/api/v1/auth", auth);
   app.use("/api/v1/departments", departments);
   app.use("/api/v1/entries", entries);
+  app.use("/api/v1/categories", categories);
   app.use("/api/v1/users", users);
   app.use("/api/v1/services", services);
 
