@@ -88,11 +88,9 @@ class EntryController {
 
   //get entry from the database, using their email
   async getEntryById(req, res) {
-    const { getAllEntriesWithoutInvoice, getEntryById } = entryService;
-    const [entry] =
-      req.user.role === "staff"
-        ? await getAllEntriesWithoutInvoice(req.params.id)
-        : await getEntryById(req.params.id);
+    const { getEntryById } = entryService;
+
+    const [entry] = await getEntryById(req.params.id);
     if (!entry) return res.status(404).send(errorMessage("entry"));
 
     entry.id = entry._id;
