@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const { Entry } = require("../model/entry.model");
+const { Service } = require("../model/service.model");
 const serviceServices = require("./service.services");
 
 class EntryService {
@@ -71,7 +72,7 @@ class EntryService {
       {
         $lookup: {
           from: "services",
-          localField: "invoice.carDetails.serviceId",
+          localField: "invoice.carDetails.serviceIds",
           foreignField: "_id",
           as: "services",
         },
@@ -109,30 +110,34 @@ class EntryService {
                       },
                     },
                     {
-                      serviceName: {
-                        $first: {
-                          $filter: {
-                            input: {
-                              $map: {
-                                input: "$services",
-                                as: "service",
-                                in: {
-                                  $cond: [
-                                    {
-                                      $eq: [
-                                        "$$service._id",
-                                        { $toObjectId: "$$car.serviceId" },
+                      serviceNames: {
+                        $map: {
+                          input: "$$car.serviceIds",
+                          as: "serviceId",
+                          in: {
+                            $first: {
+                              $filter: {
+                                input: {
+                                  $map: {
+                                    input: "$services",
+                                    as: "service",
+                                    in: {
+                                      $cond: [
+                                        {
+                                          $eq: [
+                                            "$$service._id",
+                                            { $toObjectId: "$$serviceId" },
+                                          ],
+                                        },
+                                        "$$service.name",
+                                        false,
                                       ],
                                     },
-                                    "$$service.name",
-                                    false,
-                                  ],
+                                  },
                                 },
+                                as: "item",
+                                cond: { $ne: ["$$item", false] },
                               },
-                            },
-                            as: "item",
-                            cond: {
-                              $ne: ["$$item", false],
                             },
                           },
                         },
@@ -395,7 +400,7 @@ class EntryService {
       {
         $lookup: {
           from: "services",
-          localField: "invoice.carDetails.serviceId",
+          localField: "invoice.carDetails.serviceIds",
           foreignField: "_id",
           as: "services",
         },
@@ -433,30 +438,34 @@ class EntryService {
                       },
                     },
                     {
-                      serviceName: {
-                        $first: {
-                          $filter: {
-                            input: {
-                              $map: {
-                                input: "$services",
-                                as: "service",
-                                in: {
-                                  $cond: [
-                                    {
-                                      $eq: [
-                                        "$$service._id",
-                                        { $toObjectId: "$$car.serviceId" },
+                      serviceNames: {
+                        $map: {
+                          input: "$$car.serviceIds",
+                          as: "serviceId",
+                          in: {
+                            $first: {
+                              $filter: {
+                                input: {
+                                  $map: {
+                                    input: "$services",
+                                    as: "service",
+                                    in: {
+                                      $cond: [
+                                        {
+                                          $eq: [
+                                            "$$service._id",
+                                            { $toObjectId: "$$serviceId" },
+                                          ],
+                                        },
+                                        "$$service.name",
+                                        false,
                                       ],
                                     },
-                                    "$$service.name",
-                                    false,
-                                  ],
+                                  },
                                 },
+                                as: "item",
+                                cond: { $ne: ["$$item", false] },
                               },
-                            },
-                            as: "item",
-                            cond: {
-                              $ne: ["$$item", false],
                             },
                           },
                         },
@@ -524,9 +533,9 @@ class EntryService {
   getServiceAndEntry = async (carDetails, entryId) => {
     const results = {};
 
-    results.service = await serviceServices.getServiceById(
-      carDetails.serviceId
-    );
+    const serviceIds = carDetails.serviceIds;
+
+    results.services = await serviceServices.getMultipleServices(serviceIds);
 
     results.entry = await this.getEntryById(entryId);
 
@@ -553,13 +562,13 @@ class EntryService {
     return vehiclesLeft;
   }
 
-  getPriceForService(service, customerId, category) {
-    const [customerDealershipPrice] = service.dealershipPrices.filter(
+  getPriceForService(services, customerId, category) {
+    const [customerDealershipPrice] = services.dealershipPrices.filter(
       (dealershipPrice) =>
         dealershipPrice.customerId.toString() == customerId.toString()
     );
 
-    const defaultPriceObject = service.defaultPrices.find(
+    const defaultPriceObject = services.defaultPrices.find(
       (item) => item.category === category.toLowerCase()
     );
     const defaultPrice = defaultPriceObject ? defaultPriceObject.price : null;

@@ -21,6 +21,7 @@ router.post(
 );
 
 router.get("/", asyncMiddleware(serviceController.fetchAllServices));
+router.get("/multiple", asyncMiddleware(serviceController.getMultipleServices));
 
 router.get(
   "/:id",

@@ -124,6 +124,7 @@ class UserController {
 
   async passwordReset(req, res) {
     let token = req.params.token;
+    const { newPassword, confirmPassword } = req.body;
 
     // Verify token
     jwt.verify(token, process.env.jwtPrivateKey, async (err, decoded) => {
@@ -136,7 +137,13 @@ class UserController {
       if (!user) return res.status(400).json({ error: "User not found" });
 
       // Validate and save new password
-      const newPassword = req.params.password;
+      if (newPassword !== confirmPassword)
+        return res
+          .status(400)
+          .send({
+            message: "New password and confirm password does not match",
+            succes: false,
+          });
 
       const salt = await bcrypt.genSalt(10);
       user.password = await bcrypt.hash(newPassword, salt);
