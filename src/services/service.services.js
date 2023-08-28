@@ -35,7 +35,7 @@ class ServiceService {
   async getCustomerDealershipPrice(serviceId, customerId) {
     Service.findOne({
       _id: serviceId,
-      "dealershipPrice.custumerId": customerId,
+      "dealershipPrices.customerId": customerId,
     });
   }
 

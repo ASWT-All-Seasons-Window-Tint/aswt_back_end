@@ -49,27 +49,32 @@ class EntryController {
 
     const { id: entryId } = req.params;
     const { carDetails } = req.body;
-    const { category, serviceId, vin } = carDetails;
+    const { category, serviceIds, vin } = carDetails;
 
-    let [isCarServiceAdded, { service, entry }] = await Promise.all([
-      checkDuplicateEntry(entryId, vin, serviceId),
+    let [isCarServiceAdded, { services, entry }] = await Promise.all([
+      checkDuplicateEntry(entryId, vin, serviceIds),
       getServiceAndEntry(carDetails, entryId),
     ]);
 
     entry = entry[0];
 
     if (!entry) return res.status(404).send(errorMessage("entry"));
-    if (!service) return res.status(404).send(errorMessage("service"));
+    if (!services) return res.status(404).send(errorMessage("services"));
     if (isCarServiceAdded)
       return res
         .status(400)
         .send({ message: "Duplicate entry", succes: false });
 
-    const price = getPriceForService(service, entry.customerId, category);
+    const { price, priceBreakdown } = getPriceForService(
+      services,
+      entry.customerId,
+      category
+    );
 
     carDetails.price = price;
     carDetails.category = category.toLowerCase();
     carDetails.staffId = req.user._id;
+    carDetails.priceBreakdown = priceBreakdown;
 
     entry.invoice.carDetails.push(carDetails);
 
@@ -81,6 +86,7 @@ class EntryController {
     const updatedEntry = await updateEntryById(entryId, entry);
     updatedEntry.id = updatedEntry._id;
 
+    delete carDetails.priceBreakdown;
     delete carDetails.price;
 
     res.send(successMessage(MESSAGES.UPDATED, carDetails));
@@ -164,7 +170,7 @@ class EntryController {
   }
 
   async modifyPrice(req, res) {
-    const { serviceId, price, vin } = req.body;
+    const { serviceIds, price, vin } = req.body;
 
     const entry = await entryService.getEntryById(req.params.id);
     if (!entry) return res.status(404).send(errorMessage("entry"));
@@ -172,7 +178,7 @@ class EntryController {
     const updatedEntry = entryService.modifyPrice(
       req.params.id,
       vin,
-      serviceId,
+      serviceIds,
       price
     );
 
