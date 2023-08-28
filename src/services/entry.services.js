@@ -249,7 +249,7 @@ class EntryService {
       {
         $lookup: {
           from: "services",
-          localField: "filteredDetails.serviceId",
+          localField: "filteredDetails.serviceIds",
           foreignField: "_id",
           as: "services",
         },
@@ -278,22 +278,34 @@ class EntryService {
                   make: "$$car.make",
                   colour: "$$car.colour",
                   staffId: "$$car.staffId",
-                  serviceName: {
-                    $first: {
-                      $map: {
-                        input: "$services",
-                        as: "service",
-                        in: {
-                          $cond: [
-                            {
-                              $eq: [
-                                "$$service._id",
-                                { $toObjectId: "$$car.serviceId" },
-                              ],
+                  serviceNames: {
+                    $map: {
+                      input: "$$car.serviceIds",
+                      as: "serviceId",
+                      in: {
+                        $first: {
+                          $filter: {
+                            input: {
+                              $map: {
+                                input: "$services",
+                                as: "service",
+                                in: {
+                                  $cond: [
+                                    {
+                                      $eq: [
+                                        "$$service._id",
+                                        { $toObjectId: "$$serviceId" },
+                                      ],
+                                    },
+                                    "$$service.name",
+                                    false,
+                                  ],
+                                },
+                              },
                             },
-                            "$$service.name",
-                            false,
-                          ],
+                            as: "item",
+                            cond: { $ne: ["$$item", false] },
+                          },
                         },
                       },
                     },
