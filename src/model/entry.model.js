@@ -43,10 +43,12 @@ const entrySchema = new mongoose.Schema(
             minlength: 5,
             maxlength: 255,
           },
-          serviceId: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "service",
-          },
+          serviceIds: [
+            {
+              type: mongoose.Schema.Types.ObjectId,
+              ref: "service",
+            },
+          ],
           note: {
             type: String,
             minlength: 5,

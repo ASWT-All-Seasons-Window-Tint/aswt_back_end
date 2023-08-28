@@ -34,7 +34,7 @@ const email = (firstName, token) => {
         button: {
           color: "#22BC66", // Optional action button color
           text: "Reset your password",
-          link: `http://localhost:3000/api/v1/users/reset-password/${token}/12345879`,
+          link: `https://aswt-develop.netlify.app/reset-password/?token=${token}`,
         },
       },
       outro:

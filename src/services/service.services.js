@@ -39,6 +39,14 @@ class ServiceService {
     });
   }
 
+  async getMultipleServices(serviceIds) {
+    return await Service.find({
+      _id: {
+        $in: serviceIds,
+      },
+    });
+  }
+
   async updateServiceById(id, service) {
     return await Service.findByIdAndUpdate(
       id,

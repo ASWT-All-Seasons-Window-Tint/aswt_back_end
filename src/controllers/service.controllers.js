@@ -67,6 +67,14 @@ class ServiceController {
     res.send(successMessage(MESSAGES.FETCHED, service));
   }
 
+  async getMultipleServices(req, res) {
+    const services = await serviceService.getMultipleServices(
+      req.body.serviceIds
+    );
+
+    res.send(successMessage(MESSAGES.FETCHED, services));
+  }
+
   //get all entries in the service collection/table
   async fetchAllServices(req, res) {
     const entries = await serviceService.getAllServices();
