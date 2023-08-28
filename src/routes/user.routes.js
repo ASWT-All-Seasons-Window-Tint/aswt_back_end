@@ -25,7 +25,7 @@ router.post(
   validateMiddleware(validatePatch),
   asyncMiddleware(userController.passwordResetRequest)
 );
-router.get(
+router.post(
   "/reset-password/:token",
 
   asyncMiddleware(userController.passwordReset)
