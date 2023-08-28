@@ -520,11 +520,11 @@ class EntryService {
     ]);
   }
 
-  async checkDuplicateEntry(entryId, vin, serviceId) {
+  async checkDuplicateEntry(entryId, vin, serviceIds) {
     return await Entry.findOne({
       $and: [
         { _id: entryId },
-        { "invoice.carDetails.serviceId": serviceId },
+        { "invoice.carDetails.serviceId": { $in: serviceIds } },
         { "invoice.carDetails.vin": vin },
       ],
     });
@@ -563,21 +563,40 @@ class EntryService {
   }
 
   getPriceForService(services, customerId, category) {
-    const [customerDealershipPrice] = services.dealershipPrices.filter(
-      (dealershipPrice) =>
-        dealershipPrice.customerId.toString() == customerId.toString()
+    const dealershipPrices = services.filter((service) =>
+      service.dealershipPrices.some(
+        (price) => price.customerId.toString() === customerId.toString()
+      )
     );
 
-    const defaultPriceObject = services.defaultPrices.find(
-      (item) => item.category === category.toLowerCase()
-    );
-    const defaultPrice = defaultPriceObject ? defaultPriceObject.price : null;
+    const defaultPrices = services
+      .filter(
+        (service) => !dealershipPrices.some((dp) => dp._id === service._id)
+      )
+      .map((service) => ({
+        serviceName: service.name,
+        price: service.defaultPrices.find((p) => p.category === category).price,
+        serviceType: service.type,
+      }));
 
-    const price = customerDealershipPrice
-      ? customerDealershipPrice.price
-      : defaultPrice;
+    const priceBreakdown = [
+      ...dealershipPrices.map((service) => ({
+        serviceName: service.name,
+        price: service.dealershipPrices.find(
+          (p) => p.customerId.toString() === customerId.toString()
+        ).price,
+        serviceType: service.type,
+      })),
+      ...defaultPrices,
+    ];
 
-    return price;
+    const price = priceBreakdown.reduce((acc, curr) => {
+      return acc + curr.price;
+    }, 0);
+
+    console.log(price);
+
+    return { price, priceBreakdown };
   }
 
   async updateEntryById(id, entry) {

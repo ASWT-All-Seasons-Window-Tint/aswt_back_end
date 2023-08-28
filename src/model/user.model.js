@@ -60,9 +60,9 @@ const userSchema = new mongoose.Schema(
           type: Date,
           required: true,
         },
-        timestamp: {
+        description: {
           type: String,
-          minlength: 5,
+          minlength: 3,
           maxlength: 255,
           required: true,
         },

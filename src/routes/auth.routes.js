@@ -15,7 +15,7 @@ function validate(req) {
     email: Joi.string().email().min(5).max(255).required(),
     role: Joi.string(),
     signInLocations: Joi.object({
-      description: Joi.string().min(5).max(255).required(),
+      description: Joi.string().min(2).max(255).required(),
       coordinates: Joi.object({
         latitude: Joi.number().required(),
         longitude: Joi.number().required(),

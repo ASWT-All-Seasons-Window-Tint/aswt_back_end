@@ -68,6 +68,13 @@ const entrySchema = new mongoose.Schema(
             ref: "user",
             default: null,
           },
+          priceBreakdown: [
+            {
+              serviceName: String,
+              serviceType: String,
+              price: Number,
+            },
+          ],
         },
       ],
       totalPrice: {
@@ -131,7 +138,7 @@ function validateAddInvoicePatch(entry) {
       vin: Joi.number().required(),
       year: Joi.number().min(1000).required(),
       colour: Joi.string().min(3).required(),
-      serviceId: Joi.objectId().required(),
+      serviceIds: Joi.array().items(Joi.objectId().required()),
       make: Joi.string().min(3).max(255).required(),
       note: Joi.string().min(5).max(255),
       category: Joi.string()
