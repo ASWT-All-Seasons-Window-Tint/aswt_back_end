@@ -138,12 +138,10 @@ class UserController {
 
       // Validate and save new password
       if (newPassword !== confirmPassword)
-        return res
-          .status(400)
-          .send({
-            message: "New password and confirm password does not match",
-            succes: false,
-          });
+        return res.status(400).send({
+          message: "New password and confirm password does not match",
+          succes: false,
+        });
 
       const salt = await bcrypt.genSalt(10);
       user.password = await bcrypt.hash(newPassword, salt);
@@ -170,6 +168,34 @@ class UserController {
     updatedUser = await userService.updateUserById(req.params.id, updatedUser);
 
     res.send(successMessage(MESSAGES.UPDATED, updatedUser));
+  }
+
+  async updateUserPassword(req, res) {
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+
+    const user = await userService.getUserById(req.user._id);
+    if (!user) return res.status(404).send(errorMessage("user"));
+
+    //checks if the password is valid
+    const validPassword = await bcrypt.compare(currentPassword, user.password);
+    if (!validPassword)
+      return res.status(400).send({
+        message: "The password you provided is incorrect",
+        succes: false,
+      });
+
+    if (newPassword !== confirmPassword)
+      return res.status(400).send({
+        message: "New password and confirm password does not match",
+        succes: false,
+      });
+
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+
+    user.save();
+
+    res.json({ message: "Password updated", success: true });
   }
 
   //Delete user account entirely from the database

@@ -151,6 +151,34 @@ function validatePatch(user) {
   return schema.validate(user);
 }
 
+function validateUpdatePassword(user) {
+  const schema = Joi.object({
+    currentPassword: Joi.string().min(5).max(1024).required(),
+    newPassword: Joi.string().min(5).max(1024).required(),
+    confirmPassword: Joi.string().min(5).max(1024).required(),
+  });
+
+  return schema.validate(user);
+}
+
+function validateResetPassword(user) {
+  const schema = Joi.object({
+    newPassword: Joi.string().min(5).max(1024).required(),
+    confirmPassword: Joi.string().min(5).max(1024).required(),
+  });
+
+  return schema.validate(user);
+}
+function validateRequestResetPassword(user) {
+  const schema = Joi.object({
+    email: Joi.string().email().min(5).max(255).required(),
+  });
+
+  return schema.validate(user);
+}
 exports.validatePatch = validatePatch;
 exports.validate = validate;
+exports.validateUpdatePassword = validateUpdatePassword;
+exports.validateResetPassword = validateResetPassword;
+exports.validateRequestResetPassword = validateRequestResetPassword;
 exports.User = User;
