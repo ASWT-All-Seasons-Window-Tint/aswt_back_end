@@ -3,7 +3,6 @@ const admin = require("../middleware/admin.middleware");
 const auth = require("../middleware/auth.middleware");
 const bcrypt = require("bcrypt");
 const _ = require("lodash");
-const { validate, validatePatch } = require("../model/user.model");
 const express = require("express");
 const router = express.Router();
 const asyncMiddleware = require("../middleware/async.middleware");
@@ -11,6 +10,13 @@ const validateObjectId = require("../middleware/validateObjectId.middleware");
 const userController = require("../controllers/user.controllers");
 const managerMiddleware = require("../middleware/manager.middleware");
 const adminOrManagerMiddleware = require("../middleware/adminOrManager.middleware");
+const {
+  validate,
+  validatePatch,
+  validateUpdatePassword,
+  validateResetPassword,
+  validateRequestResetPassword,
+} = require("../model/user.model");
 
 // This is used for registering a new user.
 router.post(
@@ -22,12 +28,12 @@ router.post(
 );
 router.post(
   "/request-reset",
-  validateMiddleware(validatePatch),
+  validateMiddleware(validateRequestResetPassword),
   asyncMiddleware(userController.passwordResetRequest)
 );
 router.post(
   "/reset-password/:token",
-
+  validateMiddleware(validateResetPassword),
   asyncMiddleware(userController.passwordReset)
 );
 
@@ -46,6 +52,13 @@ router.get(
   auth,
   admin,
   asyncMiddleware(userController.gethUserById)
+);
+
+router.put(
+  "/update-password",
+  auth,
+  validateMiddleware(validateUpdatePassword),
+  asyncMiddleware(userController.updateUserPassword)
 );
 
 router.put(
