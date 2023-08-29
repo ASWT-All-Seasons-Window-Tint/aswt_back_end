@@ -137,8 +137,6 @@ function validatePatch(user) {
   const schema = Joi.object({
     firstName: Joi.string().min(4).max(255),
     lastName: Joi.string().min(4).max(255),
-    password: Joi.string().min(5).max(1024),
-    email: Joi.string().email().min(5).max(255),
     role: Joi.string()
       .min(4)
       .max(255)
@@ -148,21 +146,6 @@ function validatePatch(user) {
       is: "customer",
       then: Joi.forbidden(),
     }),
-    signInLocations: Joi.array()
-      .items(
-        Joi.object({
-          timestamp: Joi.date().required(),
-          coordinates: Joi.object({
-            latitude: Joi.number().required(),
-            longitude: Joi.number().required(),
-          }).required(),
-        })
-      )
-      .when("role", {
-        is: "staff",
-        then: Joi.optional(),
-        otherwise: Joi.forbidden(),
-      }),
   });
 
   return schema.validate(user);
