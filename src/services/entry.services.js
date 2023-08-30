@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const { Entry } = require("../model/entry.model");
-const { Service } = require("../model/service.model");
 const serviceServices = require("./service.services");
+const { errorMessage } = require("../common/messages.common");
 
 class EntryService {
   //Create new entry
@@ -532,13 +532,9 @@ class EntryService {
     ]);
   }
 
-  async checkDuplicateEntry(entryId, vin, serviceIds) {
+  async checkDuplicateEntry(entryId, vin) {
     return await Entry.findOne({
-      $and: [
-        { _id: entryId },
-        { "invoice.carDetails.serviceId": { $in: serviceIds } },
-        { "invoice.carDetails.vin": vin },
-      ],
+      $and: [{ _id: entryId }, { "invoice.carDetails.vin": vin }],
     });
   }
 
@@ -636,6 +632,47 @@ class EntryService {
       { new: true }
     );
   }
+
+  getCarDoneByStaff(entry, req, vin) {
+    const { carDetails } = entry.invoice;
+
+    const carIndex = carDetails.findIndex(
+      (car) =>
+        car.staffId.toString() === req.user._id.toString() &&
+        car.vin.toString() === vin.toString()
+    );
+
+    const carDoneByStaff = carDetails[carIndex];
+
+    return { carIndex, carDoneByStaff };
+  }
+
+  updateCarProperties(req, carDoneByStaff) {
+    if (req.body.category) {
+      req.body.category = req.body.category.toLowerCase();
+    }
+
+    for (const property in req.body) {
+      if (carDoneByStaff.hasOwnProperty(property)) {
+        carDoneByStaff[property] = req.body[property];
+      }
+    }
+  }
+
+  recalculatePrices = (req, entry, services, carDoneByStaff) => {
+    if (req.body.serviceIds || req.body.category) {
+      const { price, priceBreakdown } = this.getPriceForService(
+        services,
+        entry.customerId,
+        carDoneByStaff.category
+      );
+
+      carDoneByStaff.price = price;
+      carDoneByStaff.priceBreakdown = priceBreakdown;
+
+      entry.invoice.totalPrice = this.getTotalprice(entry.invoice);
+    }
+  };
 
   async deleteEntry(id) {
     return await Entry.findByIdAndRemove(id);

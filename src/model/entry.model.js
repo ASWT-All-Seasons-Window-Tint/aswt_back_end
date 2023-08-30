@@ -31,7 +31,7 @@ const entrySchema = new mongoose.Schema(
       },
       carDetails: [
         {
-          vin: Number,
+          vin: String,
           year: Number,
           make: {
             type: String,
@@ -126,7 +126,19 @@ function validatePatch(entry) {
   const schema = Joi.object({
     customerId: Joi.string().email().min(4).max(255),
     numberOfVehicles: Joi.number().min(1).max(100000),
-    vehiclesLeft: Joi.number(),
+  });
+
+  return schema.validate(entry);
+}
+
+function validateModifyCarDetails(entry) {
+  const schema = Joi.object({
+    year: Joi.number().min(1000),
+    colour: Joi.string().min(3),
+    serviceIds: Joi.array().items(Joi.objectId()),
+    make: Joi.string().min(3).max(255),
+    note: Joi.string().min(5).max(255),
+    category: Joi.string().valid("suv", "sedan", "truck").insensitive(),
   });
 
   return schema.validate(entry);
@@ -135,7 +147,7 @@ function validatePatch(entry) {
 function validateAddInvoicePatch(entry) {
   const schema = Joi.object({
     carDetails: Joi.object({
-      vin: Joi.number().required(),
+      vin: Joi.string().required(),
       year: Joi.number().min(1000).required(),
       colour: Joi.string().min(3).required(),
       serviceIds: Joi.array().items(Joi.objectId().required()),
@@ -153,7 +165,7 @@ function validateAddInvoicePatch(entry) {
 
 function validateModifyPrice(entry) {
   const schema = Joi.object({
-    vin: Joi.number().required(),
+    vin: Joi.string().required(),
     price: Joi.number().required(),
     serviceId: Joi.objectId(),
   });
@@ -165,4 +177,5 @@ exports.validate = validate;
 exports.validatePatch = validatePatch;
 exports.validateModifyPrice = validateModifyPrice;
 exports.validateAddInvoicePatch = validateAddInvoicePatch;
+exports.validateModifyCarDetails = validateModifyCarDetails;
 exports.Entry = Entry;

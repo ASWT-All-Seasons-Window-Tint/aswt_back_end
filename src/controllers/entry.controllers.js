@@ -52,7 +52,7 @@ class EntryController {
     const { category, serviceIds, vin } = carDetails;
 
     let [isCarServiceAdded, { services, entry }] = await Promise.all([
-      checkDuplicateEntry(entryId, vin, serviceIds),
+      checkDuplicateEntry(entryId, vin),
       getServiceAndEntry(carDetails, entryId),
     ]);
 
@@ -165,6 +165,38 @@ class EntryController {
     );
 
     updatedEntry.id = updatedEntry._id;
+
+    res.send(successMessage(MESSAGES.UPDATED, updatedEntry));
+  }
+
+  //Update/edit entry data
+  async modifyCarDetails(req, res) {
+    const { getMultipleServices, validateServiceIds } = serviceService;
+    const { vin, id } = req.params;
+
+    const [entry] = await entryService.getEntryById(id);
+    if (!entry) return res.status(404).send(errorMessage("entry"));
+
+    const { carIndex, carDoneByStaff } = entryService.getCarDoneByStaff(
+      entry,
+      req,
+      vin
+    );
+
+    if (!carDoneByStaff)
+      return res
+        .status(401)
+        .send({ message: MESSAGES.UNAUTHORIZE("update"), succes: false });
+
+    entryService.updateCarProperties(req, carDoneByStaff);
+
+    const services = await getMultipleServices(carDoneByStaff.serviceIds);
+
+    entryService.recalculatePrices(req, entry, services, carDoneByStaff);
+
+    entry.invoice.carDetails[carIndex] = carDoneByStaff;
+
+    const updatedEntry = await entryService.updateEntryById(id, entry);
 
     res.send(successMessage(MESSAGES.UPDATED, updatedEntry));
   }
