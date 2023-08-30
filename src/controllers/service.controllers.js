@@ -14,18 +14,26 @@ class ServiceController {
   //Create a new service
   async createService(req, res) {
     const { type, name, defaultPrices } = req.body;
+    const { validateCategoryNames, missingCategoryNames } = categoryServices;
 
     const categoryNames = defaultPrices.map((categoryName) =>
       categoryName.category.toLowerCase()
     );
 
-    let missingNames = await categoryServices.validateCategoryNames(
-      categoryNames
-    );
+    const [missingNames, categoriesMissing] = await Promise.all([
+      validateCategoryNames(categoryNames),
+      missingCategoryNames(categoryNames),
+    ]);
 
     if (missingNames.length > 0)
       return res.status(400).send({
         message: `These categories: ${missingNames} are not recognize`,
+        success: false,
+      });
+
+    if (categoriesMissing.length > 0)
+      return res.status(400).send({
+        message: `Yo have not provided prices for: ${categoriesMissing}`,
         success: false,
       });
 
