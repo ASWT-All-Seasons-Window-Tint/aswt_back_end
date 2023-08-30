@@ -51,10 +51,18 @@ class EntryController {
     const { carDetails } = req.body;
     const { category, serviceIds, vin } = carDetails;
 
-    let [isCarServiceAdded, { services, entry }] = await Promise.all([
-      checkDuplicateEntry(entryId, vin),
-      getServiceAndEntry(carDetails, entryId),
-    ]);
+    let [isCarServiceAdded, { services, entry }, missingIds] =
+      await Promise.all([
+        checkDuplicateEntry(entryId, vin),
+        getServiceAndEntry(carDetails, entryId),
+        serviceService.validateServiceIds(serviceIds),
+      ]);
+
+    if (missingIds.length > 0)
+      return res.status(404).send({
+        message: `Services with IDs: ${missingIds} could not be found`,
+        status: false,
+      });
 
     entry = entry[0];
 

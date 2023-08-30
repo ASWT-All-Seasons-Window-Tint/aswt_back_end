@@ -78,7 +78,6 @@ router.put(
     auth,
     staffMiddleware,
     validateMiddleware(validateAddInvoicePatch),
-    validateServiceIdsMiddleware,
   ],
   asyncMiddleware(entryController.addInvoice)
 );

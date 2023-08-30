@@ -602,8 +602,6 @@ class EntryService {
       return acc + curr.price;
     }, 0);
 
-    console.log(price);
-
     return { price, priceBreakdown };
   }
 
