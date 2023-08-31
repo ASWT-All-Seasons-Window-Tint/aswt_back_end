@@ -79,6 +79,7 @@ class EntryController {
       category
     );
 
+    carDetails.entryDate = new Date();
     carDetails.price = price;
     carDetails.category = category.toLowerCase();
     carDetails.staffId = req.user._id;
@@ -195,6 +196,13 @@ class EntryController {
       return res
         .status(401)
         .send({ message: MESSAGES.UNAUTHORIZE("update"), succes: false });
+
+    if (!entryService.carWasAddedRecently(carDoneByStaff)) {
+      return res.status(400).send({
+        message: "Cannot modify car details more than 24 hours after adding",
+        succes: false,
+      });
+    }
 
     entryService.updateCarProperties(req, carDoneByStaff);
 

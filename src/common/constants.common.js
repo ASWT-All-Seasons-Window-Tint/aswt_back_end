@@ -1,6 +1,7 @@
 const constants = {
   DATABASE_URI: process.env.DATABASE_URI,
   noSpecials: /^[a-zA-Z0-9_]+$/,
+  vinRegex: /\b(?:[A-HJ-NPR-Z0-9]{17})\b/,
   DATABASES: {
     ROOM: "room",
     ROOM_TYPE: "room_type",

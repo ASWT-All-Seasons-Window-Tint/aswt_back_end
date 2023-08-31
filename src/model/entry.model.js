@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const Joi = require("joi");
 const addVirtualIdUtils = require("../utils/addVirtualId.utils");
+const { vinRegex } = require("../common/constants.common");
 
 const entrySchema = new mongoose.Schema(
   {
@@ -31,22 +32,34 @@ const entrySchema = new mongoose.Schema(
       },
       carDetails: [
         {
-          vin: String,
-          year: Number,
+          vin: { type: String, required: true },
+          year: { type: Number, required: true },
           make: {
             type: String,
-            minlength: 5,
+            minlength: 3,
             maxlength: 255,
+            required: true,
+          },
+          entryDate: {
+            type: Date,
+            required: true,
+          },
+          model: {
+            type: String,
+            minlength: 3,
+            maxlength: 255,
+            required: true,
           },
           colour: {
             type: String,
-            minlength: 5,
+            minlength: 3,
             maxlength: 255,
           },
           serviceIds: [
             {
               type: mongoose.Schema.Types.ObjectId,
               ref: "service",
+              required: true,
             },
           ],
           note: {
@@ -62,6 +75,7 @@ const entrySchema = new mongoose.Schema(
             type: String,
             minlength: 3,
             maxlength: 10,
+            required: true,
           },
           staffId: {
             type: mongoose.Schema.Types.ObjectId,
@@ -135,8 +149,9 @@ function validateModifyCarDetails(entry) {
   const schema = Joi.object({
     year: Joi.number().min(1000),
     colour: Joi.string().min(3),
-    serviceIds: Joi.array().items(Joi.objectId()),
+    serviceIds: Joi.array().items(Joi.objectId().required()),
     make: Joi.string().min(3).max(255),
+    model: Joi.string().min(3).max(255),
     note: Joi.string().min(5).max(255),
     category: Joi.string().valid("suv", "sedan", "truck").insensitive(),
   });
@@ -149,9 +164,10 @@ function validateAddInvoicePatch(entry) {
     carDetails: Joi.object({
       vin: Joi.string().required(),
       year: Joi.number().min(1000).required(),
-      colour: Joi.string().min(3).required(),
+      colour: Joi.string().min(3),
       serviceIds: Joi.array().items(Joi.objectId().required()),
       make: Joi.string().min(3).max(255).required(),
+      model: Joi.string().min(3).max(255).required(),
       note: Joi.string().min(5).max(255),
       category: Joi.string()
         .valid("suv", "sedan", "truck")

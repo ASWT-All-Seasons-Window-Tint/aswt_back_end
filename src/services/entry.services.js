@@ -672,6 +672,16 @@ class EntryService {
     }
   };
 
+  carWasAddedRecently = (car) => {
+    const now = new Date();
+    const carEntryDate = new Date(car.entryDate);
+
+    const diffTime = Math.abs(now - carEntryDate);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    return diffDays <= 1;
+  };
+
   async deleteEntry(id) {
     return await Entry.findByIdAndRemove(id);
   }
