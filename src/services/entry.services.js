@@ -226,6 +226,8 @@ class EntryService {
           customerId: 1,
           numberOfVehicles: 1,
           vehiclesLeft: 1,
+          entryDate: 1,
+          invoice: 1,
           filteredDetails: {
             $filter: {
               input: "$invoice.carDetails",
@@ -266,6 +268,8 @@ class EntryService {
           },
           numberOfVehicles: 1,
           vehiclesLeft: 1,
+          entryDate: 1,
+
           invoice: {
             name: 1,
             carDetails: {
@@ -276,8 +280,11 @@ class EntryService {
                   vin: "$$car.vin",
                   year: "$$car.year",
                   make: "$$car.make",
+                  entryDate: "$$car.entryDate",
+                  note: "$$car.note",
                   colour: "$$car.colour",
                   staffId: "$$car.staffId",
+                  serviceIds: "$$car.serviceIds",
                   serviceNames: {
                     $map: {
                       input: "$$car.serviceIds",
