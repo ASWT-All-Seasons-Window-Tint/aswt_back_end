@@ -662,6 +662,8 @@ class EntryService {
         carDoneByStaff[property] = req.body[property];
       }
     }
+
+    if (req.body.note) carDoneByStaff["note"] = req.body.note;
   }
 
   recalculatePrices = (req, entry, services, carDoneByStaff) => {

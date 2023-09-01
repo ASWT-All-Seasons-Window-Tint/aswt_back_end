@@ -206,6 +206,8 @@ class EntryController {
 
     entryService.updateCarProperties(req, carDoneByStaff);
 
+    console.log(carDoneByStaff);
+
     const services = await getMultipleServices(carDoneByStaff.serviceIds);
 
     entryService.recalculatePrices(req, entry, services, carDoneByStaff);
