@@ -1,7 +1,7 @@
 const { BlacklistedToken } = require("../model/blacklistedToken.model");
 const blacklistedTokenService = require("../services/blacklistedToken.services");
-const { errorMessage, successMessage } = require("../common/messages.common");
-const { MESSAGES, errorAlreadyExists } = require("../common/constants.common");
+const { logoutSuccess } = require("../common/messages.common");
+const { MESSAGES } = require("../common/constants.common");
 
 class BlacklistedTokenController {
   async getStatus(req, res) {
@@ -18,7 +18,7 @@ class BlacklistedTokenController {
       blacklistedToken
     );
 
-    res.send(successMessage(MESSAGES.CREATED, blacklistedToken));
+    res.send(logoutSuccess());
   }
 }
 

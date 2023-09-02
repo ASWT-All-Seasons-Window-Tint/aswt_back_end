@@ -29,6 +29,9 @@ const loginError = () => {
 const loginSuccess = (token, user) => {
   return { message: MESSAGES.SUCCESFUL_LOGIN, success: true, token, user };
 };
+const logoutSuccess = () => {
+  return { message: MESSAGES.SUCCESFUL_LOGOUT, success: true };
+};
 
 exports.errorMessage = errorMessage;
 exports.errorMessageUserName = errorMessageUserName;
@@ -36,3 +39,4 @@ exports.successMessage = successMessage;
 exports.unAuthMessage = unAuthMessage;
 exports.loginError = loginError;
 exports.loginSuccess = loginSuccess;
+exports.logoutSuccess = logoutSuccess;
