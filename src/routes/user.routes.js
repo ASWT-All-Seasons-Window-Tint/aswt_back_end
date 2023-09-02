@@ -8,6 +8,7 @@ const router = express.Router();
 const asyncMiddleware = require("../middleware/async.middleware");
 const validateObjectId = require("../middleware/validateObjectId.middleware");
 const userController = require("../controllers/user.controllers");
+const blacklistedTokenController = require("../controllers/blacklistedToken.controllers");
 const managerMiddleware = require("../middleware/manager.middleware");
 const adminOrManagerMiddleware = require("../middleware/adminOrManager.middleware");
 const {
