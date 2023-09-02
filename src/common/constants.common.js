@@ -24,6 +24,7 @@ const constants = {
       return `We can't find ${resource} with the given ID`;
     },
     SUCCESFUL_LOGIN: "Sucessfully logged in",
+    SUCCESFUL_LOGOUT: "Sucessfully logged out",
     LOGIN_FAILURE: "Unable to login. Username or password incorrect",
   },
 
