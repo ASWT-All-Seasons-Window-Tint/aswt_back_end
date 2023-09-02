@@ -57,6 +57,41 @@ class ServiceService {
     );
   }
 
+  defaultPricesInArray(defaultPrices) {
+    const defaultPricesInArray = [];
+
+    for (const property in defaultPrices) {
+      defaultPricesInArray.push({
+        category: property,
+        price: defaultPrices[property],
+      });
+    }
+
+    return defaultPricesInArray;
+  }
+
+  serviceDefaultPricesToObject(service) {
+    const newService = {};
+    const obj = {};
+
+    for (const priceObj in service.defaultPrices) {
+      obj[service.defaultPrices[priceObj]["category"]] =
+        service.defaultPrices[priceObj]["price"];
+    }
+    newService["name"] = service.name;
+    newService["type"] = service.type;
+    newService["dealershipPrices"] = service.dealershipPrices;
+    newService["defaultPrices"] = obj;
+
+    return newService;
+  }
+
+  servicesDefaultPricesToObject = (services) => {
+    return services.map((service) =>
+      this.serviceDefaultPricesToObject(service)
+    );
+  };
+
   async getServiceByCustomer(customerId, serviceId) {
     return Service.findOne({
       $and: [{ _id: serviceId }, { "dealershipPrices.customerId": customerId }],

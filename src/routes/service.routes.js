@@ -12,21 +12,28 @@ const {
   validate,
   validatePatch,
   validateAddDealershipPrice,
+  validateWithObj,
 } = require("../model/service.model");
 
 router.post(
   "/",
-  [auth, validateMiddleware(validate), adminOrManager],
+  [auth, validateMiddleware(validateWithObj), adminOrManager],
   asyncMiddleware(serviceController.createService)
 );
 
 router.get("/", asyncMiddleware(serviceController.fetchAllServices));
+router.get("/web", asyncMiddleware(serviceController.fetchAllServicesWeb));
 router.get("/multiple", asyncMiddleware(serviceController.getMultipleServices));
 
 router.get(
   "/:id",
   validateObjectId,
   asyncMiddleware(serviceController.getServiceById)
+);
+router.get(
+  "/web/:id",
+  validateObjectId,
+  asyncMiddleware(serviceController.getServiceByIdWeb)
 );
 
 router.put(
