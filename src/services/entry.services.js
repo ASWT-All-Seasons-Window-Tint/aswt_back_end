@@ -281,6 +281,7 @@ class EntryService {
                   year: "$$car.year",
                   make: "$$car.make",
                   entryDate: "$$car.entryDate",
+                  model: "$$car.model",
                   note: "$$car.note",
                   colour: "$$car.colour",
                   staffId: "$$car.staffId",
