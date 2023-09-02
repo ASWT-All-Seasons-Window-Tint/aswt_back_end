@@ -3,8 +3,10 @@ const serviceService = require("../services/service.services");
 const userService = require("../services/user.services");
 const { errorMessage, successMessage } = require("../common/messages.common");
 const { MESSAGES, errorAlreadyExists } = require("../common/constants.common");
-const categoryServices = require("../services/category.services");
-const { Category } = require("../model/category.model");
+const {
+  validateCategoryNames,
+  missingCategoryNames,
+} = require("../services/category.services");
 
 class ServiceController {
   async getStatus(req, res) {
@@ -13,41 +15,32 @@ class ServiceController {
 
   //Create a new service
   async createService(req, res) {
-    const { type, name, defaultPrices } = req.body;
-    const { validateCategoryNames, missingCategoryNames } = categoryServices;
+    let { type, name, defaultPrices } = req.body;
+    // const categoryNames = Object.keys(defaultPrices);
 
-    const categoryNames = defaultPrices.map((categoryName) =>
-      categoryName.category.toLowerCase()
-    );
+    // const [missingNames, categoriesMissing] = await Promise.all([
+    //   validateCategoryNames(categoryNames),
+    //   missingCategoryNames(categoryNames),
+    // ]);
 
-    const [missingNames, categoriesMissing] = await Promise.all([
-      validateCategoryNames(categoryNames),
-      missingCategoryNames(categoryNames),
-    ]);
+    // if (missingNames.length > 0)
+    //   return res.status(400).send({
+    //     message: `These categories: ${missingNames} are not recognize`,
+    //     success: false,
+    //   });
 
-    if (missingNames.length > 0)
-      return res.status(400).send({
-        message: `These categories: ${missingNames} are not recognize`,
-        success: false,
-      });
+    // if (categoriesMissing.length > 0)
+    //   return res.status(400).send({
+    //     message: `You have not provided prices for: ${categoriesMissing}`,
+    //     success: false,
+    //   });
 
-    if (categoriesMissing.length > 0)
-      return res.status(400).send({
-        message: `Yo have not provided prices for: ${categoriesMissing}`,
-        success: false,
-      });
-
-    const defaultPricesInLowerCase = defaultPrices.map((categoryName) => {
-      return {
-        category: categoryName.category.toLowerCase(),
-        price: categoryName.price,
-      };
-    });
+    defaultPrices = serviceService.defaultPricesInArray(defaultPrices);
 
     let service = new Service({
       type,
       name,
-      defaultPrices: defaultPricesInLowerCase,
+      defaultPrices,
     });
 
     service = await serviceService.createService(service);
@@ -59,6 +52,15 @@ class ServiceController {
   async getServiceById(req, res) {
     const service = await serviceService.getServiceById(req.params.id);
     if (!service) return res.status(404).send(errorMessage("service"));
+
+    res.send(successMessage(MESSAGES.FETCHED, service));
+  }
+
+  async getServiceByIdWeb(req, res) {
+    let service = await serviceService.getServiceById(req.params.id);
+    if (!service) return res.status(404).send(errorMessage("service"));
+
+    service = serviceService.serviceDefaultPricesToObject(service);
 
     res.send(successMessage(MESSAGES.FETCHED, service));
   }
@@ -83,11 +85,23 @@ class ServiceController {
     res.send(successMessage(MESSAGES.FETCHED, services));
   }
 
-  //get all entries in the service collection/table
+  //get all services in the service collection/table
   async fetchAllServices(req, res) {
-    const entries = await serviceService.getAllServices();
+    const services = await serviceService.getAllServices();
 
-    res.send(successMessage(MESSAGES.FETCHED, entries));
+    res.send(successMessage(MESSAGES.FETCHED, services));
+  }
+
+  async fetchAllServicesWeb(req, res) {
+    let services = await serviceService.getAllServices();
+
+    console.log(services);
+
+    services = serviceService.servicesDefaultPricesToObject(services);
+
+    console.log(services);
+
+    res.send(successMessage(MESSAGES.FETCHED, services));
   }
 
   async addDealershipPrice(req, res) {

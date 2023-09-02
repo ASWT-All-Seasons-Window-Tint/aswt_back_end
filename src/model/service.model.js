@@ -54,6 +54,20 @@ function validate(service) {
   return schema.validate(service);
 }
 
+function validateWithObj(service) {
+  const schema = Joi.object({
+    name: Joi.string().min(3).max(255).required(),
+    type: Joi.string().valid("installation", "removal").required(),
+    defaultPrices: Joi.object({
+      suv: Joi.number().min(1).required(),
+      sedan: Joi.number().min(1).required(),
+      truck: Joi.number().min(1).required(),
+    }),
+  });
+
+  return schema.validate(service);
+}
+
 function validatePatch(service) {
   const schema = Joi.object({
     name: Joi.string().min(5).max(255),
@@ -72,7 +86,8 @@ function validateAddDealershipPrice(service) {
   return schema.validate(service);
 }
 
+exports.validate = validate;
+exports.validateWithObj = validateWithObj;
 exports.validatePatch = validatePatch;
 exports.validateAddDealershipPrice = validateAddDealershipPrice;
-exports.validate = validate;
 exports.Service = Service;
