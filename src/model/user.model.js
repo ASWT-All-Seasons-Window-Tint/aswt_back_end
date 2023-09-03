@@ -64,7 +64,6 @@ const userSchema = new mongoose.Schema(
           type: String,
           minlength: 3,
           maxlength: 255,
-          required: true,
         },
         coordinates: {
           latitude: { type: Number, required: true },
