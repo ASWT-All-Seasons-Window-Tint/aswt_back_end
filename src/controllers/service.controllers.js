@@ -57,7 +57,9 @@ class ServiceController {
   }
 
   async getServiceByIdWeb(req, res) {
-    let service = await serviceService.getServiceById(req.params.id);
+    let service = await serviceService.getServiceById(req.params.id, {
+      lean: true,
+    });
     if (!service) return res.status(404).send(errorMessage("service"));
 
     service = serviceService.serviceDefaultPricesToObject(service);
@@ -93,13 +95,9 @@ class ServiceController {
   }
 
   async fetchAllServicesWeb(req, res) {
-    let services = await serviceService.getAllServices();
-
-    console.log(services);
+    let services = await serviceService.getAllServices({ lean: true });
 
     services = serviceService.servicesDefaultPricesToObject(services);
-
-    console.log(services);
 
     res.send(successMessage(MESSAGES.FETCHED, services));
   }

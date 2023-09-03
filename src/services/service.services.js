@@ -6,8 +6,10 @@ class ServiceService {
     return await service.save();
   }
 
-  async getServiceById(serviceId) {
-    return await Service.findById(serviceId);
+  async getServiceById(serviceId, lean = { lean: false }) {
+    return lean.lean
+      ? await Service.findById(serviceId).lean()
+      : await Service.findById(serviceId);
   }
 
   async validateServiceIds(serviceIds) {
@@ -28,8 +30,10 @@ class ServiceService {
     return await Service.findOne({ name: caseInsensitiveName });
   }
 
-  async getAllServices() {
-    return await Service.find().sort({ _id: -1 });
+  async getAllServices(lean = { lean: false }) {
+    return lean.lean
+      ? await Service.find().lean().sort({ _id: -1 })
+      : await Service.find().sort({ _id: -1 });
   }
 
   async getCustomerDealershipPrice(serviceId, customerId) {
@@ -71,19 +75,17 @@ class ServiceService {
   }
 
   serviceDefaultPricesToObject(service) {
-    const newService = {};
     const obj = {};
 
     for (const priceObj in service.defaultPrices) {
       obj[service.defaultPrices[priceObj]["category"]] =
         service.defaultPrices[priceObj]["price"];
     }
-    newService["name"] = service.name;
-    newService["type"] = service.type;
-    newService["dealershipPrices"] = service.dealershipPrices;
-    newService["defaultPrices"] = obj;
 
-    return newService;
+    service.defaultPrices = obj;
+    service.id = service._id;
+
+    return service;
   }
 
   servicesDefaultPricesToObject = (services) => {
