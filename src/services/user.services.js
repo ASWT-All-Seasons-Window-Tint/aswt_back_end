@@ -15,6 +15,10 @@ class UserService {
     return await User.findById(userId);
   }
 
+  async getUsersByRole(role) {
+    return await User.find({ role });
+  }
+
   async getUserByRoleAndId(userId, role) {
     return await User.find({ _id: userId, role });
   }

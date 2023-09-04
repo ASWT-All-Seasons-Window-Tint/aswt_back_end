@@ -48,6 +48,13 @@ router.get(
 );
 
 router.get(
+  "/role/:role",
+  auth,
+  adminOrManagerMiddleware,
+  asyncMiddleware(userController.getUsersByRole)
+);
+
+router.get(
   "/:id",
   validateObjectId,
   auth,
