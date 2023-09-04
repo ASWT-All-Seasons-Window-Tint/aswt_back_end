@@ -74,6 +74,16 @@ const userSchema = new mongoose.Schema(
     resetToken: {
       type: String,
     },
+    customerDetails: {
+      companyName: {
+        type: String,
+        minlength: 3,
+        maxlength: 255,
+        required: function () {
+          return this.role === "customer";
+        },
+      },
+    },
   },
   { toJSON: { virtuals: true } },
   { toObject: { virtuals: true } }
@@ -126,6 +136,13 @@ function validate(user) {
       is: "customer",
       then: Joi.forbidden(),
       otherwise: Joi.required(),
+    }),
+    customerDetails: Joi.object({
+      companyName: Joi.string().min(3).max(255).required(),
+    }).when("role", {
+      is: "customer",
+      then: Joi.required(),
+      otherwise: Joi.forbidden(),
     }),
   });
 

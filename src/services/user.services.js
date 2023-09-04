@@ -1,5 +1,9 @@
-const { User } = require("../model/user.model");
+require("dotenv").config();
+const _ = require("lodash");
 const bcrypt = require("bcrypt");
+const { User } = require("../model/user.model");
+const propertiesToPick = require("../common/propertiesToPick.common");
+const generateRandomAvatar = require("../utils/generateRandomAvatar.utils");
 
 class UserService {
   //Create new user
@@ -14,6 +18,14 @@ class UserService {
   async getUserById(userId) {
     return await User.findById(userId);
   }
+
+  query = (filter = {}, selectArg = "") => User.find(filter).select(selectArg);
+
+  getUsersByRole = async (role) => {
+    return role === "customer"
+      ? await this.query({ role }, "-departments")
+      : await this.query({ role }, "-customerDetails");
+  };
 
   async getUserByRoleAndId(userId, role) {
     return await User.find({ _id: userId, role });
@@ -62,6 +74,53 @@ class UserService {
 
   async deleteUser(id) {
     return await User.findByIdAndRemove(id);
+  }
+
+  createUserWithAvatar = async (req, user, departments) => {
+    const modifiedPropertiesToPick = this.modifyCustomer(req);
+
+    user = new User(
+      _.pick(req.body, [...modifiedPropertiesToPick, "password"])
+    );
+
+    const avatarUrl = await generateRandomAvatar(user.email);
+    user.avatarUrl = avatarUrl;
+    user.avatarImgTag = `<img src=${avatarUrl} alt=${user._id}>`;
+
+    user.role = user.role.toLowerCase();
+    if (user.role !== "customer") user.departments = [...new Set(departments)];
+
+    user = await this.createUser(user);
+
+    const token = user.generateAuthToken();
+
+    user = _.pick(user, propertiesToPick);
+    // It creates a token which is sent as a header to the client
+
+    return { user, token };
+  };
+
+  async addAvatarToUser(user) {
+    const avatarUrl = await generateRandomAvatar(user.email);
+    user.avatarUrl = avatarUrl;
+    user.avatarImgTag = `<img src=${avatarUrl} alt=${user._id}>`;
+
+    return user;
+  }
+
+  modifyCustomer(req) {
+    const { role, password } = req.body;
+
+    if (role.toLowerCase() == "customer") {
+      if (!password) req.body.password = process.env.customerPassword;
+
+      propertiesToPick.push("customerDetails");
+      const filteredFieldsArray = propertiesToPick.filter(
+        (field) => field !== "departments"
+      );
+      return filteredFieldsArray;
+    }
+    return propertiesToPick;
   }
 }
 

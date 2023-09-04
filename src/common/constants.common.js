@@ -26,6 +26,10 @@ const constants = {
     SUCCESFUL_LOGIN: "Sucessfully logged in",
     SUCCESFUL_LOGOUT: "Sucessfully logged out",
     LOGIN_FAILURE: "Unable to login. Username or password incorrect",
+    USER_EXISTS: "User already registered",
+    INVALID(ids, collection) {
+      return `This ids: ${ids} are not in the ${collection}`;
+    },
   },
 
   errorMessage: (data) => {
