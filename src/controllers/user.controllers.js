@@ -21,8 +21,9 @@ class UserController {
     const { departments, email } = req.body;
     const { createUserWithAvatar } = userService;
 
-    if (typeof req.body.departments[0] !== "string")
-      return jsonResponse(res, 400, false, "invalid ID");
+    if (req.body.departments)
+      if (typeof req.body.departments[0] !== "string")
+        return jsonResponse(res, 400, false, "invalid ID");
 
     // Checks if a user already exist by using the email id
     let [user, invalidIds] = await Promise.all([
