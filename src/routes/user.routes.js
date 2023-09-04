@@ -11,6 +11,7 @@ const userController = require("../controllers/user.controllers");
 const blacklistedTokenController = require("../controllers/blacklistedToken.controllers");
 const managerMiddleware = require("../middleware/manager.middleware");
 const adminOrManagerMiddleware = require("../middleware/adminOrManager.middleware");
+const validateroleMiddleware = require("../middleware/validaterole.middleware");
 const {
   validate,
   validatePatch,
@@ -51,6 +52,7 @@ router.get(
   "/role/:role",
   auth,
   adminOrManagerMiddleware,
+  validateroleMiddleware,
   asyncMiddleware(userController.getUsersByRole)
 );
 

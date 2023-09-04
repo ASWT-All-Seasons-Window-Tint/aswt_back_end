@@ -1,15 +1,15 @@
+require("dotenv").config();
 const _ = require("lodash");
 const jwt = require("jsonwebtoken");
-const { User } = require("../model/user.model");
 const userService = require("../services/user.services");
 const { MESSAGES } = require("../common/constants.common");
-const propertiesToPick = require("../common/propertiesToPick.common");
 const { errorMessage, successMessage } = require("../common/messages.common");
 const generateRandomAvatar = require("../utils/generateRandomAvatar.utils");
 const departmentServices = require("../services/department.services");
 const { transporter, mailOptions } = require("../utils/email.utils");
-require("dotenv").config();
 const bcrypt = require("bcrypt");
+const { User } = require("../model/user.model");
+const { jsonResponse } = require("../common/messages.common");
 
 class UserController {
   async getStatus(req, res) {
@@ -18,50 +18,34 @@ class UserController {
 
   //Create a new user
   async register(req, res) {
-    const { role, password, departments, email } = req.body;
+    const { departments, email } = req.body;
+    const { createUserWithAvatar } = userService;
+
+    if (typeof req.body.departments[0] !== "string")
+      return jsonResponse(res, 400, false, "invalid ID");
 
     // Checks if a user already exist by using the email id
     let [user, invalidIds] = await Promise.all([
       userService.getUserByEmail(email),
       departmentServices.validateDepartmentIds(departments),
     ]);
-    if (user)
-      return res
-        .status(400)
-        .send({ success: false, message: "User already registered" });
 
+    if (user) return jsonResponse(res, 400, false, MESSAGES.USER_EXISTS);
     if (invalidIds.length > 0)
-      return res.status(400).send({
-        message: `This ids: ${[invalidIds]} are not in the department`,
-        success: false,
-      });
+      return jsonResponse(
+        res,
+        400,
+        false,
+        MESSAGES.INVALID(invalidIds, "departments")
+      );
 
-    if (role.toLowerCase() == "customer" && !password)
-      password = process.env.customerPassword;
-
-    user = new User(_.pick(req.body, [...propertiesToPick, "password"]));
-
-    user = new User(user);
-
-    const avatarUrl = await generateRandomAvatar(user.email);
-    user.avatarUrl = avatarUrl;
-    user.avatarImgTag = `<img src=${avatarUrl} alt=${user._id}>`;
-
-    user.role = user.role.toLowerCase();
-    user.departments = [...new Set(departments)];
-
-    user = await userService.createUser(user);
-
-    // it creates a token which is sent as an header to the client
-    const token = user.generateAuthToken();
-
-    user = _.pick(user, propertiesToPick);
+    const userWithAvatar = await createUserWithAvatar(req, user, departments);
 
     res
-      .header("x-auth-header", token)
+      .header("x-auth-header", userWithAvatar.token)
       .header("access-control-expose-headers", "x-auth-token")
       // It determines what is sent back to the client
-      .send(successMessage(MESSAGES.CREATED, user));
+      .send(successMessage(MESSAGES.CREATED, userWithAvatar.user));
   }
 
   //get user from the database, using their email

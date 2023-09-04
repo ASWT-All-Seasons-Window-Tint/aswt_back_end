@@ -1,4 +1,4 @@
-const {} = require("../common/messages.common");
+const { jsonResponse } = require("../common/messages.common");
 
 module.exports = function (req, res, next) {
   const errorMessage = "Invalid role";
@@ -8,9 +8,7 @@ module.exports = function (req, res, next) {
   const roleLists = ["customer", "manager", "staff"];
 
   if (!roleLists.includes(role))
-    return res
-      .status(400)
-      .send({ success: false, message: "Invalid learning track" });
+    return jsonResponse(res, 400, false, errorMessage);
 
   next();
 };

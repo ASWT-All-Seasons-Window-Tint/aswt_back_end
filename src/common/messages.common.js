@@ -14,6 +14,10 @@ const errorMessageUserName = () => {
   };
 };
 
+const jsonResponse = (res, stastusCode = 200, success = true, message) => {
+  return res.status(stastusCode).send({ message, success });
+};
+
 const successMessage = (message, data) => {
   return { message, success: true, data };
 };
@@ -40,3 +44,4 @@ exports.unAuthMessage = unAuthMessage;
 exports.loginError = loginError;
 exports.loginSuccess = loginSuccess;
 exports.logoutSuccess = logoutSuccess;
+exports.jsonResponse = jsonResponse;
