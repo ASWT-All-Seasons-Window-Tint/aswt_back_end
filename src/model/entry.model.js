@@ -138,7 +138,6 @@ function validate(entry) {
 
 function validatePatch(entry) {
   const schema = Joi.object({
-    customerId: Joi.string().email().min(4).max(255),
     numberOfVehicles: Joi.number().min(1).max(100000),
   });
 

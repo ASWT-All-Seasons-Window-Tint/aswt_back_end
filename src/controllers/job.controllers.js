@@ -17,7 +17,7 @@ class JobController {
 
     const [[staff], entry, service] = await Promise.all([
       userService.getUserByRoleAndId(staffId, "staff"),
-      entryService.getEntryById(entryId),
+      entryService.getEntries({ entryId }),
       serviceService.getServiceById(serviceId),
     ]);
 
