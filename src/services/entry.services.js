@@ -9,48 +9,12 @@ class EntryService {
     return await entry.save();
   }
 
-  async getAllEntriesWithoutInvoice(entryId) {
-    const match = entryId ? { _id: new mongoose.Types.ObjectId(entryId) } : {};
-
-    return await Entry.aggregate([
-      {
-        $match: match,
-      },
-
-      {
-        $lookup: {
-          from: "users",
-          localField: "customerId",
-          foreignField: "_id",
-          as: "customer",
-        },
-      },
-
-      {
-        $project: {
-          customerName: {
-            $concat: [
-              { $arrayElemAt: ["$customer.firstName", 0] },
-              " ",
-              { $arrayElemAt: ["$customer.lastName", 0] },
-            ],
-          },
-          numberOfVehicles: 1,
-          vehiclesLeft: 1,
-          entryDate: 1,
-
-          // Keep existing invoice projection
-        },
-      },
-    ]);
-  }
-
   async getEntryById(entryId) {
     return await Entry.aggregate([
       {
         $match: {
           _id: new mongoose.Types.ObjectId(entryId),
-          vehiclesLeft: { $gt: 0 },
+          vehiclesLeft: { $gte: 0 },
         },
       },
       {
@@ -194,10 +158,12 @@ class EntryService {
     ]);
   }
 
-  async getEntries(entryId, vehiclesLeft = { $gte: 0 }) {
-    const match = { vehiclesLeft };
-    if (entryId) {
-      match._id = new mongoose.Types.ObjectId(entryId);
+  async getEntries(filter = { vehiclesLeft: { $gte: 0 }, entryId: undefined }) {
+    const match = filter.vehiclesLeft
+      ? { vehiclesLeft: filter.vehiclesLeft }
+      : {};
+    if (filter.entryId) {
+      match._id = new mongoose.Types.ObjectId(filter.entryId);
     }
 
     return await Entry.aggregate([
@@ -345,13 +311,6 @@ class EntryService {
     ]);
   }
 
-  // Usage for getting a single entry by ID
-  // const entryId = "your-entry-id";
-  // const entry = await getEntries(entryId);
-
-  // Usage for getting all entries
-  // const entries = await getEntries();
-
   async validateEntryIds(entryIds) {
     const entrys = await Entry.find({
       _id: { $in: entryIds },
@@ -370,8 +329,8 @@ class EntryService {
     return await Entry.findOne({ name: caseInsensitiveName });
   }
 
-  getCarsDoneByStaff = async (entryId, staffId) => {
-    const match = { vehiclesLeft: { $gt: 0 } };
+  getCarsDoneByStaff = async (entryId, staffId, vehiclesLeft = { $gte: 0 }) => {
+    const match = { vehiclesLeft };
     if (entryId) {
       match._id = new mongoose.Types.ObjectId(entryId);
     }
@@ -717,7 +676,7 @@ class EntryService {
 
     results.services = await serviceServices.getMultipleServices(serviceIds);
 
-    results.entry = await this.getEntryById(entryId);
+    results.entry = await this.getEntries({ entryId });
 
     return results;
   };
@@ -733,11 +692,12 @@ class EntryService {
   }
 
   getVehiclesLeft(entry) {
-    if (entry.vehiclesLeft === 0) return 0;
     let vehiclesLeft = entry.numberOfVehicles;
 
     const vehiclesAdded = entry.invoice.carDetails.length;
     vehiclesLeft = vehiclesLeft - vehiclesAdded;
+
+    if (vehiclesLeft < 1) return 0;
 
     return vehiclesLeft;
   }
@@ -806,11 +766,13 @@ class EntryService {
   getCarDoneByStaff(entry, req, vin) {
     const { carDetails } = entry.invoice;
 
-    const carIndex = carDetails.findIndex(
-      (car) =>
-        car.staffId.toString() === req.user._id.toString() &&
-        car.vin.toString() === vin.toString()
-    );
+    const carIndex = carDetails.findIndex((car) => {
+      if (car.staffId)
+        return (
+          car.staffId.toString() === req.user._id.toString() &&
+          car.vin.toString() === vin.toString()
+        );
+    });
 
     const carDoneByStaff = carDetails[carIndex];
 

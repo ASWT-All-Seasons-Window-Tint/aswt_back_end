@@ -2,8 +2,12 @@ const { Entry } = require("../model/entry.model");
 const entryService = require("../services/entry.services");
 const userService = require("../services/user.services");
 const serviceService = require("../services/service.services");
-const { errorMessage, successMessage } = require("../common/messages.common");
-const { MESSAGES, errorAlreadyExists } = require("../common/constants.common");
+const { MESSAGES } = require("../common/constants.common");
+const {
+  errorMessage,
+  successMessage,
+  jsonResponse,
+} = require("../common/messages.common");
 
 class EntryController {
   async getStatus(req, res) {
@@ -38,6 +42,7 @@ class EntryController {
   }
 
   async addInvoice(req, res) {
+    const message = "Number of Vehicles already at 0";
     const {
       getServiceAndEntry,
       updateEntryById,
@@ -72,6 +77,7 @@ class EntryController {
       return res
         .status(400)
         .send({ message: "Duplicate entry", succes: false });
+    if (entry.vehiclesLeft < 1) return jsonResponse(res, 400, false, message);
 
     const { price, priceBreakdown } = getPriceForService(
       services,
@@ -101,11 +107,34 @@ class EntryController {
     res.send(successMessage(MESSAGES.UPDATED, carDetails));
   }
 
-  //get entry from the database, using their email
-  async getEntryById(req, res) {
-    const { getEntryById } = entryService;
+  //get all entries in the entry collection/table
+  async fetchAllEntries(req, res) {
+    const { getEntries } = entryService;
+    const role = "staff" || "customer";
+    const errorMessage = "There's no entry please create one";
 
-    const [entry] = await getEntryById(req.params.id);
+    const entries =
+      req.user.role !== role
+        ? await getEntries()
+        : await getEntries({ vehiclesLeft: { $gt: 0 } });
+
+    if (entries.length < 0) return jsonResponse(res, 404, false, errorMessage);
+
+    entries.map((entry) => (entry.id = entry._id));
+
+    res.send(successMessage(MESSAGES.FETCHED, entries));
+  }
+
+  async getEntryById(req, res) {
+    const { getEntries } = entryService;
+    const { id: entryId } = req.params;
+    const role = "staff" || "customer";
+
+    const [entry] =
+      req.user.role !== role
+        ? await getEntries({ entryId, vehiclesLeft: { $gte: 0 } })
+        : await getEntries({ entryId, vehiclesLeft: { $gt: 0 } });
+
     if (!entry) return res.status(404).send(errorMessage("entry"));
 
     entry.id = entry._id;
@@ -115,7 +144,12 @@ class EntryController {
 
   async getCarsDoneByStaffPerEntryId(req, res) {
     const { entryId, staffId } = req.params;
-    const [entry] = await entryService.getCarsDoneByStaff(entryId, staffId);
+    const role = "staff" || "customer";
+
+    const [entry] =
+      req.user.role !== role
+        ? await entryService.getCarsDoneByStaff(entryId, staffId)
+        : await entryService.getCarsDoneByStaff(entryId, staffId, { $gt: 0 });
 
     if (!entry) return res.status(404).send(errorMessage("entry"));
 
@@ -126,7 +160,12 @@ class EntryController {
 
   async getCarsDoneByStaff(req, res) {
     const { staffId } = req.params;
-    const entries = await entryService.getCarsDoneByStaff(null, staffId);
+    const role = "staff" || "customer";
+
+    const entries =
+      req.user.role !== role
+        ? await entryService.getCarsDoneByStaff(null, staffId)
+        : await entryService.getCarsDoneByStaff(null, staffId, { $gt: 0 });
 
     if (!entries) return res.status(404).send(errorMessage("entry"));
 
@@ -135,44 +174,16 @@ class EntryController {
     res.send(successMessage(MESSAGES.FETCHED, entries));
   }
 
-  //get all entries in the entry collection/table
-  async fetchAllEntries(req, res) {
-    const { getEntries } = entryService;
-
-    const entries = await getEntries();
-    entries.map((entry) => (entry.id = entry._id));
-
-    res.send(successMessage(MESSAGES.FETCHED, entries));
-  }
-
-  async getAllEntriesWithoutInvoice(req, res) {
-    const entries = await entryService.getAllEntriesWithoutInvoice();
-    entries.map((entry) => (entry.id = entry._id));
-
-    res.send(successMessage(MESSAGES.FETCHED, entries));
-  }
-  async getAllEntryByIdWithoutInvoice(req, res) {
-    const entry = await entryService.getAllEntriesWithoutInvoice(req.params.id);
-    if (!entry) return res.status(404).send(errorMessage("entry"));
-
-    entry.id = entry._id;
-
-    res.send(successMessage(MESSAGES.FETCHED, entry));
-  }
-
   //Update/edit entry data
   async updateEntry(req, res) {
-    const entry = await entryService.getEntryById(req.params.id);
+    const [entry] = await entryService.getEntries({ entryId: req.params.id });
 
     if (!entry) return res.status(404).send(errorMessage("entry"));
 
-    let updatedEntry = req.body;
+    entry.numberOfVehicles = req.body.numberOfVehicles;
+    entry.vehiclesLeft = entryService.getVehiclesLeft(entry);
 
-    updatedEntry = await entryService.updateEntryById(
-      req.params.id,
-      updatedEntry
-    );
-
+    let updatedEntry = await entryService.updateEntryById(req.params.id, entry);
     updatedEntry.id = updatedEntry._id;
 
     res.send(successMessage(MESSAGES.UPDATED, updatedEntry));
@@ -180,10 +191,10 @@ class EntryController {
 
   //Update/edit entry data
   async modifyCarDetails(req, res) {
-    const { getMultipleServices, validateServiceIds } = serviceService;
+    const { getMultipleServices } = serviceService;
     const { vin, id } = req.params;
 
-    const [entry] = await entryService.getEntryById(id);
+    const [entry] = await entryService.getEntries({ entryId: id });
     if (!entry) return res.status(404).send(errorMessage("entry"));
 
     const { carIndex, carDoneByStaff } = entryService.getCarDoneByStaff(
@@ -222,7 +233,7 @@ class EntryController {
   async modifyPrice(req, res) {
     const { serviceIds, price, vin } = req.body;
 
-    const entry = await entryService.getEntryById(req.params.id);
+    const [entry] = await entryService.getEntries({ entryId: req.params.id });
     if (!entry) return res.status(404).send(errorMessage("entry"));
 
     const updatedEntry = entryService.modifyPrice(
@@ -237,7 +248,7 @@ class EntryController {
 
   //Delete entry account entirely from the database
   async deleteEntry(req, res) {
-    const entry = await entryService.getEntryById(req.params.id);
+    const entry = await entryService.getEntries({ entryId: req.params.id });
 
     if (!entry) return res.status(404).send(errorMessage("entry"));
 
