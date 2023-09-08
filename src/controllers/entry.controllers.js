@@ -153,12 +153,12 @@ class EntryController {
     if (!entry) return res.status(404).send(errorMessage("entry"));
     if (!staff) return res.status(404).send(errorMessage("staff"));
 
-    const staffEntry =
+    let [staffEntry] =
       req.user.role !== role
         ? await entryService.getCarsDoneByStaff(entryId, staffId)
         : await entryService.getCarsDoneByStaff(entryId, staffId, { $gt: 0 });
 
-    if (!staffEntry) return res.status(404).send(errorMessage("entry"));
+    if (!staffEntry) staffEntry = [];
 
     staffEntry.id = staffEntry._id;
 
