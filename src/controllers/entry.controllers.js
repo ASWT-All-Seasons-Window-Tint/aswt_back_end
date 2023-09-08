@@ -145,17 +145,24 @@ class EntryController {
   async getCarsDoneByStaffPerEntryId(req, res) {
     const { entryId, staffId } = req.params;
     const role = "staff" || "customer";
+    const [staff, [entry]] = await Promise.all([
+      userService.getUserById(staffId),
+      entryService.getEntries({ entryId, vehiclesLeft: { $gte: 0 } }),
+    ]);
 
-    const [entry] =
+    if (!entry) return res.status(404).send(errorMessage("entry"));
+    if (!staff) return res.status(404).send(errorMessage("staff"));
+
+    const staffEntry =
       req.user.role !== role
         ? await entryService.getCarsDoneByStaff(entryId, staffId)
         : await entryService.getCarsDoneByStaff(entryId, staffId, { $gt: 0 });
 
-    if (!entry) return res.status(404).send(errorMessage("entry"));
+    if (!staffEntry) return res.status(404).send(errorMessage("entry"));
 
-    entry.id = entry._id;
+    staffEntry.id = staffEntry._id;
 
-    res.send(successMessage(MESSAGES.FETCHED, entry));
+    res.send(successMessage(MESSAGES.FETCHED, staffEntry));
   }
 
   async getCarsDoneByStaff(req, res) {
