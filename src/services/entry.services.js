@@ -818,6 +818,21 @@ class EntryService {
     return diffDays <= 1;
   };
 
+  getStaffEntriesAndAllEntries = async (staffId, req, role) => {
+    const results = {};
+
+    [results.staffEntries, results.entries] = await Promise.all([
+      req.user.role !== role
+        ? this.getCarsDoneByStaff(null, staffId)
+        : this.getCarsDoneByStaff(null, staffId, { $gt: 0 }),
+      req.user.role !== role
+        ? this.getEntries()
+        : this.getEntries({ vehiclesLeft: { $gt: 0 } }),
+    ]);
+
+    return results;
+  };
+
   async deleteEntry(id) {
     return await Entry.findByIdAndRemove(id);
   }

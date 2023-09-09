@@ -3,6 +3,7 @@ const entryService = require("../services/entry.services");
 const userService = require("../services/user.services");
 const serviceService = require("../services/service.services");
 const { MESSAGES } = require("../common/constants.common");
+const _ = require("lodash");
 const {
   errorMessage,
   successMessage,
@@ -158,7 +159,11 @@ class EntryController {
         ? await entryService.getCarsDoneByStaff(entryId, staffId)
         : await entryService.getCarsDoneByStaff(entryId, staffId, { $gt: 0 });
 
-    if (!staffEntry) staffEntry = [];
+    if (!staffEntry) {
+      staffEntry = _.cloneDeep(entry);
+      staffEntry.invoice.carDetails = [];
+      delete staffEntry.invoice.totalPrice;
+    }
 
     staffEntry.id = staffEntry._id;
 
@@ -168,17 +173,24 @@ class EntryController {
   async getCarsDoneByStaff(req, res) {
     const { staffId } = req.params;
     const role = "staff" || "customer";
+    const { getStaffEntriesAndAllEntries } = entryService;
 
-    const entries =
-      req.user.role !== role
-        ? await entryService.getCarsDoneByStaff(null, staffId)
-        : await entryService.getCarsDoneByStaff(null, staffId, { $gt: 0 });
+    let results = await getStaffEntriesAndAllEntries(staffId, req, role);
+    let { entries, staffEntries } = results;
 
-    if (!entries) return res.status(404).send(errorMessage("entry"));
+    if (staffEntries && staffEntries.length < 1) {
+      staffEntries = _.cloneDeep(entries);
+      staffEntries.map((staffEntry) => {
+        {
+          delete staffEntry.invoice.totalPrice;
+          staffEntry.invoice.carDetails = [];
+        }
+      });
+    }
 
-    entries.map((entry) => (entry.id = entry._id));
+    staffEntries.map((entry) => (entry.id = entry._id));
 
-    res.send(successMessage(MESSAGES.FETCHED, entries));
+    res.send(successMessage(MESSAGES.FETCHED, staffEntries));
   }
 
   //Update/edit entry data
