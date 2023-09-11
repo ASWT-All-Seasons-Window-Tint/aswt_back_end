@@ -85,9 +85,17 @@ function validateAddDealershipPrice(service) {
 
   return schema.validate(service);
 }
+function validateUpdateDealershipPrice(service) {
+  const schema = Joi.object({
+    price: Joi.number().min(1).required(),
+  });
+
+  return schema.validate(service);
+}
 
 exports.validate = validate;
 exports.validateWithObj = validateWithObj;
 exports.validatePatch = validatePatch;
 exports.validateAddDealershipPrice = validateAddDealershipPrice;
+exports.validateUpdateDealershipPrice = validateUpdateDealershipPrice;
 exports.Service = Service;

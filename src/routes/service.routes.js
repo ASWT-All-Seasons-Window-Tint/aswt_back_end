@@ -13,6 +13,7 @@ const {
   validatePatch,
   validateAddDealershipPrice,
   validateWithObj,
+  validateUpdateDealershipPrice,
 } = require("../model/service.model");
 
 router.post(
@@ -51,6 +52,17 @@ router.put(
     validateMiddleware(validateAddDealershipPrice),
   ],
   asyncMiddleware(serviceController.addDealershipPrice)
+);
+router.put(
+  "/update-dealership-price/service/:id/customer/:customerId",
+  [
+    validateObjectId,
+    auth,
+    admin,
+
+    validateMiddleware(validateUpdateDealershipPrice),
+  ],
+  asyncMiddleware(serviceController.updateDealershipPrice)
 );
 
 router.delete(

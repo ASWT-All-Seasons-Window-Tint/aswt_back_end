@@ -1,4 +1,5 @@
 const { Service } = require("../model/service.model");
+const { jsonResponse } = require("../common/messages.common");
 
 class ServiceService {
   //Create new service
@@ -8,8 +9,8 @@ class ServiceService {
 
   async getServiceById(serviceId, lean = { lean: false }) {
     return lean.lean
-      ? await Service.findById(serviceId).lean()
-      : await Service.findById(serviceId);
+      ? Service.findById(serviceId).lean()
+      : Service.findById(serviceId);
   }
 
   async validateServiceIds(serviceIds) {
@@ -93,6 +94,23 @@ class ServiceService {
       this.serviceDefaultPricesToObject(service)
     );
   };
+
+  updateCustomerPrice(service, customerId, newPrice) {
+    const customerNotFound = "We can't find the customer for this dealership";
+    const customer = service.dealershipPrices.find(
+      (c) => c.customerId.toString() === customerId.toString()
+    );
+    const results = {};
+
+    if (!customer) results.error = customerNotFound;
+
+    customer.price = newPrice;
+    results.updatedService = service;
+
+    console.log(service);
+
+    return results;
+  }
 
   async getServiceByCustomer(customerId, serviceId) {
     return Service.findOne({

@@ -7,7 +7,7 @@
 /src/test.js
 .pnp.js
 .env
-*.json
+test*
 
 # testing
 /coverage

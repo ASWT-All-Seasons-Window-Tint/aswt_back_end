@@ -1,12 +1,17 @@
 const { Service } = require("../model/service.model");
 const serviceService = require("../services/service.services");
 const userService = require("../services/user.services");
-const { errorMessage, successMessage } = require("../common/messages.common");
+const {
+  errorMessage,
+  successMessage,
+  jsonResponse,
+} = require("../common/messages.common");
 const { MESSAGES, errorAlreadyExists } = require("../common/constants.common");
 const {
   validateCategoryNames,
   missingCategoryNames,
 } = require("../services/category.services");
+const { compareSync } = require("bcrypt");
 
 class ServiceController {
   async getStatus(req, res) {
@@ -142,6 +147,31 @@ class ServiceController {
     );
 
     res.send(successMessage(MESSAGES.UPDATED, updatedService));
+  }
+
+  async updateDealershipPrice(req, res) {
+    const { id, customerId } = req.params;
+    const service = await serviceService.getServiceById(id, {
+      lean: true,
+    });
+    if (!service) return res.status(404).send(errorMessage("service"));
+
+    let { updatedService, error } = serviceService.updateCustomerPrice(
+      service,
+      customerId,
+      req.body.price
+    );
+
+    if (error) return jsonResponse(res, 404, false, error);
+
+    updatedService = await serviceService.updateServiceById(id, updatedService);
+
+    res.send(
+      successMessage(
+        "Customer's delearship price is succefully updated",
+        updatedService
+      )
+    );
   }
 
   //Delete service account entirely from the database
