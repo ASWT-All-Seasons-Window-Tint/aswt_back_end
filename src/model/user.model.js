@@ -153,11 +153,7 @@ function validatePatch(user) {
   const schema = Joi.object({
     firstName: Joi.string().min(4).max(255),
     lastName: Joi.string().min(4).max(255),
-    role: Joi.string()
-      .min(4)
-      .max(255)
-      .valid("staff", "manager", "customer")
-      .insensitive(),
+    role: Joi.string().min(4).max(255).valid("staff", "manager").insensitive(),
     departments: Joi.array().items(Joi.objectId().required()).when("role", {
       is: "customer",
       then: Joi.forbidden(),

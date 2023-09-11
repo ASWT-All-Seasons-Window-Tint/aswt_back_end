@@ -8,8 +8,8 @@ const generateRandomAvatar = require("../utils/generateRandomAvatar.utils");
 const departmentServices = require("../services/department.services");
 const { transporter, mailOptions } = require("../utils/email.utils");
 const bcrypt = require("bcrypt");
-const { User } = require("../model/user.model");
-const { jsonResponse } = require("../common/messages.common");
+const { jsonResponse, badReqResponse } = require("../common/messages.common");
+const propertiesToPick = require("../common/propertiesToPick.common");
 
 class UserController {
   async getStatus(req, res) {
@@ -151,9 +151,17 @@ class UserController {
   }
   //Update/edit user data
   async updateUserProfile(req, res) {
-    let user = await userService.getUserById(req.params.id);
+    const { role } = req.body;
+    if (role) req.body.role = role.toLowerCase();
 
+    const user = await userService.getUserById(req.params.id);
     if (!user) return res.status(404).send(errorMessage("user"));
+
+    if (user.isAdmin && role)
+      return badReqResponse(res, "Cannot change role of an admin");
+
+    if (role && user.role === role.toLowerCase())
+      return badReqResponse(res, `The user is already a ${role}`);
 
     let updatedUser = req.body;
 
@@ -163,6 +171,8 @@ class UserController {
     updatedUser.avatarImgTag = `<img src=${avatarUrl} alt=${user._id}>`;
 
     updatedUser = await userService.updateUserById(req.params.id, updatedUser);
+
+    updatedUser = _.pick(updatedUser, propertiesToPick);
 
     res.send(successMessage(MESSAGES.UPDATED, updatedUser));
   }

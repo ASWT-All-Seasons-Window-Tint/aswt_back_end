@@ -82,6 +82,7 @@ router.put(
   validateObjectId,
   // auth is used to make authenticate a user.
   auth,
+  admin,
   validateMiddleware(validatePatch),
   asyncMiddleware(userController.updateUserProfile)
 );
