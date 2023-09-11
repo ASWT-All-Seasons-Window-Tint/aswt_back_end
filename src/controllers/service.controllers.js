@@ -177,6 +177,23 @@ class ServiceController {
     );
   }
 
+  async deleteCustomerDealerShip(req, res) {
+    const { serviceId, customerId } = req.params;
+
+    const { error, service } = await serviceService.deleteCustomerDealerShip(
+      serviceId,
+      customerId
+    );
+    if (error) return jsonResponse(res, 404, false, error);
+
+    const updatedService = await serviceService.updateServiceById(
+      serviceId,
+      service
+    );
+
+    res.send(successMessage(MESSAGES.DELETED, updatedService));
+  }
+
   //Delete service account entirely from the database
   async deleteService(req, res) {
     const service = await serviceService.getServiceById(req.params.id);

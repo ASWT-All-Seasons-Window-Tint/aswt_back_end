@@ -65,6 +65,12 @@ router.put(
   asyncMiddleware(serviceController.updateDealershipPrice)
 );
 
+router.put(
+  "/delete-dealership-price/service/:serviceId/customer/:customerId",
+  [auth, admin, validateObjectIdWithXArg(["serviceId", "customerId"])],
+  asyncMiddleware(serviceController.deleteCustomerDealerShip)
+);
+
 router.delete(
   "/:id",
   [validateObjectId, auth, admin],

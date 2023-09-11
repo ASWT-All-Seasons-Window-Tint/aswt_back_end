@@ -1,5 +1,5 @@
 const { Service } = require("../model/service.model");
-const { jsonResponse } = require("../common/messages.common");
+const { errorMessage } = require("../common/messages.common");
 
 class ServiceService {
   //Create new service
@@ -111,6 +111,30 @@ class ServiceService {
 
     return results;
   }
+
+  deleteCustomerDealerShip = async (serviceId, customerId) => {
+    const results = {};
+    const service = await this.getServiceById(serviceId, { lean: true });
+    if (!service) {
+      results.error = "We can't find service for the given ID";
+      return results;
+    }
+
+    const customerIndex = service.dealershipPrices.findIndex(
+      (c) => c.customerId.toString() === customerId.toString()
+    );
+
+    if (customerIndex === -1) {
+      results.error = "No dealership found for this customer";
+      return results;
+    }
+
+    service.dealershipPrices.splice(customerIndex, 1);
+
+    results.service = service;
+
+    return results;
+  };
 
   async getServiceByCustomer(customerId, serviceId) {
     return Service.findOne({
