@@ -208,10 +208,12 @@ class UserController {
   //Delete user account entirely from the database
   async deleteUserAccount(req, res) {
     const user = await userService.getUserById(req.params.id);
-
     if (!user) return res.status(404).send(errorMessage("user"));
 
-    await userService.deleteUser(req.params.id);
+    if (user.isAdmin)
+      return badReqResponse(res, "You can not delete an admin account");
+
+    await userService.softDeleteUser(req.params.id);
 
     res.send(successMessage(MESSAGES.DELETED, user));
   }

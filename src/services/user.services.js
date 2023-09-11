@@ -16,31 +16,32 @@ class UserService {
   }
 
   async getUserById(userId) {
-    return await User.findById(userId);
+    return await User.findOne({ _id: userId, isDeleted: undefined });
   }
 
-  query = (filter = {}, selectArg = "") => User.find(filter).select(selectArg);
+  query = (role, selectArg) =>
+    User.find({ role, isDeleted: undefined }).select(selectArg);
 
   getUsersByRole = async (role) => {
     return role === "customer"
-      ? await this.query({ role }, "-departments")
-      : await this.query({ role }, "-customerDetails");
+      ? await this.query(role, "-departments")
+      : await this.query(role, "-customerDetails");
   };
 
   async getEmployees() {
-    return await User.find({ role: { $ne: "customer" } });
+    return await User.find({ role: { $ne: "customer" }, isDeleted: undefined });
   }
 
   async getUserByRoleAndId(userId, role) {
-    return await User.find({ _id: userId, role });
+    return await User.find({ _id: userId, role, isDeleted: undefined });
   }
 
   async getUserByEmail(email) {
-    return await User.findOne({ email });
+    return await User.findOne({ email, isDeleted: undefined });
   }
 
   async getUserByUsername(userName) {
-    return await User.findOne({ userName });
+    return await User.findOne({ userName, isDeleted: undefined });
   }
 
   async getStaffsByDepartments(departmentIds) {
@@ -49,6 +50,7 @@ class UserService {
         $in: departmentIds,
       },
       role: "staff",
+      isDeleted: undefined,
     });
   }
 
@@ -125,6 +127,13 @@ class UserService {
       return filteredFieldsArray;
     }
     return propertiesToPick;
+  }
+  async softDeleteUser(id) {
+    const user = await User.findById(id);
+
+    user.isDeleted = true;
+
+    return await user.save();
   }
 }
 

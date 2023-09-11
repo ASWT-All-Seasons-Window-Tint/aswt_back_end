@@ -79,10 +79,14 @@ const userSchema = new mongoose.Schema(
         type: String,
         minlength: 3,
         maxlength: 255,
-        required: function () {
-          return this.role === "customer";
-        },
+        // required: function () {
+        //   return this.role === "customer";
+        // },
       },
+    },
+    isDeleted: {
+      type: Boolean,
+      default: undefined,
     },
   },
   { toJSON: { virtuals: true } },
