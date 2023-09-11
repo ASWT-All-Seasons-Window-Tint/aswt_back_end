@@ -27,6 +27,10 @@ class UserService {
       : await this.query({ role }, "-customerDetails");
   };
 
+  async getEmployees() {
+    return await User.find({ role: { $ne: "customer" } });
+  }
+
   async getUserByRoleAndId(userId, role) {
     return await User.find({ _id: userId, role });
   }

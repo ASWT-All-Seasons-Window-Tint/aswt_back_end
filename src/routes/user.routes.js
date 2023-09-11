@@ -40,6 +40,12 @@ router.post(
 );
 
 router.get("/", auth, admin, asyncMiddleware(userController.fetchAllUsers));
+router.get(
+  "/employees",
+  auth,
+  admin,
+  asyncMiddleware(userController.getEmployees)
+);
 
 router.get(
   "/staffs",

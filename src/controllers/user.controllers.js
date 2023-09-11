@@ -79,6 +79,12 @@ class UserController {
     res.send(successMessage(MESSAGES.FETCHED, users));
   }
 
+  async getEmployees(req, res) {
+    const users = await userService.getEmployees();
+
+    res.send(successMessage(MESSAGES.FETCHED, users));
+  }
+
   //get all users in the user collection/table
   async passwordResetRequest(req, res) {
     const user = await userService.getUserByEmail(req.body.email);
