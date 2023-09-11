@@ -150,8 +150,8 @@ class ServiceController {
   }
 
   async updateDealershipPrice(req, res) {
-    const { id, customerId } = req.params;
-    const service = await serviceService.getServiceById(id, {
+    const { serviceId, customerId } = req.params;
+    const service = await serviceService.getServiceById(serviceId, {
       lean: true,
     });
     if (!service) return res.status(404).send(errorMessage("service"));
@@ -164,7 +164,10 @@ class ServiceController {
 
     if (error) return jsonResponse(res, 404, false, error);
 
-    updatedService = await serviceService.updateServiceById(id, updatedService);
+    updatedService = await serviceService.updateServiceById(
+      serviceId,
+      updatedService
+    );
 
     res.send(
       successMessage(

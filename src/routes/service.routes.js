@@ -15,6 +15,7 @@ const {
   validateWithObj,
   validateUpdateDealershipPrice,
 } = require("../model/service.model");
+const validateObjectIdWithXArg = require("../middleware/validateObjectIdWithXArg.middleware");
 
 router.post(
   "/",
@@ -54,12 +55,11 @@ router.put(
   asyncMiddleware(serviceController.addDealershipPrice)
 );
 router.put(
-  "/update-dealership-price/service/:id/customer/:customerId",
+  "/update-dealership-price/service/:serviceId/customer/:customerId",
   [
-    validateObjectId,
     auth,
     admin,
-
+    validateObjectIdWithXArg(["serviceId", "customerId"]),
     validateMiddleware(validateUpdateDealershipPrice),
   ],
   asyncMiddleware(serviceController.updateDealershipPrice)
