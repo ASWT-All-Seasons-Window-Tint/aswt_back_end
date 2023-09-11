@@ -55,7 +55,7 @@ class UserService {
   }
 
   async getAllUsers() {
-    return await User.find({}).select("-password");
+    return await User.find({ isDeleted: undefined }).select("-password");
   }
 
   async addSignInLocation(email, signInLocations) {
