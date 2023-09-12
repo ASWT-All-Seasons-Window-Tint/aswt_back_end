@@ -107,15 +107,15 @@ entrySchema.statics.getNextInvoiceNumber = async function () {
   // Get the last entry
   const lastEntry = await this.findOne().sort("-entryDate");
 
-  // Start with AWST0001 if no entries
+  // Start with AWST00001 if no entries
   let nextNum = "00001";
 
   if (lastEntry) {
-    const lastNum = lastEntry.invoice.name.substring(4);
-    nextNum = leadingZero(parseInt(lastNum) + 1, 4);
+    const lastNum = lastEntry.invoice.name.substring(5);
+    nextNum = leadingZero(parseInt(lastNum) + 1, 5);
   }
 
-  return "AWST" + nextNum;
+  return "ASWT" + nextNum;
 };
 
 function leadingZero(num, size) {
