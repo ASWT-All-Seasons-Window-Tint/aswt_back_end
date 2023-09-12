@@ -13,12 +13,16 @@ class AuthController {
   async logIn(req, res) {
     const { email, password } = req.body;
 
+    if (req.user.role !== "staff" && req.body.signInLocations)
+      return res
+        .status(400)
+        .send({ message: "Only a staff can sign in", success: false });
+
     let user = req.user;
     //checks if the password is valid
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) return res.status(400).send(loginError());
 
-    console.log(req.body);
     // Check if the user is a staff member
     if (user.role === "staff") {
       const { description, coordinates } = req.body.signInLocations;
