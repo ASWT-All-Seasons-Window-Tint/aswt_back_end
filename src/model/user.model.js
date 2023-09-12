@@ -123,8 +123,8 @@ const User = mongoose.model("User", userSchema);
 
 function validate(user) {
   const schema = Joi.object({
-    firstName: Joi.string().min(4).max(255).required(),
-    lastName: Joi.string().min(4).max(255).required(),
+    firstName: Joi.string().min(2).max(255).required(),
+    lastName: Joi.string().min(2).max(255).required(),
     password: Joi.string().min(5).max(1024).when("role", {
       is: "customer",
       then: Joi.optional(),

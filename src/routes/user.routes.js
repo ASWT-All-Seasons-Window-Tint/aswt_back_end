@@ -43,7 +43,7 @@ router.get("/", auth, admin, asyncMiddleware(userController.fetchAllUsers));
 router.get(
   "/employees",
   auth,
-  admin,
+  adminOrManagerMiddleware,
   asyncMiddleware(userController.getEmployees)
 );
 
