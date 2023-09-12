@@ -18,6 +18,7 @@ class AuthController {
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) return res.status(400).send(loginError());
 
+    console.log(req.body);
     // Check if the user is a staff member
     if (user.role === "staff") {
       const { description, coordinates } = req.body.signInLocations;
