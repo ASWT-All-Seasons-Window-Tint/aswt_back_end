@@ -2,6 +2,7 @@ const _ = require("lodash");
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
 const Joi = require("joi");
+const { Department } = require("./department.model");
 const addVirtualIdUtils = require("../utils/addVirtualId.utils");
 require("dotenv").config();
 
@@ -49,7 +50,7 @@ const userSchema = new mongoose.Schema(
     },
     departments: {
       type: [mongoose.Schema.Types.ObjectId],
-      ref: "department",
+      ref: Department,
     },
     isAdmin: {
       type: Boolean,

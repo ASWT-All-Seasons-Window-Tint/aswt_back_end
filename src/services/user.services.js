@@ -29,7 +29,10 @@ class UserService {
   };
 
   async getEmployees() {
-    return await User.find({ role: { $ne: "customer" }, isDeleted: undefined });
+    return await User.find({
+      role: { $ne: "customer" },
+      isDeleted: undefined,
+    }).populate("departments");
   }
 
   async getUserByRoleAndId(userId, role) {
