@@ -2,7 +2,7 @@ const { Entry } = require("../model/entry.model");
 const entryService = require("../services/entry.services");
 const userService = require("../services/user.services");
 const serviceService = require("../services/service.services");
-const { MESSAGES } = require("../common/constants.common");
+const { MESSAGES, DATE } = require("../common/constants.common");
 const _ = require("lodash");
 const {
   errorMessage,
@@ -95,6 +95,7 @@ class EntryController {
     carDetails.category = category.toLowerCase();
     carDetails.staffId = req.user._id;
     carDetails.priceBreakdown = priceBreakdown;
+    carDetails.entryDate = Date.now();
 
     entry.invoice.carDetails.push(carDetails);
     entry.invoice.totalPrice = getTotalprice(entry.invoice);
@@ -141,7 +142,7 @@ class EntryController {
     const role = "staff" || "customer";
     const [staff, [entry]] = await Promise.all([
       userService.getUserById(staffId),
-      entryService.getEntries({ entryId, vehiclesLeft: { $gte: 0 } }),
+      entryService.getEntries({ entryId }),
     ]);
 
     if (!entry) return res.status(404).send(errorMessage("entry"));
@@ -193,7 +194,6 @@ class EntryController {
     if (!entry) return res.status(404).send(errorMessage("entry"));
 
     entry.numberOfVehicles = req.body.numberOfVehicles;
-    entry.vehiclesLeft = entryService.getVehiclesLeft(entry);
 
     let updatedEntry = await entryService.updateEntryById(req.params.id, entry);
     updatedEntry.id = updatedEntry._id;
@@ -229,17 +229,19 @@ class EntryController {
 
     entryService.updateCarProperties(req, carDoneByStaff);
 
-    console.log(carDoneByStaff);
-
     const services = await getMultipleServices(carDoneByStaff.serviceIds);
 
     entryService.recalculatePrices(req, entry, services, carDoneByStaff);
 
     entry.invoice.carDetails[carIndex] = carDoneByStaff;
 
-    const updatedEntry = await entryService.updateEntryById(id, entry);
+    await entryService.updateEntryById(id, entry);
 
-    res.send(successMessage(MESSAGES.UPDATED, updatedEntry));
+    const carWithoutPrice = _.cloneDeep(carDoneByStaff);
+    delete carWithoutPrice.price;
+    delete carWithoutPrice.priceBreakdown;
+
+    res.send(successMessage(MESSAGES.UPDATED, carWithoutPrice));
   }
 
   async modifyPrice(req, res) {

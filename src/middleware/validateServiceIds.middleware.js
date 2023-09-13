@@ -6,7 +6,7 @@ module.exports = async function validateServiceIds(req, res, next) {
     : [];
   if (missingIds.length > 0)
     return res.status(404).send({
-      message: `Services with IDs: ${missingIds} could not be found`,
+      message: `Services with IDs: [${missingIds}] could not be found`,
       status: false,
     });
 

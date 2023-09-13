@@ -14,7 +14,6 @@ class EntryService {
       {
         $match: {
           _id: new mongoose.Types.ObjectId(entryId),
-          vehiclesLeft: { $gte: 0 },
         },
       },
       {
@@ -53,7 +52,6 @@ class EntryService {
             ],
           },
           numberOfVehicles: 1,
-          vehiclesLeft: 1,
           entryDate: 1,
           customerId: 1,
           // Keep existing invoice projection
@@ -327,8 +325,8 @@ class EntryService {
     return await Entry.findOne({ name: caseInsensitiveName });
   }
 
-  getCarsDoneByStaff = async (entryId, staffId, vehiclesLeft = { $gte: 0 }) => {
-    const match = { vehiclesLeft };
+  getCarsDoneByStaff = async (entryId, staffId) => {
+    const match = {};
     if (entryId) {
       match._id = new mongoose.Types.ObjectId(entryId);
     }
@@ -516,11 +514,6 @@ class EntryService {
 
   async getAllEntries() {
     return await Entry.aggregate([
-      {
-        $match: {
-          vehiclesLeft: { $gt: 0 },
-        },
-      },
       {
         $lookup: {
           from: "users",
@@ -860,12 +853,8 @@ class EntryService {
     const results = {};
 
     [results.staffEntries, results.entries] = await Promise.all([
-      req.user.role !== role
-        ? this.getCarsDoneByStaff(null, staffId)
-        : this.getCarsDoneByStaff(null, staffId, { $gt: 0 }),
-      req.user.role !== role
-        ? this.getEntries()
-        : this.getEntries({ vehiclesLeft: { $gt: 0 } }),
+      this.getCarsDoneByStaff(null, staffId),
+      this.getEntries(),
     ]);
 
     return results;

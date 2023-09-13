@@ -39,7 +39,12 @@ router.post(
   asyncMiddleware(userController.passwordReset)
 );
 
-router.get("/", auth, admin, asyncMiddleware(userController.fetchAllUsers));
+router.get(
+  "/",
+  auth,
+  adminOrManagerMiddleware,
+  asyncMiddleware(userController.fetchAllUsers)
+);
 router.get(
   "/employees",
   auth,

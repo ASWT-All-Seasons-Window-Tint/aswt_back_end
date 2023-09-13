@@ -8,8 +8,12 @@ const generateRandomAvatar = require("../utils/generateRandomAvatar.utils");
 const departmentServices = require("../services/department.services");
 const { transporter, mailOptions } = require("../utils/email.utils");
 const bcrypt = require("bcrypt");
-const { jsonResponse, badReqResponse } = require("../common/messages.common");
 const propertiesToPick = require("../common/propertiesToPick.common");
+const {
+  jsonResponse,
+  badReqResponse,
+  forbiddenResponse,
+} = require("../common/messages.common");
 
 class UserController {
   async getStatus(req, res) {
@@ -18,12 +22,15 @@ class UserController {
 
   //Create a new user
   async register(req, res) {
-    const { departments, email } = req.body;
+    const { departments, email, role } = req.body;
     const { createUserWithAvatar } = userService;
 
     if (req.body.departments)
       if (typeof req.body.departments[0] !== "string")
         return jsonResponse(res, 400, false, "invalid ID");
+
+    if (req.user.role === "manager" && role === "manager")
+      return forbiddenResponse(res, "Only admins can create managers");
 
     // Checks if a user already exist by using the email id
     let [user, invalidIds] = await Promise.all([
@@ -69,7 +76,7 @@ class UserController {
   //get all users in the user collection/table
   async fetchAllUsers(req, res) {
     const users =
-      req.user.role === "mananager"
+      req.user.role === "manager"
         ? await userService.getStaffsByDepartments(req.user.departments)
         : await userService.getAllUsers();
 
