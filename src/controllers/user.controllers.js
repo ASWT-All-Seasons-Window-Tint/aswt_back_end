@@ -68,7 +68,10 @@ class UserController {
 
   //get all users in the user collection/table
   async fetchAllUsers(req, res) {
-    const users = await userService.getAllUsers();
+    const users =
+      req.user.role === "mananager"
+        ? await userService.getStaffsByDepartments(req.user.departments)
+        : await userService.getAllUsers();
 
     res.send(successMessage(MESSAGES.FETCHED, users));
   }

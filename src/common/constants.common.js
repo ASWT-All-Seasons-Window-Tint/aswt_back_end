@@ -31,6 +31,11 @@ const constants = {
       return `This ids: ${ids} are not in the ${collection}`;
     },
   },
+  DATE: {
+    now: new Date(),
+    yesterday: new Date(new Date().getTime() - 24 * 60 * 60 * 1000),
+    twentyFourHoursInMs: 24 * 60 * 60 * 1000,
+  },
 
   errorMessage: (data) => {
     return {

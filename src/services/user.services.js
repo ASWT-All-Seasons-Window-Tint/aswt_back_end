@@ -32,7 +32,9 @@ class UserService {
     return await User.find({
       role: { $ne: "customer" },
       isDeleted: undefined,
-    }).populate("departments");
+    })
+      .select("-password")
+      .populate("departments");
   }
 
   async getUserByRoleAndId(userId, role) {

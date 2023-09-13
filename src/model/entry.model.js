@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const Joi = require("joi");
 const addVirtualIdUtils = require("../utils/addVirtualId.utils");
-const { vinRegex } = require("../common/constants.common");
+const { DATE } = require("../common/constants.common");
 
 const entrySchema = new mongoose.Schema(
   {
@@ -10,19 +10,17 @@ const entrySchema = new mongoose.Schema(
       ref: "user",
       required: true,
     },
-    numberOfVehicles: {
-      type: Number,
-      trim: true,
-      required: true,
-    },
-    vehiclesLeft: {
-      type: Number,
-      trim: true,
-      required: true,
-    },
     entryDate: {
       type: Date,
-      required: true,
+      default: new Date(),
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+    numberOfCarsAdded: {
+      type: Number,
+      default: 0,
     },
     invoice: {
       name: {
@@ -123,6 +121,15 @@ function leadingZero(num, size) {
   while (s.length < size) s = "0" + s;
   return s;
 }
+
+entrySchema.post("save", function (doc) {
+  const entryDate = doc.entryDate;
+
+  setTimeout(() => {
+    doc.isActive = false;
+    doc.save();
+  }, DATE.twentyFourHoursInMs + entryDate.getTime());
+});
 
 const Entry = mongoose.model("Entry", entrySchema);
 

@@ -43,26 +43,34 @@ class EntryController {
   }
 
   async addInvoice(req, res) {
-    const message = "Number of Vehicles already at 0";
     const {
       getServiceAndEntry,
       updateEntryById,
       getPriceForService,
       getTotalprice,
       checkDuplicateEntry,
-      getVehiclesLeft,
     } = entryService;
 
-    const { id: entryId } = req.params;
+    const { id: customerId } = req.params;
     const { carDetails } = req.body;
     const { category, serviceIds, vin } = carDetails;
 
+    const [customer] = await userService.getUserByRoleAndId(
+      customerId,
+      "customer"
+    );
+    if (!customer) return res.status(404).send(errorMessage("customer"));
+
+    carDetails.serviceIds = [...new Set(serviceIds)];
+
     let [isCarServiceAdded, { services, entry }, missingIds] =
       await Promise.all([
-        checkDuplicateEntry(entryId, vin),
-        getServiceAndEntry(carDetails, entryId),
+        checkDuplicateEntry(customerId, vin),
+        getServiceAndEntry(carDetails, customerId),
         serviceService.validateServiceIds(serviceIds),
       ]);
+
+    if (Array.isArray(entry)) entry = entry[0];
 
     if (missingIds.length > 0)
       return res.status(404).send({
@@ -70,15 +78,12 @@ class EntryController {
         status: false,
       });
 
-    entry = entry[0];
-
     if (!entry) return res.status(404).send(errorMessage("entry"));
     if (!services) return res.status(404).send(errorMessage("services"));
     if (isCarServiceAdded)
       return res
         .status(400)
         .send({ message: "Duplicate entry", succes: false });
-    if (entry.vehiclesLeft < 1) return jsonResponse(res, 400, false, message);
 
     const { price, priceBreakdown } = getPriceForService(
       services,
@@ -86,20 +91,18 @@ class EntryController {
       category
     );
 
-    carDetails.entryDate = new Date();
     carDetails.price = price;
     carDetails.category = category.toLowerCase();
     carDetails.staffId = req.user._id;
     carDetails.priceBreakdown = priceBreakdown;
 
     entry.invoice.carDetails.push(carDetails);
-
-    const vehiclesLeft = getVehiclesLeft(entry);
-
-    entry.vehiclesLeft = vehiclesLeft;
     entry.invoice.totalPrice = getTotalprice(entry.invoice);
+    entry.numberOfCarsAdded = entryService.getNumberOfCarsAdded(
+      entry.invoice.carDetails
+    );
 
-    const updatedEntry = await updateEntryById(entryId, entry);
+    const updatedEntry = await updateEntryById(entry._id, entry);
     updatedEntry.id = updatedEntry._id;
 
     delete carDetails.priceBreakdown;
@@ -111,14 +114,9 @@ class EntryController {
   //get all entries in the entry collection/table
   async fetchAllEntries(req, res) {
     const { getEntries } = entryService;
-    const role = "staff" || "customer";
     const errorMessage = "There's no entry please create one";
 
-    const entries =
-      req.user.role !== role
-        ? await getEntries()
-        : await getEntries({ vehiclesLeft: { $gt: 0 } });
-
+    const entries = await getEntries();
     if (entries.length < 0) return jsonResponse(res, 404, false, errorMessage);
 
     entries.map((entry) => (entry.id = entry._id));
@@ -129,13 +127,8 @@ class EntryController {
   async getEntryById(req, res) {
     const { getEntries } = entryService;
     const { id: entryId } = req.params;
-    const role = "staff" || "customer";
 
-    const [entry] =
-      req.user.role !== role
-        ? await getEntries({ entryId, vehiclesLeft: { $gte: 0 } })
-        : await getEntries({ entryId, vehiclesLeft: { $gt: 0 } });
-
+    const [entry] = await getEntries({ entryId });
     if (!entry) return res.status(404).send(errorMessage("entry"));
 
     entry.id = entry._id;

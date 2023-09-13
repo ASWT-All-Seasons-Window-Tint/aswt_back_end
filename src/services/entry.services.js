@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const { Entry } = require("../model/entry.model");
 const serviceServices = require("./service.services");
-const { errorMessage } = require("../common/messages.common");
+const { DATE } = require("../common/constants.common");
 
 class EntryService {
   //Create new entry
@@ -158,10 +158,8 @@ class EntryService {
     ]);
   }
 
-  async getEntries(filter = { vehiclesLeft: { $gte: 0 }, entryId: undefined }) {
-    const match = filter.vehiclesLeft
-      ? { vehiclesLeft: filter.vehiclesLeft }
-      : {};
+  async getEntries(filter = { entryId: undefined }) {
+    const match = {};
     if (filter.entryId) {
       match._id = new mongoose.Types.ObjectId(filter.entryId);
     }
@@ -663,20 +661,54 @@ class EntryService {
     ]);
   }
 
-  async checkDuplicateEntry(entryId, vin) {
-    return await Entry.findOne({
-      $and: [{ _id: entryId }, { "invoice.carDetails.vin": vin }],
+  async getEntryForCustomerLast24Hours(customerId) {
+    return Entry.findOne({
+      customerId,
+      entryDate: {
+        $gte: DATE.yesterday,
+      },
     });
   }
 
-  getServiceAndEntry = async (carDetails, entryId) => {
+  createNewEntry = async (customerId) => {
+    let entry = new Entry({
+      customerId,
+    });
+
+    const invoiceNumber = await Entry.getNextInvoiceNumber();
+    entry.invoice.name = invoiceNumber;
+
+    entry = await this.createEntry(entry);
+    entry.id = entry._id;
+
+    return entry;
+  };
+
+  async checkDuplicateEntry(customerId, vin) {
+    return await Entry.findOne({
+      $and: [
+        { customerId },
+        { "invoice.carDetails.vin": vin },
+        {
+          entryDate: {
+            $gte: DATE.yesterday,
+          },
+        },
+      ],
+    });
+  }
+
+  getServiceAndEntry = async (carDetails, customerId) => {
     const results = {};
 
     const serviceIds = carDetails.serviceIds;
 
-    results.services = await serviceServices.getMultipleServices(serviceIds);
-
-    results.entry = await this.getEntries({ entryId });
+    [results.services, results.entry] = await Promise.all([
+      serviceServices.getMultipleServices(serviceIds),
+      (await this.getEntryForCustomerLast24Hours(customerId))
+        ? this.getEntryForCustomerLast24Hours(customerId)
+        : this.createNewEntry(customerId),
+    ]);
 
     return results;
   };
@@ -700,6 +732,12 @@ class EntryService {
     if (vehiclesLeft < 1) return 0;
 
     return vehiclesLeft;
+  }
+
+  getNumberOfCarsAdded(carDetails) {
+    const numberOfCarsAdded = carDetails.length;
+
+    return numberOfCarsAdded;
   }
 
   getPriceForService(services, customerId, category) {
