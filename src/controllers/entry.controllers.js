@@ -137,7 +137,19 @@ class EntryController {
     if (!entries) return res.status(404).send(errorMessage("entry"));
 
     if (entryId) entries.id = entries._id;
-    if (customerId) entries.map((entry) => (entry.id = entry._id));
+    if (customerId) {
+      entries.map((entry) => (entry.id = entry._id));
+      if (Array.isArray(entries) && entries.length < 1) {
+        entries = [
+          {
+            customerId,
+            numberOfCarsAdded: 0,
+            entryDate: null,
+            invoice: {},
+          },
+        ];
+      }
+    }
 
     res.send(successMessage(MESSAGES.FETCHED, entries));
   }

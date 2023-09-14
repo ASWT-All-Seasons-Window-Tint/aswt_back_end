@@ -12,6 +12,8 @@ module.exports = (validator) => {
         .status(400)
         .send({ success: false, message: error.details[0].message });
 
+    req.body.email = req.body.email.toLowerCase();
+
     const user = await userServices.getUserByEmail(req.body.email);
     if (!user)
       return res

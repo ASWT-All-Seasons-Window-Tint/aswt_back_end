@@ -32,6 +32,7 @@ class UserController {
     if (req.user.role === "manager" && role === "manager")
       return forbiddenResponse(res, "Only admins can create managers");
 
+    req.body.email = req.body.email.toLowerCase();
     // Checks if a user already exist by using the email id
     let [user, invalidIds] = await Promise.all([
       userService.getUserByEmail(email),
