@@ -132,12 +132,14 @@ class EntryController {
       ...(entryId ? { entryId } : { customerId }),
     };
 
-    const [entry] = await entryService.getEntryById(customerId);
-    if (!entry) return res.status(404).send(errorMessage("entry"));
+    let entries = await getEntries(getEntriesArgument);
+    if (entryId) entries = entries[0];
+    if (!entries) return res.status(404).send(errorMessage("entry"));
 
-    entry.id = entry._id;
+    if (entryId) entries.id = entries._id;
+    if (customerId) entries.map((entry) => (entry.id = entry._id));
 
-    res.send(successMessage(MESSAGES.FETCHED, entry));
+    res.send(successMessage(MESSAGES.FETCHED, entries));
   }
 
   async getCarsDoneByStaffPerId(req, res) {
@@ -158,17 +160,20 @@ class EntryController {
 
     const getCarArgs = { ...(entryId ? { entryId } : { customerId }), staffId };
 
-    let [staffEntry] = await entryService.getCarsDoneByStaff(getCarArgs);
+    let staffEntries = await entryService.getCarsDoneByStaff(getCarArgs);
 
-    if (!staffEntry) {
-      staffEntry = _.cloneDeep(entry);
-      staffEntry.invoice.carDetails = [];
-      delete staffEntry.invoice.totalPrice;
+    if (entryId) {
+      staffEntries = staffEntries[0];
+      staffEntries.id = staffEntries._id;
     }
+    if (!staffEntries) {
+      staffEntries = _.cloneDeep(entry);
+      staffEntries.invoice.carDetails = [];
+      delete staffEntries.invoice.totalPrice;
+    }
+    if (customerId) staffEntries.map((entry) => (entry.id = entry._id));
 
-    staffEntry.id = staffEntry._id;
-
-    res.send(successMessage(MESSAGES.FETCHED, staffEntry));
+    res.send(successMessage(MESSAGES.FETCHED, staffEntries));
   }
 
   async getCarsDoneByStaff(req, res) {

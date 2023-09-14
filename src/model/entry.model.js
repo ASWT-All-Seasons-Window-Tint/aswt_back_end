@@ -124,11 +124,12 @@ function leadingZero(num, size) {
 
 entrySchema.post("save", function (doc) {
   const entryDate = doc.entryDate;
+  const timeoutMs = Math.min(2 * 60 * 1000 + entryDate.getTime(), 2147483647);
 
   setTimeout(() => {
     doc.isActive = false;
     doc.save();
-  }, DATE.twentyFourHoursInMs + entryDate.getTime());
+  }, timeoutMs);
 });
 
 const Entry = mongoose.model("Entry", entrySchema);

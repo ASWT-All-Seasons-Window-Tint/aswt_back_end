@@ -10,13 +10,13 @@ class EntryService {
     return await entry.save();
   }
 
-  async getEntryById(entryId) {
+  async getEntryById(customerId) {
     return await Entry.aggregate([
-      {
-        $match: {
-          _id: new mongoose.Types.ObjectId(entryId),
-        },
-      },
+      // {
+      //   $match: {
+      //     _id: new mongoose.Types.ObjectId(entryId),
+      //   },
+      // },
       {
         $lookup: {
           from: "users",
@@ -42,7 +42,15 @@ class EntryService {
           as: "services",
         },
       },
-
+      {
+        $filter: {
+          input: "$$ROOT",
+          as: "item",
+          cond: {
+            $eq: ["$$item.customerId", new mongoose.Types.ObjectId(customerId)],
+          },
+        },
+      },
       {
         $project: {
           customerName: {
