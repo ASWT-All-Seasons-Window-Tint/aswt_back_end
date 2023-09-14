@@ -62,7 +62,6 @@ router.get(
 router.get(
   "/role/:role",
   auth,
-  adminOrManagerMiddleware,
   validateroleMiddleware,
   asyncMiddleware(userController.getUsersByRole)
 );

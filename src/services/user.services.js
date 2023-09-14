@@ -28,6 +28,12 @@ class UserService {
       : await this.query(role, "-customerDetails");
   };
 
+  async getCustomersForStaff() {
+    return await User.find({ role: "customer", isDeleted: undefined }).select(
+      "firstName lastName id"
+    );
+  }
+
   async getEmployees() {
     return await User.find({
       role: { $ne: "customer" },

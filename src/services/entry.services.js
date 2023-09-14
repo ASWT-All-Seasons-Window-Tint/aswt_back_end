@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const { Entry } = require("../model/entry.model");
 const serviceServices = require("./service.services");
 const { DATE } = require("../common/constants.common");
+const { filter } = require("lodash");
 
 class EntryService {
   //Create new entry
@@ -156,10 +157,15 @@ class EntryService {
     ]);
   }
 
-  async getEntries(filter = { entryId: undefined }) {
+  getEntries = async (
+    filter = { entryId: undefined, customerId: undefined }
+  ) => {
     const match = {};
     if (filter.entryId) {
       match._id = new mongoose.Types.ObjectId(filter.entryId);
+    }
+    if (filter.customerId) {
+      match.customerId = new mongoose.Types.ObjectId(filter.customerId);
     }
 
     return await Entry.aggregate([
@@ -305,7 +311,7 @@ class EntryService {
         },
       },
     ]);
-  }
+  };
 
   async validateEntryIds(entryIds) {
     const entrys = await Entry.find({
@@ -325,10 +331,13 @@ class EntryService {
     return await Entry.findOne({ name: caseInsensitiveName });
   }
 
-  getCarsDoneByStaff = async (entryId, staffId) => {
+  getCarsDoneByStaff = async ({ entryId, staffId, customerId }) => {
     const match = {};
     if (entryId) {
       match._id = new mongoose.Types.ObjectId(entryId);
+    }
+    if (customerId) {
+      match.customerId = new mongoose.Types.ObjectId(customerId);
     }
 
     const pipeline = [
@@ -339,6 +348,7 @@ class EntryService {
         $project: {
           customerId: 1,
           numberOfVehicles: 1,
+          numberOfCarsAdded: 1,
           vehiclesLeft: 1,
           entryDate: 1,
           invoice: 1,
@@ -381,9 +391,10 @@ class EntryService {
             ],
           },
           numberOfVehicles: 1,
+          numberOfCarsAdded: 1,
           vehiclesLeft: 1,
           entryDate: 1,
-
+          customerId: 1,
           invoice: {
             name: 1,
             carDetails: {
@@ -853,7 +864,7 @@ class EntryService {
     const results = {};
 
     [results.staffEntries, results.entries] = await Promise.all([
-      this.getCarsDoneByStaff(null, staffId),
+      this.getCarsDoneByStaff({ staffId }),
       this.getEntries(),
     ]);
 

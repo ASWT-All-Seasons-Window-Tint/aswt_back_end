@@ -35,10 +35,24 @@ router.get(
 );
 
 router.get(
+  "/customer/:customerId",
+  auth,
+  validateObjectIdWithXArgMiddleware(["customerId"]),
+  asyncMiddleware(entryController.getEntryById)
+);
+
+router.get(
   "/entry/:entryId/staff/:staffId",
   auth,
   validateObjectIdWithXArgMiddleware(["entryId", "staffId"]),
-  asyncMiddleware(entryController.getCarsDoneByStaffPerEntryId)
+  asyncMiddleware(entryController.getCarsDoneByStaffPerId)
+);
+
+router.get(
+  "/customer/:customerId/staff/:staffId",
+  auth,
+  validateObjectIdWithXArgMiddleware(["customerId", "staffId"]),
+  asyncMiddleware(entryController.getCarsDoneByStaffPerId)
 );
 
 router.get(

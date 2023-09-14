@@ -127,9 +127,12 @@ class EntryController {
 
   async getEntryById(req, res) {
     const { getEntries } = entryService;
-    const { id: entryId } = req.params;
+    const { id: entryId, customerId } = req.params;
+    const getEntriesArgument = {
+      ...(entryId ? { entryId } : { customerId }),
+    };
 
-    const [entry] = await getEntries({ entryId });
+    const [entry] = await entryService.getEntryById(customerId);
     if (!entry) return res.status(404).send(errorMessage("entry"));
 
     entry.id = entry._id;
@@ -137,21 +140,25 @@ class EntryController {
     res.send(successMessage(MESSAGES.FETCHED, entry));
   }
 
-  async getCarsDoneByStaffPerEntryId(req, res) {
-    const { entryId, staffId } = req.params;
-    const role = "staff" || "customer";
-    const [staff, [entry]] = await Promise.all([
+  async getCarsDoneByStaffPerId(req, res) {
+    const { entryId, staffId, customerId } = req.params;
+
+    let [staff, customer, [entry]] = await Promise.all([
       userService.getUserById(staffId),
-      entryService.getEntries({ entryId }),
+      customerId ? userService.getUserByRoleAndId(customerId, "customer") : [],
+      entryId ? entryService.getEntries({ entryId }) : [],
     ]);
 
-    if (!entry) return res.status(404).send(errorMessage("entry"));
+    if (Array.isArray(customer)) customer = customer[0];
+
+    if (entryId && !entry) return res.status(404).send(errorMessage("entry"));
+    if (customerId && !customer)
+      return res.status(404).send(errorMessage("customer"));
     if (!staff) return res.status(404).send(errorMessage("staff"));
 
-    let [staffEntry] =
-      req.user.role !== role
-        ? await entryService.getCarsDoneByStaff(entryId, staffId)
-        : await entryService.getCarsDoneByStaff(entryId, staffId, { $gt: 0 });
+    const getCarArgs = { ...(entryId ? { entryId } : { customerId }), staffId };
+
+    let [staffEntry] = await entryService.getCarsDoneByStaff(getCarArgs);
 
     if (!staffEntry) {
       staffEntry = _.cloneDeep(entry);

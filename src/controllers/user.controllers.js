@@ -84,7 +84,10 @@ class UserController {
   }
 
   async getUsersByRole(req, res) {
-    const users = await userService.getUsersByRole(req.params.role);
+    const users =
+      req.user.role === "staff"
+        ? await userService.getCustomersForStaff()
+        : await userService.getUsersByRole(req.params.role);
 
     res.send(successMessage(MESSAGES.FETCHED, users));
   }
