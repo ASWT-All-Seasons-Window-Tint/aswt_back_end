@@ -194,7 +194,15 @@ class EntryController {
     }
 
     if (Array.isArray(staffEntries) && staffEntries.length < 1)
-      staffEntries = {};
+      staffEntries = [
+        {
+          customerId,
+          numberOfCarsAdded: 0,
+          entryDate: null,
+          invoice: {},
+          customerName: `${customer.firstName} ${customer.lastName}`,
+        },
+      ];
 
     res.send(successMessage(MESSAGES.FETCHED, staffEntries));
   }
