@@ -164,13 +164,17 @@ class EntryController {
 
     if (entryId) {
       staffEntries = staffEntries[0];
-      staffEntries.id = staffEntries._id;
+      if (staffEntries) staffEntries.id = staffEntries._id;
     }
     if (!staffEntries) {
       staffEntries = _.cloneDeep(entry);
       staffEntries.invoice.carDetails = [];
       delete staffEntries.invoice.totalPrice;
     }
+
+    if (Array.isArray(staffEntries) && staffEntries.length < 1)
+      staffEntries = {};
+
     if (customerId) staffEntries.map((entry) => (entry.id = entry._id));
 
     res.send(successMessage(MESSAGES.FETCHED, staffEntries));
