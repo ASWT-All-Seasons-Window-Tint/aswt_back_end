@@ -19,13 +19,19 @@ class UserService {
     return await User.findOne({ _id: userId, isDeleted: undefined });
   }
 
+  async getUserWithoutPasswordById(userId) {
+    return await User.findOne({ _id: userId, isDeleted: undefined }).select(
+      "-password"
+    );
+  }
+
   query = (role, selectArg) =>
     User.find({ role, isDeleted: undefined }).select(selectArg);
 
   getUsersByRole = async (role) => {
     return role === "customer"
-      ? await this.query(role, "-departments")
-      : await this.query(role, "-customerDetails");
+      ? await this.query(role, "-departments -password")
+      : await this.query(role, "-customerDetails -password");
   };
 
   async getCustomersForStaff() {
@@ -44,15 +50,25 @@ class UserService {
   }
 
   async getUserByRoleAndId(userId, role) {
-    return await User.find({ _id: userId, role, isDeleted: undefined });
+    return await User.find({ _id: userId, role, isDeleted: undefined }).select(
+      "-password"
+    );
   }
 
   async getUserByEmail(email) {
     return await User.findOne({ email, isDeleted: undefined });
   }
 
+  async getUserWithoutPasswordByEmail(email) {
+    return await User.findOne({ email, isDeleted: undefined }).select(
+      "-password"
+    );
+  }
+
   async getUserByUsername(userName) {
-    return await User.findOne({ userName, isDeleted: undefined });
+    return await User.findOne({ userName, isDeleted: undefined }).select(
+      "-password"
+    );
   }
 
   async getStaffsByDepartments(departmentIds) {
@@ -62,7 +78,7 @@ class UserService {
       },
       role: "staff",
       isDeleted: undefined,
-    });
+    }).select("-password");
   }
 
   async getAllUsers() {

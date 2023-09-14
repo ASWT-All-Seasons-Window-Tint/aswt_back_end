@@ -58,7 +58,7 @@ class UserController {
 
   //get user from the database, using their email
   async gethUserById(req, res) {
-    const user = await userService.getUserById(req.params.id);
+    const user = await userService.getUserWithoutPasswordById(req.params.id);
     if (!user) return res.status(404).send(errorMessage("user"));
 
     res.send(successMessage(MESSAGES.FETCHED, user));
@@ -220,13 +220,15 @@ class UserController {
 
   //Delete user account entirely from the database
   async deleteUserAccount(req, res) {
-    const user = await userService.getUserById(req.params.id);
+    let user = await userService.getUserById(req.params.id);
     if (!user) return res.status(404).send(errorMessage("user"));
 
     if (user.isAdmin)
       return badReqResponse(res, "You can not delete an admin account");
 
     await userService.softDeleteUser(req.params.id);
+
+    user = _.pick(user, propertiesToPick);
 
     res.send(successMessage(MESSAGES.DELETED, user));
   }
