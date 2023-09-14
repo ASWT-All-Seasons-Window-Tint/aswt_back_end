@@ -132,13 +132,16 @@ class EntryController {
       ...(entryId ? { entryId } : { customerId }),
     };
 
-    let entries = await getEntries(getEntriesArgument);
+    let [entries, [customer]] = await Promise.all([
+      getEntries(getEntriesArgument),
+      userService.getUserByRoleAndId(customerId, "customer"),
+    ]);
     if (entryId) entries = entries[0];
     if (!entries) return res.status(404).send(errorMessage("entry"));
+    if (!customer) return res.status(404).send(errorMessage("customer"));
 
     if (entryId) entries.id = entries._id;
     if (customerId) {
-      entries.map((entry) => (entry.id = entry._id));
       if (Array.isArray(entries) && entries.length < 1) {
         entries = [
           {
@@ -146,9 +149,11 @@ class EntryController {
             numberOfCarsAdded: 0,
             entryDate: null,
             invoice: {},
+            customerName: `${customer.firstName} ${customer.lastName}`,
           },
         ];
       }
+      entries.map((entry) => (entry.id = entry._id));
     }
 
     res.send(successMessage(MESSAGES.FETCHED, entries));
@@ -183,11 +188,13 @@ class EntryController {
       staffEntries.invoice.carDetails = [];
       delete staffEntries.invoice.totalPrice;
     }
+    if (customerId && Array.isArray(staffEntries)) {
+      if (staffEntries.length >= 1)
+        staffEntries.map((entry) => (entry.id = entry._id));
+    }
 
     if (Array.isArray(staffEntries) && staffEntries.length < 1)
       staffEntries = {};
-
-    if (customerId) staffEntries.map((entry) => (entry.id = entry._id));
 
     res.send(successMessage(MESSAGES.FETCHED, staffEntries));
   }
