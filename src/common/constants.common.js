@@ -1,3 +1,5 @@
+const mongoose = require("mongoose");
+const { env } = process;
 const constants = {
   DATABASE_URI: process.env.DATABASE_URI,
   noSpecials: /^[a-zA-Z0-9_]+$/,
@@ -11,6 +13,18 @@ const constants = {
     USER: "user",
     ADMIN: "admin",
   },
+  apiEndpoint: `https://sandbox-quickbooks.api.intuit.com/v3/company/${env.realmId}/payment/${env.paymentId}`,
+  tokenSchema: new mongoose.Schema({
+    token: {
+      type: String,
+      required: true,
+    },
+    expires: {
+      type: Date,
+      // Set the 'expires' field as a TTL index
+      index: { expireAfterSeconds: 0 }, // 0 means documents expire immediately after 'expires' date
+    },
+  }),
   MESSAGES: {
     FETCHED: "Resource fetched successfully",
     UPDATED: "Resource updated successfully",

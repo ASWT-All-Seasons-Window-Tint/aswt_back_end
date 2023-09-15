@@ -7,6 +7,7 @@ const router = express.Router();
 const asyncMiddleware = require("../middleware/async.middleware");
 const validateObjectId = require("../middleware/validateObjectId.middleware");
 const categoryController = require("../controllers/category.controllers");
+const { getNewAccessToken } = require("../controllers/oauthToken.controllers");
 
 router.post(
   "/",
@@ -17,6 +18,7 @@ router.post(
 );
 
 router.get("/", asyncMiddleware(categoryController.fetchAllCategories));
+router.get("/oauth", asyncMiddleware(getNewAccessToken));
 
 router.get(
   "/:id",
