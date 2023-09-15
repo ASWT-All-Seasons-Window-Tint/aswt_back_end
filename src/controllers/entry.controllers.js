@@ -8,6 +8,7 @@ const {
   errorMessage,
   successMessage,
   jsonResponse,
+  notFoundResponse,
 } = require("../common/messages.common");
 
 class EntryController {
@@ -95,7 +96,7 @@ class EntryController {
     carDetails.category = category.toLowerCase();
     carDetails.staffId = req.user._id;
     carDetails.priceBreakdown = priceBreakdown;
-    carDetails.entryDate = Date.now();
+    carDetails.entryDate = new Date();
 
     entry.invoice.carDetails.push(carDetails);
     entry.invoice.totalPrice = getTotalprice(entry.invoice);
@@ -264,8 +265,9 @@ class EntryController {
         .send({ message: MESSAGES.UNAUTHORIZE("update"), succes: false });
 
     if (!entryService.carWasAddedRecently(carDoneByStaff)) {
-      return res.status(400).send({
-        message: "Cannot modify car details more than 24 hours after adding",
+      return res.status(401).send({
+        message:
+          "Modifying car details is not allowed beyond 24 hours after adding.",
         succes: false,
       });
     }
@@ -288,16 +290,48 @@ class EntryController {
   }
 
   async modifyPrice(req, res) {
-    const { serviceIds, price, vin } = req.body;
+    const { serviceId, price, vin } = req.body;
 
-    const [entry] = await entryService.getEntries({ entryId: req.params.id });
+    const [[entry], service] = await Promise.all([
+      entryService.getEntries({ entryId: req.params.id }),
+      serviceService.getServiceById(serviceId),
+    ]);
     if (!entry) return res.status(404).send(errorMessage("entry"));
+    if (!service) return res.status(404).send(errorMessage("service"));
 
-    const updatedEntry = entryService.modifyPrice(
+    const { carWithVin, carIndex } = entryService.getCarByVin({ entry, vin });
+    if (!carWithVin || carIndex < 0)
+      return notFoundResponse(res, "Car with VIN number not found in invoice.");
+
+    if (!entryService.carWasAddedRecently(carWithVin)) {
+      return res.status(401).send({
+        message:
+          "Modifying car details is not allowed beyond 24 hours after adding.",
+        succes: false,
+      });
+    }
+
+    let priceBreakdown = carWithVin.priceBreakdown;
+
+    const { servicePrice, servicePriceIndex } = entryService.getServicePrice(
+      priceBreakdown,
+      serviceId
+    );
+
+    servicePrice.price = parseFloat(price);
+    priceBreakdown[servicePriceIndex] = servicePrice;
+
+    carWithVin.price =
+      entryService.calculateServicePriceDoneforCar(priceBreakdown);
+
+    entry.invoice.carDetails[carIndex] = carWithVin;
+
+    const totalPrice = entryService.getTotalprice(entry.invoice);
+    entry.invoice.totalPrice = totalPrice;
+
+    const updatedEntry = await entryService.updateEntryById(
       req.params.id,
-      vin,
-      serviceIds,
-      price
+      entry
     );
 
     res.send(successMessage(MESSAGES.UPDATED, updatedEntry));

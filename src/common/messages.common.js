@@ -26,6 +26,10 @@ const forbiddenResponse = (res, message) => {
   return res.status(403).send({ message, success: false });
 };
 
+const notFoundResponse = (res, message) => {
+  return res.status(404).send({ message, success: false });
+};
+
 const successMessage = (message, data) => {
   return { message, success: true, data };
 };
@@ -55,3 +59,4 @@ exports.logoutSuccess = logoutSuccess;
 exports.jsonResponse = jsonResponse;
 exports.badReqResponse = badReqResponse;
 exports.forbiddenResponse = forbiddenResponse;
+exports.notFoundResponse = notFoundResponse;

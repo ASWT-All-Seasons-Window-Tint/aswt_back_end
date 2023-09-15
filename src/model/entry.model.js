@@ -12,7 +12,6 @@ const entrySchema = new mongoose.Schema(
     },
     entryDate: {
       type: Date,
-      default: new Date(),
     },
     isActive: {
       type: Boolean,
@@ -85,6 +84,12 @@ const entrySchema = new mongoose.Schema(
               serviceName: String,
               serviceType: String,
               price: Number,
+              serviceId: {
+                type: mongoose.Schema.Types.ObjectId,
+              },
+              dealership: {
+                type: Boolean,
+              },
             },
           ],
         },
@@ -190,7 +195,7 @@ function validateModifyPrice(entry) {
   const schema = Joi.object({
     vin: Joi.string().required(),
     price: Joi.number().required(),
-    serviceId: Joi.objectId(),
+    serviceId: Joi.objectId().required(),
   });
 
   return schema.validate(entry);

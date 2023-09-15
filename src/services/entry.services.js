@@ -685,6 +685,7 @@ class EntryService {
   createNewEntry = async (customerId) => {
     let entry = new Entry({
       customerId,
+      entryDate: new Date(),
     });
 
     const invoiceNumber = await Entry.getNextInvoiceNumber();
@@ -752,39 +753,49 @@ class EntryService {
     return numberOfCarsAdded;
   }
 
-  getPriceForService(services, customerId, category) {
+  getPriceForService = (services, customerId, category) => {
+    // To check if customer has a dealership price
     const dealershipPrices = services.filter((service) =>
       service.dealershipPrices.some(
         (price) => price.customerId.toString() === customerId.toString()
       )
     );
-
     const defaultPrices = services
       .filter(
-        (service) => !dealershipPrices.some((dp) => dp._id === service._id)
+        (service) => !dealershipPrices.some((dp) => dp._id === service._id) // Default prices for services without dealership
       )
       .map((service) => ({
+        dealership: false,
         serviceName: service.name,
         price: service.defaultPrices.find((p) => p.category === category).price,
         serviceType: service.type,
+        serviceId: service._id,
       }));
 
     const priceBreakdown = [
       ...dealershipPrices.map((service) => ({
+        dealership: true,
         serviceName: service.name,
         price: service.dealershipPrices.find(
           (p) => p.customerId.toString() === customerId.toString()
         ).price,
         serviceType: service.type,
+        serviceId: service._id,
       })),
       ...defaultPrices,
     ];
 
+    const price = this.calculateServicePriceDoneforCar(priceBreakdown);
+
+    return { price, priceBreakdown };
+  };
+
+  calculateServicePriceDoneforCar(priceBreakdown) {
     const price = priceBreakdown.reduce((acc, curr) => {
       return acc + curr.price;
     }, 0);
 
-    return { price, priceBreakdown };
+    return price;
   }
 
   async updateEntryById(id, entry) {
@@ -797,16 +808,17 @@ class EntryService {
     );
   }
 
-  async modifyPrice(entryId, vin, serviceId, price) {
+  async modifyPrice({ entryId, vin, priceBreakdown, totalPrice }) {
     return await Entry.updateOne(
       {
         _id: entryId, // entry document id
         "invoice.carDetails.vin": vin,
-        "invoice.carDetails.serviceId": serviceId,
       },
       {
         $set: {
+          "invoice.carDetails.$.priceBreakdown": priceBreakdown, // new price
           "invoice.carDetails.$.price": price, // new price
+          "invoice.totalPrice": totalPrice,
         },
       },
       { new: true }
@@ -827,6 +839,28 @@ class EntryService {
     const carDoneByStaff = carDetails[carIndex];
 
     return { carIndex, carDoneByStaff };
+  }
+
+  getCarByVin({ entry, vin }) {
+    const { carDetails } = entry.invoice;
+
+    const carIndex = carDetails.findIndex((car) => {
+      return car.vin.toString() === vin.toString();
+    });
+
+    const carWithVin = carDetails[carIndex];
+
+    return { carIndex, carWithVin };
+  }
+
+  getServicePrice(priceBreakdown, serviceId) {
+    const servicePriceIndex = priceBreakdown.findIndex(
+      (price) => price.serviceId.toString() === serviceId.toString()
+    );
+
+    const servicePrice = priceBreakdown[servicePriceIndex];
+
+    return { servicePrice, servicePriceIndex };
   }
 
   updateCarProperties(req, carDoneByStaff) {

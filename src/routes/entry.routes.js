@@ -98,7 +98,12 @@ router.put(
 
 router.put(
   "/modify-price/:id",
-  [validateObjectId, auth, admin, validateMiddleware(validateModifyPrice)],
+  [
+    validateObjectId,
+    auth,
+    adminOrManagerMiddleware,
+    validateMiddleware(validateModifyPrice),
+  ],
   asyncMiddleware(entryController.modifyPrice)
 );
 
