@@ -1,7 +1,6 @@
 const axios = require("axios");
 require("dotenv").config();
 const { response } = require("express");
-const config = require("../../config");
 const { successMessage } = require("../common/messages.common");
 const { AccessToken } = require("../model/accessToken.model");
 const { RefreshToken } = require("../model/refreshToken.model");
