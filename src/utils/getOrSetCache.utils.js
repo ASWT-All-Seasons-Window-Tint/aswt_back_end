@@ -1,12 +1,11 @@
 const redis = require("redis");
-const { env } = process;
 
 const redisClient = redis.createClient();
 (async () => {
   redisClient.on("error", (err) => console.log("Redis Client Error", err));
 
   await redisClient.connect({
-    url: env.redisUrl,
+    url: process.env.redisUrl,
   });
 })();
 async function getOrSetCache(collection, expires, getDBDataFunction, query) {
@@ -16,7 +15,7 @@ async function getOrSetCache(collection, expires, getDBDataFunction, query) {
   try {
     let data = await redisClient.get(collection);
 
-    if (data) {
+    if (data != "null") {
       // Token found in cache
       results.data = JSON.parse(data);
 
