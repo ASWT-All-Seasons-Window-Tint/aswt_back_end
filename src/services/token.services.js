@@ -15,7 +15,7 @@ class TokenService {
     return await tokenModel.findById(tokenId);
   }
 
-  async getLatestToken({ tokenModel }) {
+  async getLatestToken(tokenModel) {
     return await tokenModel.findOne().sort({ createdAt: -1 }).limit(1);
   }
 

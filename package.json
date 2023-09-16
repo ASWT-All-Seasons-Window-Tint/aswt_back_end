@@ -25,6 +25,7 @@
     "lodash": "^4.17.21",
     "mailgen": "^2.0.27",
     "mongoose": "^7.4.2",
-    "nodemailer": "^6.9.4"
+    "nodemailer": "^6.9.4",
+    "redis": "^4.6.8"
   }
 }

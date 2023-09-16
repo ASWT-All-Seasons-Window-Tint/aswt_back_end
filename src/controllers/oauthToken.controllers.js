@@ -5,6 +5,7 @@ const { successMessage } = require("../common/messages.common");
 const { AccessToken } = require("../model/accessToken.model");
 const { RefreshToken } = require("../model/refreshToken.model");
 const getUpdatedDate = require("../utils/getUpdatedDate.utils");
+const { getOrSetCache } = require("../utils/getOrSetCache.utils");
 const { MESSAGES } = require("../common/constants.common");
 const tokenServices = require("../services/token.services");
 const { env } = process;
@@ -23,6 +24,8 @@ const tokenEndpoint = env.tokenEndpoint;
 
 class OauthTokenController {
   async getNewAccessToken(req, res) {
+    const expires = 1800;
+    const { getLatestToken } = tokenServices;
     const basicAuth = Buffer.from(clientId + ":" + clientSecret).toString(
       "base64"
     );
@@ -34,10 +37,20 @@ class OauthTokenController {
     };
 
     try {
-      const [accessToken, refreshToken] = await Promise.all([
-        tokenServices.getLatestToken({ tokenModel: AccessToken }),
-        tokenServices.getLatestToken({ tokenModel: RefreshToken }),
-      ]);
+      const accessToken = await getOrSetCache(
+        "accessToken",
+        expires,
+        getLatestToken,
+        AccessToken
+      );
+
+      const { data: refreshToken } = await getOrSetCache(
+        "refreshToken",
+        expires,
+        getLatestToken,
+        RefreshToken
+      );
+      //console.log(refreshToken);
 
       if (accessToken)
         return res.send(successMessage(MESSAGES.CREATED, accessToken));
@@ -69,9 +82,9 @@ class OauthTokenController {
         await refreshToken.save();
       }
 
-      res.send(successMessage(MESSAGES.CREATED, responseData));
+      res.send(successMessage(MESSAGES.CREATED, refreshToken));
     } catch (error) {
-      console.error(error);
+      // console.error(error);
     }
   }
 }
