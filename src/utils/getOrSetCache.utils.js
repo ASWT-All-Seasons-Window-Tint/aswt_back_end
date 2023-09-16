@@ -5,7 +5,7 @@ const redisClient = redis.createClient();
   redisClient.on("error", (err) => console.log("Redis Client Error", err));
 
   await redisClient.connect({
-    url: "rediss://red-ck2ruj6ru70s739ijd4g:AM7mhLWXWVkZE7efshuVn5AMj34uIetr@oregon-redis.render.com:6379",
+    url: process.env.redisUrl,
   });
 })();
 async function getOrSetCache(collection, expires, getDBDataFunction, query) {
