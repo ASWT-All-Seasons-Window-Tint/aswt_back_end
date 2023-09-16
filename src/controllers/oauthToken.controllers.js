@@ -5,7 +5,7 @@ const { successMessage } = require("../common/messages.common");
 const { AccessToken } = require("../model/accessToken.model");
 const { RefreshToken } = require("../model/refreshToken.model");
 const getUpdatedDate = require("../utils/getUpdatedDate.utils");
-const { getOrSetCache } = require("../utils/getOrSetCache.utils");
+const { getOrSetCache, updateCache } = require("../utils/getOrSetCache.utils");
 const { MESSAGES } = require("../common/constants.common");
 const tokenServices = require("../services/token.services");
 const { env } = process;
@@ -37,23 +37,24 @@ class OauthTokenController {
     };
 
     try {
-      const accessToken = await getOrSetCache(
+      let { data: accessToken, error: accessError } = await getOrSetCache(
         "accessToken",
         expires,
         getLatestToken,
         AccessToken
       );
+      if (accessToken) {
+        return res.send(
+          successMessage(MESSAGES.CREATED, { token: accessToken.token })
+        );
+      }
 
-      const { data: refreshToken } = await getOrSetCache(
+      let { data: refreshToken, error: refreshError } = await getOrSetCache(
         "refreshToken",
         expires,
         getLatestToken,
         RefreshToken
       );
-      //console.log(refreshToken);
-
-      if (accessToken)
-        return res.send(successMessage(MESSAGES.CREATED, accessToken));
 
       const data = `grant_type=refresh_token&refresh_token=${refreshToken.token}`;
       const { data: responseData } = await axios.post(tokenEndpoint, data, {
@@ -71,20 +72,28 @@ class OauthTokenController {
         timeInSeconds: accessTokenExpiryTime - 80,
       });
 
-      const isRefreshTokenTheSame = tokenServices.getTokenByToken({
+      const isRefreshTokenTheSame = await tokenServices.getTokenByToken({
         token: newRefreshToken,
         tokenModel: RefreshToken,
       });
+
       if (!isRefreshTokenTheSame) {
-        refreshToken.token = newRefreshToken;
-        refreshToken.expires = getUpdatedDate(refreshTokenExpiryTime);
+        await tokenServices.updateToken({
+          formerToken: refreshToken.token,
+          tokenToUpdate: newRefreshToken,
+          tokenModel: RefreshToken,
+          timeInSeconds: refreshTokenExpiryTime,
+        });
 
-        await refreshToken.save();
+        updateCache("refreshToken", expires, newRefreshToken);
+        refreshToken = newRefreshToken;
       }
+      accessToken = newAccessToken;
 
-      res.send(successMessage(MESSAGES.CREATED, refreshToken));
+      res.send(successMessage(MESSAGES.CREATED, { token: accessToken }));
     } catch (error) {
-      // console.error(error);
+      console.error(error);
+      return res.status(501).send(error.message);
     }
   }
 }

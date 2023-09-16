@@ -19,6 +19,18 @@ class TokenService {
     return await tokenModel.findOne().sort({ createdAt: -1 }).limit(1);
   }
 
+  async updateToken({ formerToken, tokenToUpdate, tokenModel, timeInSeconds }) {
+    // Find and update query
+    const result = await tokenModel.findOneAndUpdate(
+      { token: formerToken },
+      {
+        $set: { expires: getUpdatedDate(timeInSeconds), token: tokenToUpdate },
+      },
+      { new: true } // Return updated doc
+    );
+    return result;
+  }
+
   async getTokenByToken({ token, tokenModel }) {
     return await tokenModel.findOne({ token });
   }
