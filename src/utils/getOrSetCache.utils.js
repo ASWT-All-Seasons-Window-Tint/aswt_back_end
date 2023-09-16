@@ -1,10 +1,13 @@
 const redis = require("redis");
+const { env } = process;
 
 const redisClient = redis.createClient();
 (async () => {
   redisClient.on("error", (err) => console.log("Redis Client Error", err));
 
-  await redisClient.connect();
+  await redisClient.connect({
+    url: env.redisUrl,
+  });
 })();
 async function getOrSetCache(collection, expires, getDBDataFunction, query) {
   const results = {};
