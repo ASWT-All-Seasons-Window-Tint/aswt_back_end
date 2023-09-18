@@ -165,6 +165,10 @@ class EntryService {
     ]);
   }
 
+  getEntryByIdForInvoice(entryId) {
+    return Entry.findById(entryId).lean();
+  }
+
   getEntries = async (
     filter = { entryId: undefined, customerId: undefined }
   ) => {
@@ -219,6 +223,7 @@ class EntryService {
           vehiclesLeft: 1,
           entryDate: 1,
           customerId: 1,
+          numberOfCarsAdded: 1,
           // Keep existing invoice projection
           invoice: {
             name: "$invoice.name",
@@ -770,6 +775,7 @@ class EntryService {
         price: service.defaultPrices.find((p) => p.category === category).price,
         serviceType: service.type,
         serviceId: service._id,
+        qbId: service.qbId,
       }));
 
     const priceBreakdown = [
@@ -781,6 +787,7 @@ class EntryService {
         ).price,
         serviceType: service.type,
         serviceId: service._id,
+        qbId: service.qbId,
       })),
       ...defaultPrices,
     ];

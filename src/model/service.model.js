@@ -16,6 +16,10 @@ const serviceSchema = new mongoose.Schema(
       maxlength: 255,
       required: true,
     },
+    qbId: {
+      type: String,
+      required: true,
+    },
     defaultPrices: [
       {
         category: { type: String, min: 3, required: true },

@@ -62,6 +62,19 @@ class ServiceService {
     );
   }
 
+  // Function to create a customer in QuickBooks
+  createQuickBooksService(qbo, serviceData) {
+    return new Promise((resolve, reject) => {
+      qbo.createItem(serviceData, (err, service) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(service);
+        }
+      });
+    });
+  }
+
   defaultPricesInArray(defaultPrices) {
     const defaultPricesInArray = [];
 

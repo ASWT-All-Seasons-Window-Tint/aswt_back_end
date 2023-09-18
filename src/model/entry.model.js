@@ -90,6 +90,9 @@ const entrySchema = new mongoose.Schema(
               dealership: {
                 type: Boolean,
               },
+              qbId: {
+                type: String,
+              },
             },
           ],
         },

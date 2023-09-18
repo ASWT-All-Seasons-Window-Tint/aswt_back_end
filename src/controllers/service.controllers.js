@@ -1,17 +1,16 @@
 const { Service } = require("../model/service.model");
 const serviceService = require("../services/service.services");
 const userService = require("../services/user.services");
+const { MESSAGES } = require("../common/constants.common");
+const initializeQuickBooks = require("../utils/initializeQb.utils");
+const { getOrSetCache, updateCache } = require("../utils/getOrSetCache.utils");
+const { getLatestToken } = require("../services/token.services");
+const { getNewAccessToken } = require("./oauthToken.controllers");
 const {
   errorMessage,
   successMessage,
   jsonResponse,
 } = require("../common/messages.common");
-const { MESSAGES, errorAlreadyExists } = require("../common/constants.common");
-const {
-  validateCategoryNames,
-  missingCategoryNames,
-} = require("../services/category.services");
-const { compareSync } = require("bcrypt");
 
 class ServiceController {
   async getStatus(req, res) {
@@ -19,7 +18,7 @@ class ServiceController {
   }
 
   //Create a new service
-  async createService(req, res) {
+  createService = async (req, res) => {
     let { type, name, defaultPrices } = req.body;
     // const categoryNames = Object.keys(defaultPrices);
 
@@ -39,6 +38,11 @@ class ServiceController {
     //     message: `You have not provided prices for: ${categoriesMissing}`,
     //     success: false,
     //   });
+    const { serviceOnQb, error } = await this.createQbService(name);
+    if (error)
+      return jsonResponse(res, 400, false, error.Fault.Error[0].Detail);
+
+    const qbId = serviceOnQb.Id;
 
     defaultPrices = serviceService.defaultPricesInArray(defaultPrices);
 
@@ -46,11 +50,43 @@ class ServiceController {
       type,
       name,
       defaultPrices,
+      qbId,
     });
 
     service = await serviceService.createService(service);
 
     res.send(successMessage(MESSAGES.CREATED, service));
+  };
+
+  async createQbService(serviceName) {
+    const results = {};
+    try {
+      // Initialize the QuickBooks SDK
+      const qbo = await initializeQuickBooks();
+
+      const serviceData = {
+        Name: serviceName,
+        IncomeAccountRef: {
+          value: "79",
+          name: "Sales of Product Income",
+        },
+        ExpenseAccountRef: {
+          value: "80",
+          name: "Cost of Goods Sold",
+        },
+        Type: "Service",
+      };
+
+      const serviceOnQb = await serviceService.createQuickBooksService(
+        qbo,
+        serviceData
+      );
+      results.serviceOnQb = serviceOnQb;
+      return results;
+    } catch (error) {
+      results.error = error;
+      return results;
+    }
   }
 
   //get service from the database, using their email

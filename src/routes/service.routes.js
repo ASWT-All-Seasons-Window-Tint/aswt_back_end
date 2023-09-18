@@ -8,6 +8,7 @@ const router = express.Router();
 const asyncMiddleware = require("../middleware/async.middleware");
 const validateObjectId = require("../middleware/validateObjectId.middleware");
 const serviceController = require("../controllers/service.controllers");
+const invoiceController = require("../controllers/invoice.controllers");
 const {
   validate,
   validatePatch,
@@ -23,7 +24,14 @@ router.post(
   asyncMiddleware(serviceController.createService)
 );
 
+router.post(
+  "/qb",
+  [auth, adminOrManager],
+  asyncMiddleware(serviceController.createQbService)
+);
+
 router.get("/", asyncMiddleware(serviceController.fetchAllServices));
+router.post("/invoice/:id", asyncMiddleware(invoiceController.sendInvoice));
 router.get("/web", asyncMiddleware(serviceController.fetchAllServicesWeb));
 router.get("/multiple", asyncMiddleware(serviceController.getMultipleServices));
 
