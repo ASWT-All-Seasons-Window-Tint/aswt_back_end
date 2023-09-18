@@ -1,11 +1,21 @@
 class InvoiceService {
-  createInvoiceOnQuickBooks(qbo, invoiceData) {
+  createInvoiceOnQuickBooks(qbo, invoiceData, emailAddr) {
     return new Promise((resolve, reject) => {
+      const results = {};
       qbo.createInvoice(invoiceData, (err, invoice) => {
         if (err) {
           reject(err);
         } else {
-          resolve(invoice);
+          qbo.sendInvoicePdf(invoice.Id, emailAddr, (sendErr, sendResponse) => {
+            if (sendErr) {
+              reject("Error sending invoice:", sendErr);
+            } else {
+              console.log("Invoice sent successfully:");
+              results.sendResponse = sendResponse;
+            }
+          });
+          results.invoice = invoice;
+          resolve(results);
         }
       });
     });

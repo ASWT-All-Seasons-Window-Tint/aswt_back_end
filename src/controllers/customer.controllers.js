@@ -35,30 +35,13 @@ class Customer {
   async getCustomerById(req, res) {
     try {
       const id = req.params.id;
-      const accessToken = await getNewAccessToken();
-      const refreshTokenData = await getOrSetCache(
-        "refreshToken",
-        expires,
-        getLatestToken,
-        [RefreshToken]
-      );
-      const refreshToken = refreshTokenData.token;
 
-      // Initialize the QuickBooks SDK
-      const qbo = customerService.initializeQuickBooks(
-        accessToken,
-        refreshToken
-      );
-
-      const { data: customer, error } = await getOrSetCache(
-        `customers?Id=${id}`,
-        expires,
-        customerService.getCustomerById,
-        [qbo, req.params.id]
-      );
+      const { data: customer, error } =
+        await customerService.getOrSetCustomerOnCache(id);
 
       if (error)
         return jsonResponse(res, 404, false, error.Fault.Error[0].Detail);
+
       // 'customers' now contains an array of customer records from QuickBooksc
       return res.send(successMessage(MESSAGES.FETCHED, customer));
     } catch (error) {

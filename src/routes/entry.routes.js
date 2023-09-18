@@ -87,12 +87,7 @@ router.put(
 
 router.put(
   "/add-car/:id",
-  [
-    validateObjectId,
-    auth,
-    staffMiddleware,
-    validateMiddleware(validateAddInvoicePatch),
-  ],
+  [auth, staffMiddleware, validateMiddleware(validateAddInvoicePatch)],
   asyncMiddleware(entryController.addInvoice)
 );
 

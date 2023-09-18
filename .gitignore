@@ -8,6 +8,7 @@
 .pnp.js
 .env
 test*
+/src/utils/getOrSetCache.utils.js
 
 # testing
 /coverage

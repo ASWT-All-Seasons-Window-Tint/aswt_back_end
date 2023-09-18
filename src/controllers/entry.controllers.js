@@ -1,6 +1,7 @@
 const { Entry } = require("../model/entry.model");
 const entryService = require("../services/entry.services");
 const userService = require("../services/user.services");
+const customerService = require("../services/customer.service");
 const serviceService = require("../services/service.services");
 const { MESSAGES, DATE } = require("../common/constants.common");
 const _ = require("lodash");
@@ -56,18 +57,17 @@ class EntryController {
     const { carDetails } = req.body;
     const { category, serviceIds, vin } = carDetails;
 
-    const [customer] = await userService.getUserByRoleAndId(
-      customerId,
-      "customer"
-    );
-    if (!customer) return res.status(404).send(errorMessage("customer"));
+    const { data: customer, error } =
+      await customerService.getOrSetCustomerOnCache(customerId);
+    if (error)
+      return jsonResponse(res, 404, false, error.Fault.Error[0].Detail);
 
     carDetails.serviceIds = [...new Set(serviceIds)];
 
     let [isCarServiceAdded, { services, entry }, missingIds] =
       await Promise.all([
         checkDuplicateEntry(customerId, vin),
-        getServiceAndEntry(carDetails, customerId),
+        getServiceAndEntry(carDetails, customerId, customer),
         serviceService.validateServiceIds(serviceIds),
       ]);
 

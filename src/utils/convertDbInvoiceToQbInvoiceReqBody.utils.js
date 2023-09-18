@@ -2,8 +2,8 @@ module.exports = function (mongoDBInvoice) {
   const qboInvoice = {
     Line: [],
     CustomerRef: {
-      value: "83", // Replace with the customer ID or name
-      name: "Olisaeloka Odira Paul", // Replace with the customer name
+      value: mongoDBInvoice.customerId, // Replace with the customer ID or name
+      name: mongoDBInvoice.customerName, // Replace with the customer name
     },
     TxnDate: new Date().toISOString().split("T")[0], // Current date
     DueDate: new Date().toISOString().split("T")[0], // Same as TxnDate by default

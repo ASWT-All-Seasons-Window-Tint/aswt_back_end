@@ -165,10 +165,6 @@ class EntryService {
     ]);
   }
 
-  getEntryByIdForInvoice(entryId) {
-    return Entry.findById(entryId).lean();
-  }
-
   getEntries = async (
     filter = { entryId: undefined, customerId: undefined }
   ) => {
@@ -184,14 +180,14 @@ class EntryService {
       {
         $match: match,
       },
-      {
-        $lookup: {
-          from: "users",
-          localField: "customerId",
-          foreignField: "_id",
-          as: "customer",
-        },
-      },
+      // {
+      //   $lookup: {
+      //     from: "users",
+      //     localField: "customerId",
+      //     foreignField: "_id",
+      //     as: "customer",
+      //   },
+      // },
       {
         $lookup: {
           from: "users",
@@ -212,13 +208,15 @@ class EntryService {
 
       {
         $project: {
-          customerName: {
-            $concat: [
-              { $arrayElemAt: ["$customer.firstName", 0] },
-              " ",
-              { $arrayElemAt: ["$customer.lastName", 0] },
-            ],
-          },
+          customerName: 1,
+          customerEmail: 1,
+          // {
+          //   $concat: [
+          //     { $arrayElemAt: ["$customer.firstName", 0] },
+          //     " ",
+          //     { $arrayElemAt: ["$customer.lastName", 0] },
+          //   ],
+          // },
           numberOfVehicles: 1,
           vehiclesLeft: 1,
           entryDate: 1,
@@ -687,9 +685,15 @@ class EntryService {
     });
   }
 
-  createNewEntry = async (customerId) => {
+  createNewEntry = async (customer) => {
+    const customerId = customer.Id;
+    const customerName = customer.FullyQualifiedName;
+    const customerEmail = customer.PrimaryEmailAddr.Address;
+
     let entry = new Entry({
       customerId,
+      customerName,
+      customerEmail,
       entryDate: new Date(),
     });
 
@@ -716,7 +720,7 @@ class EntryService {
     });
   }
 
-  getServiceAndEntry = async (carDetails, customerId) => {
+  getServiceAndEntry = async (carDetails, customerId, customer) => {
     const results = {};
 
     const serviceIds = carDetails.serviceIds;
@@ -725,7 +729,7 @@ class EntryService {
       serviceServices.getMultipleServices(serviceIds),
       (await this.getEntryForCustomerLast24Hours(customerId))
         ? this.getEntryForCustomerLast24Hours(customerId)
-        : this.createNewEntry(customerId),
+        : this.createNewEntry(customer),
     ]);
 
     return results;

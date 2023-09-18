@@ -6,8 +6,15 @@ const { DATE } = require("../common/constants.common");
 const entrySchema = new mongoose.Schema(
   {
     customerId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "user",
+      type: String,
+      required: true,
+    },
+    customerName: {
+      type: String,
+      required: true,
+    },
+    customerEmail: {
+      type: String,
       required: true,
     },
     entryDate: {
