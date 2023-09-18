@@ -139,7 +139,9 @@ class EntryController {
     ]);
     if (entryId) entries = entries[0];
     if (!entries) return res.status(404).send(errorMessage("entry"));
-    if (!customer) return res.status(404).send(errorMessage("customer"));
+
+    if (customerId && !customer)
+      return res.status(404).send(errorMessage("customer"));
 
     if (entryId) entries.id = entries._id;
     if (customerId) {

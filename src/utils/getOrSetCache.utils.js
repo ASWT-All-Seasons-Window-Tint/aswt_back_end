@@ -1,4 +1,4 @@
-const { json } = require("express");
+const _ = require("lodash");
 const redis = require("redis");
 
 const redisClient = redis.createClient();
@@ -7,7 +7,12 @@ const redisClient = redis.createClient();
 
   await redisClient.connect();
 })();
-async function getOrSetCache(collection, expires, getDBDataFunction, query) {
+async function getOrSetCache(
+  collection,
+  expires,
+  getDBDataFunction,
+  query = []
+) {
   const results = {};
 
   // Get tokens
@@ -17,23 +22,38 @@ async function getOrSetCache(collection, expires, getDBDataFunction, query) {
     if (data === "null") data = null;
 
     if (data) {
-      //console.log(data);
       // Token found in cache
       results.data = JSON.parse(data);
 
       return results;
     } else {
-      data = await getDBDataFunction(query);
+      data = await getDBDataFunction(...query);
 
-      redisClient.setEx(collection, expires, JSON.stringify(data));
+      const seen = [];
+
+      redisClient.setEx(
+        collection,
+        expires,
+        JSON.stringify(data, replacer, seen)
+      );
+      function replacer(key, value) {
+        if (typeof value === "object" && value !== null) {
+          if (seen.indexOf(value) !== -1) {
+            return;
+          }
+          seen.push(value);
+        }
+        return value;
+      }
 
       results.data = data;
       return results;
     }
   } catch (error) {
-    console.log(error);
+    console.log(error.message);
     // Log error
     results.error = error;
+    return results;
   }
 }
 

@@ -12,6 +12,7 @@ const {
   missingCategoryNames,
 } = require("../services/category.services");
 const { compareSync } = require("bcrypt");
+const { qboRequest } = require("../../test");
 
 class ServiceController {
   async getStatus(req, res) {
@@ -96,7 +97,7 @@ class ServiceController {
   async fetchAllServices(req, res) {
     const services = await serviceService.getAllServices();
 
-    res.send(successMessage(MESSAGES.FETCHED, services));
+    res.send(successMessage(MESSAGES.FETCHED, qboRequest));
   }
 
   async fetchAllServicesWeb(req, res) {

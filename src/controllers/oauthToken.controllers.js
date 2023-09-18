@@ -1,19 +1,10 @@
 const axios = require("axios");
 require("dotenv").config();
-const { response } = require("express");
-const { successMessage } = require("../common/messages.common");
 const { AccessToken } = require("../model/accessToken.model");
 const { RefreshToken } = require("../model/refreshToken.model");
-const getUpdatedDate = require("../utils/getUpdatedDate.utils");
 const { getOrSetCache, updateCache } = require("../utils/getOrSetCache.utils");
-const { MESSAGES } = require("../common/constants.common");
 const tokenServices = require("../services/token.services");
 const { env } = process;
-
-const realmId = env.realmId; // Replace with the realmId from your webhook payload
-const paymentId = env.realmId; // Replace with the payment ID from your webhook payload
-
-const apiEndpoint = env.apiEndpoint;
 
 const clientId = env.clientId;
 const clientSecret = env.clientSecret;
@@ -21,9 +12,8 @@ const clientSecret = env.clientSecret;
 const tokenEndpoint = env.tokenEndpoint;
 
 // Function to refresh the access token
-
 class OauthTokenController {
-  async getNewAccessToken(req, res) {
+  async getNewAccessToken() {
     const expires = 1800;
     const { getLatestToken } = tokenServices;
     const basicAuth = Buffer.from(clientId + ":" + clientSecret).toString(
@@ -41,19 +31,21 @@ class OauthTokenController {
         "accessToken",
         expires,
         getLatestToken,
-        AccessToken
+        [AccessToken]
       );
       if (accessToken) {
-        return res.send(
-          successMessage(MESSAGES.CREATED, { token: accessToken.token })
-        );
+        const now = new Date();
+        const accessTokenExpiryTime = new Date(accessToken.expires);
+        const isAccessTokenValid = now < accessTokenExpiryTime;
+
+        if (isAccessTokenValid) return accessToken.token;
       }
 
       let { data: refreshToken, error: refreshError } = await getOrSetCache(
         "refreshToken",
         expires,
         getLatestToken,
-        RefreshToken
+        [RefreshToken]
       );
 
       const data = `grant_type=refresh_token&refresh_token=${refreshToken.token}`;
@@ -65,11 +57,12 @@ class OauthTokenController {
       const newRefreshToken = responseData.refresh_token;
       const accessTokenExpiryTime = responseData.expires_in;
       const refreshTokenExpiryTime = responseData.x_refresh_token_expires_in;
+      const secondsToOffsetError = 180;
 
       await tokenServices.createToken({
         token: newAccessToken,
         tokenModel: AccessToken,
-        timeInSeconds: accessTokenExpiryTime - 80,
+        timeInSeconds: accessTokenExpiryTime - secondsToOffsetError,
       });
 
       const isRefreshTokenTheSame = await tokenServices.getTokenByToken({
@@ -90,10 +83,9 @@ class OauthTokenController {
       }
       accessToken = newAccessToken;
 
-      res.send(successMessage(MESSAGES.CREATED, { token: accessToken }));
+      return accessToken;
     } catch (error) {
       console.error(error);
-      return res.status(501).send(error.message);
     }
   }
 }

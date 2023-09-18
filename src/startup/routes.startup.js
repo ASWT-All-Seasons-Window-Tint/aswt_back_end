@@ -6,6 +6,7 @@ const auth = require("../routes/auth.routes");
 const users = require("../routes/user.routes");
 const departments = require("../routes/department.routes");
 const categories = require("../routes/category.routes");
+const customers = require("../routes/customer.routes");
 const entries = require("../routes/entry.routes");
 const services = require("../routes/service.routes");
 const logout = require("../routes/logout.routes");
@@ -19,6 +20,7 @@ module.exports = function (app) {
   app.use("/api/v1/departments", departments);
   app.use("/api/v1/entries", entries);
   app.use("/api/v1/categories", categories);
+  app.use("/api/v1/customers", customers);
   app.use("/api/v1/users", users);
   app.use("/api/v1/logout", logout);
   app.use("/api/v1/services", services);
