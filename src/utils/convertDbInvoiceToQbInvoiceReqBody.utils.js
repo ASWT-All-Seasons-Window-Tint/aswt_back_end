@@ -5,6 +5,10 @@ module.exports = function (mongoDBInvoice) {
       value: mongoDBInvoice.customerId, // Replace with the customer ID or name
       name: mongoDBInvoice.customerName, // Replace with the customer name
     },
+    AllowIPNPayment: true,
+    AllowOnlinePayment: true,
+    AllowOnlineCreditCardPayment: true,
+    AllowOnlineACHPayment: true,
     TxnDate: new Date().toISOString().split("T")[0], // Current date
     DueDate: new Date().toISOString().split("T")[0], // Same as TxnDate by default
     // Add other fields as needed
