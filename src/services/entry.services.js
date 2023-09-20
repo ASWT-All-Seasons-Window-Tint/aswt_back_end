@@ -350,6 +350,7 @@ class EntryService {
       {
         $project: {
           customerId: 1,
+          customerName: 1,
           numberOfVehicles: 1,
           numberOfCarsAdded: 1,
           vehiclesLeft: 1,
@@ -369,14 +370,6 @@ class EntryService {
 
       {
         $lookup: {
-          from: "users",
-          localField: "customerId",
-          foreignField: "_id",
-          as: "customer",
-        },
-      },
-      {
-        $lookup: {
           from: "services",
           localField: "filteredDetails.serviceIds",
           foreignField: "_id",
@@ -386,13 +379,7 @@ class EntryService {
 
       {
         $project: {
-          customerName: {
-            $concat: [
-              { $arrayElemAt: ["$customer.firstName", 0] },
-              " ",
-              { $arrayElemAt: ["$customer.lastName", 0] },
-            ],
-          },
+          customerName: 1,
           numberOfVehicles: 1,
           numberOfCarsAdded: 1,
           vehiclesLeft: 1,
