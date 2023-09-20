@@ -61,6 +61,7 @@ class Customer {
         [RefreshToken]
       );
       const refreshToken = refreshTokenData.token;
+      if (refreshTokenData.error) return jsonResponse(res, 500, false, error);
 
       // Initialize the QuickBooks SDK
       const qbo = customerService.initializeQuickBooks(
