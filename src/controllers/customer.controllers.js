@@ -9,6 +9,7 @@ const { getLatestToken } = require("../services/token.services");
 const { getAllCustomers } = require("../services/customer.service");
 const customerService = require("../services/customer.service");
 const { RefreshToken } = require("../model/refreshToken.model");
+const initializeQbUtils = require("../utils/initializeQb.utils");
 
 const { env } = process;
 const expires = 1800;
@@ -52,22 +53,7 @@ class Customer {
 
   async createCustomer(req, res) {
     try {
-      // Retrieve the access token and refresh token
-      const accessToken = await getNewAccessToken();
-      const refreshTokenData = await getOrSetCache(
-        "refreshToken",
-        expires,
-        getLatestToken,
-        [RefreshToken]
-      );
-      const refreshToken = refreshTokenData.token;
-      if (refreshTokenData.error) return jsonResponse(res, 501, false, error);
-
-      // Initialize the QuickBooks SDK
-      const qbo = customerService.initializeQuickBooks(
-        accessToken,
-        refreshToken
-      );
+      const qbo = await initializeQbUtils();
 
       // Create the customer in QuickBooks
       const customerData = {
@@ -94,7 +80,7 @@ class Customer {
       res.status(200).json(successMessage("Customer created", createdCustomer));
     } catch (error) {
       console.error("Error in createCustomerAndCache:", error);
-      res.status(500).json({ success: false, message: error });
+      res.status(500).json({ success: false, message: "Something Failed" });
     }
   }
 }
