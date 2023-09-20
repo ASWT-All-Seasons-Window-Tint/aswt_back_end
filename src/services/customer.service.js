@@ -57,21 +57,6 @@ class CustomerService {
     return results;
   };
 
-  // Function to initialize the QuickBooks SDK
-  initializeQuickBooks(accessToken, refreshToken) {
-    return new QuickBooks(
-      env.clientId,
-      env.clientSecret,
-      accessToken,
-      false,
-      env.realmId,
-      true,
-      true,
-      null,
-      "2.0",
-      refreshToken
-    );
-  }
   // Function to create a customer in QuickBooks
   createQuickBooksCustomer(qbo, customerData) {
     return new Promise((resolve, reject) => {
