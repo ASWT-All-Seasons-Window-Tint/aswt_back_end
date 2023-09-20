@@ -93,9 +93,7 @@ class Customer {
       res.status(200).json(successMessage("Customer created", createdCustomer));
     } catch (error) {
       console.error("Error in createCustomerAndCache:", error);
-      res
-        .status(500)
-        .json({ success: false, message: error.Fault.Error[0].Detail });
+      res.status(500).json({ success: false, message: error });
     }
   }
 }
