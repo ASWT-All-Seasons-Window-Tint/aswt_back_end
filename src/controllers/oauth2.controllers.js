@@ -32,14 +32,13 @@ var consumerSecret = env.clientSecret;
 class Ouath2Controller {
   start(req, res) {
     res.render("intuit.ejs", {
-      port: `${env.apiUrl}/api/v1/oauth2/requestToken`,
+      port: `${env.apiUrl}${env.requestTokenEnpoint}`,
       appCenter: QuickBooks.APP_CENTER_BASE,
     });
   }
 
   // OAUTH 2 makes use of redirect requests
   generateAntiForgery(session) {
-    console.log(session);
     session.secret = csrf.secretSync();
     return csrf.create(session.secret);
   }
@@ -50,7 +49,7 @@ class Ouath2Controller {
       "?client_id=" +
       consumerKey +
       "&redirect_uri=" +
-      encodeURIComponent(`${env.apiUrl}/api/v1/oauth2/callback/`) + //Make sure this path matches entry in application dashboard
+      encodeURIComponent(`${env.apiUrl}${env.callbackEndpoint}`) + //Make sure this path matches entry in application dashboard
       "&scope=com.intuit.quickbooks.accounting" +
       "&response_type=code" +
       "&state=" +
@@ -74,7 +73,7 @@ class Ouath2Controller {
       form: {
         grant_type: "authorization_code",
         code: req.query.code,
-        redirect_uri: `${env.apiUrl}/api/v1/oauth2/callback/`, //Make sure this path matches entry in application dashboard
+        redirect_uri: `${env.apiUrl}${env.callbackEndpoint}`, //Make sure this path matches entry in application dashboard
       },
     };
 
@@ -82,9 +81,6 @@ class Ouath2Controller {
       const responseData = JSON.parse(r.body);
 
       await tokenServices.updateAccessAndRefreshToken(responseData);
-
-      console.log("refreshToken", responseData.refresh_token);
-      console.log("accessToken:", responseData.access_token);
     });
 
     res.send(
