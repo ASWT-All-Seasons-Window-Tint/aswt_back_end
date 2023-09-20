@@ -24,7 +24,7 @@ module.exports = async function () {
     false,
     env.realmId,
     true,
-    true,
+    false,
     null,
     "2.0",
     refreshToken
