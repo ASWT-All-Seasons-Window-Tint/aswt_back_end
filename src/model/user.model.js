@@ -75,14 +75,13 @@ const userSchema = new mongoose.Schema(
     resetToken: {
       type: String,
     },
-    customerDetails: {
-      companyName: {
-        type: String,
-        minlength: 3,
-        maxlength: 255,
-        // required: function () {
-        //   return this.role === "customer";
-        // },
+    staffDetails: {
+      earningRate: {
+        type: Number,
+        min: 1,
+      },
+      totalEarning: {
+        type: Number,
       },
     },
     isDeleted: {
@@ -112,6 +111,7 @@ userSchema.methods.generateAuthToken = function () {
       email: this.email,
       role: this.role,
       departments: this.departments,
+      staffDetails: this.staffDetails,
       avatarUrl: this.avatarUrl,
     },
     process.env.jwtPrivateKey
@@ -125,27 +125,19 @@ function validate(user) {
   const schema = Joi.object({
     firstName: Joi.string().min(2).max(255).required(),
     lastName: Joi.string().min(2).max(255).required(),
-    password: Joi.string().min(5).max(1024).when("role", {
-      is: "customer",
-      then: Joi.optional(),
-      otherwise: Joi.required(),
-    }),
+    password: Joi.string().min(5).max(1024).required(),
     email: Joi.string().email().min(5).max(255).required(),
     role: Joi.string()
       .min(4)
       .max(255)
       .required()
-      .valid("staff", "manager", "customer")
+      .valid("staff", "manager")
       .insensitive(),
-    departments: Joi.array().items(Joi.objectId().required()).when("role", {
-      is: "customer",
-      then: Joi.forbidden(),
-      otherwise: Joi.required(),
-    }),
-    customerDetails: Joi.object({
-      companyName: Joi.string().min(3).max(255).required(),
+    departments: Joi.array().items(Joi.objectId().required()),
+    staffDetails: Joi.object({
+      earningRate: Joi.number().required(),
     }).when("role", {
-      is: "customer",
+      is: "staff",
       then: Joi.required(),
       otherwise: Joi.forbidden(),
     }),

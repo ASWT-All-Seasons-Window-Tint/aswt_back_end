@@ -19,6 +19,7 @@ module.exports = function (mongoDBInvoice) {
     // Loop through priceBreakdown for this carDetail
     carDetail.priceBreakdown.forEach((priceDetail) => {
       qboInvoice.Line.push({
+        Description: `${priceDetail.serviceName} service done on ${carDetail.make}, identified by VIN number: ${carDetail.vin}`,
         Amount: priceDetail.price,
         DetailType: "SalesItemLineDetail",
         SalesItemLineDetail: {

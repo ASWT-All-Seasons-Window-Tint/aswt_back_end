@@ -104,6 +104,11 @@ class EntryController {
       entry.invoice.carDetails
     );
 
+    const { error: updateStaffError } =
+      await userService.updateStaffTotalEarnings(req.user);
+    if (updateStaffError)
+      return jsonResponse(res, 500, false, "Something failed");
+
     const updatedEntry = await updateEntryById(entry._id, entry);
     updatedEntry.id = updatedEntry._id;
 

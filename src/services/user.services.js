@@ -105,6 +105,33 @@ class UserService {
     );
   }
 
+  updateStaffTotalEarnings = async (staff) => {
+    const results = {};
+
+    try {
+      const staffFromDb = await this.getUserById(staff._id);
+      staff = staffFromDb;
+
+      const staffEarningRate = staff.staffDetails.earningRate;
+      const previousStaffTotalEarning = staff.staffDetails.totalEarning;
+      const updatedTotalStaffEarning =
+        previousStaffTotalEarning + staffEarningRate;
+
+      staff.staffDetails.totalEarning = updatedTotalStaffEarning;
+
+      const updatedStaff = await this.updateUserById(staff._id, staff);
+
+      results.updatedStaff = updatedStaff;
+
+      return results;
+    } catch (error) {
+      console.log(error);
+      results.error = error;
+
+      return results;
+    }
+  };
+
   async deleteUser(id) {
     return await User.findByIdAndRemove(id);
   }
@@ -126,6 +153,8 @@ class UserService {
     user = await this.createUser(user);
 
     const token = user.generateAuthToken();
+
+    if (user.role === "staff") propertiesToPick.push("staffDetails");
 
     user = _.pick(user, propertiesToPick);
     // It creates a token which is sent as a header to the client

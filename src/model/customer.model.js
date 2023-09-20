@@ -17,6 +17,7 @@ function validate(customer) {
       Country: Joi.string().required(),
       PostalCode: Joi.string().required(),
     }).required(),
+    CompanyName: Joi.string().min(3).max(255).required(),
     Notes: Joi.string(),
   });
 

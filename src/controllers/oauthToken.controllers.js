@@ -79,6 +79,7 @@ class OauthTokenController {
         });
 
         updateCache("refreshToken", expires, newRefreshToken);
+        updateCache("accessToken", expires, newAccessToken);
         refreshToken = newRefreshToken;
       }
       accessToken = newAccessToken;

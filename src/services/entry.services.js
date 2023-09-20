@@ -180,14 +180,6 @@ class EntryService {
       {
         $match: match,
       },
-      // {
-      //   $lookup: {
-      //     from: "users",
-      //     localField: "customerId",
-      //     foreignField: "_id",
-      //     as: "customer",
-      //   },
-      // },
       {
         $lookup: {
           from: "users",
