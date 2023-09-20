@@ -2,7 +2,7 @@ require("dotenv").config();
 const QuickBooks = require("node-quickbooks");
 const { getOrSetCache } = require("../utils/getOrSetCache.utils");
 const { getLatestToken } = require("../services/token.services");
-const { getNewAccessToken } = require("../controllers/oauthToken.controllers");
+const { getNewAccessToken } = require("../utils/getNewAccessToken.utils");
 const { RefreshToken } = require("../model/refreshToken.model");
 
 const { env } = process;

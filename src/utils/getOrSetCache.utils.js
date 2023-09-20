@@ -2,7 +2,7 @@ const _ = require("lodash");
 const redis = require("redis");
 require("dotenv").config();
 
-const redisClient = redis.createClient({ url: process.env.redisUrl });
+const redisClient = redis.createClient();
 (async () => {
   redisClient.on("error", (err) => console.log("Redis Client Error", err));
 

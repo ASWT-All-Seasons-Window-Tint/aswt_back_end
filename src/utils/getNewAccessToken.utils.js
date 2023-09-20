@@ -2,7 +2,7 @@ const axios = require("axios");
 require("dotenv").config();
 const { AccessToken } = require("../model/accessToken.model");
 const { RefreshToken } = require("../model/refreshToken.model");
-const { getOrSetCache, updateCache } = require("../utils/getOrSetCache.utils");
+const { getOrSetCache, updateCache } = require("./getOrSetCache.utils");
 const tokenServices = require("../services/token.services");
 const { env } = process;
 
@@ -52,36 +52,10 @@ class OauthTokenController {
       const { data: responseData } = await axios.post(tokenEndpoint, data, {
         headers,
       });
+      const newAccessToken = await tokenServices.updateAccessAndRefreshToken(
+        responseData
+      );
 
-      const newAccessToken = responseData.access_token;
-      const newRefreshToken = responseData.refresh_token;
-      const accessTokenExpiryTime = responseData.expires_in;
-      const refreshTokenExpiryTime = responseData.x_refresh_token_expires_in;
-      const secondsToOffsetError = 180;
-
-      await tokenServices.createToken({
-        token: newAccessToken,
-        tokenModel: AccessToken,
-        timeInSeconds: accessTokenExpiryTime - secondsToOffsetError,
-      });
-
-      const isRefreshTokenTheSame = await tokenServices.getTokenByToken({
-        token: newRefreshToken,
-        tokenModel: RefreshToken,
-      });
-
-      if (!isRefreshTokenTheSame) {
-        await tokenServices.updateToken({
-          formerToken: refreshToken.token,
-          tokenToUpdate: newRefreshToken,
-          tokenModel: RefreshToken,
-          timeInSeconds: refreshTokenExpiryTime,
-        });
-
-        updateCache("refreshToken", expires, newRefreshToken);
-        updateCache("accessToken", expires, newAccessToken);
-        refreshToken = newRefreshToken;
-      }
       accessToken = newAccessToken;
 
       return accessToken;

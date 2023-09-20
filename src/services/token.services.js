@@ -1,4 +1,7 @@
 const getUpdatedDate = require("../utils/getUpdatedDate.utils");
+const { AccessToken } = require("../model/accessToken.model");
+const { getOrSetCache, updateCache } = require("../utils/getOrSetCache.utils");
+const { RefreshToken } = require("../model/refreshToken.model");
 
 class TokenService {
   //Create new token
@@ -30,6 +33,46 @@ class TokenService {
     );
     return result;
   }
+
+  updateAccessAndRefreshToken = async (responseData) => {
+    const expires = 1800;
+
+    const newAccessToken = responseData.access_token;
+    const newRefreshToken = responseData.refresh_token;
+    const accessTokenExpiryTime = responseData.expires_in;
+    const refreshTokenExpiryTime = responseData.x_refresh_token_expires_in;
+    const secondsToOffsetError = 180;
+
+    const updatedAcccesToken = await this.createToken({
+      token: newAccessToken,
+      tokenModel: AccessToken,
+      timeInSeconds: accessTokenExpiryTime - secondsToOffsetError,
+    });
+
+    updateCache("accessToken", expires, updatedAcccesToken);
+
+    const isRefreshTokenTheSame = await this.getTokenByToken({
+      token: newRefreshToken,
+      tokenModel: RefreshToken,
+    });
+
+    let refreshToken = await this.getLatestToken(RefreshToken);
+
+    if (!isRefreshTokenTheSame) {
+      const updatedRefreshToken = await this.updateToken({
+        formerToken: refreshToken.token,
+        tokenToUpdate: newRefreshToken,
+        tokenModel: RefreshToken,
+        timeInSeconds: refreshTokenExpiryTime,
+      });
+
+      updateCache("refreshToken", expires, updatedRefreshToken);
+    }
+
+    refreshToken = newRefreshToken;
+
+    return newAccessToken;
+  };
 
   async getTokenByToken({ token, tokenModel }) {
     return await tokenModel.findOne({ token });

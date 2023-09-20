@@ -1,7 +1,7 @@
 require("dotenv").config();
 const QuickBooks = require("node-quickbooks");
 const axios = require("axios");
-const { getNewAccessToken } = require("../controllers/oauthToken.controllers");
+const { getNewAccessToken } = require("../utils/getNewAccessToken.utils");
 const { getOrSetCache } = require("../utils/getOrSetCache.utils");
 const initializeQbUtils = require("../utils/initializeQb.utils");
 

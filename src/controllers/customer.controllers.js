@@ -1,7 +1,7 @@
 require("dotenv").config();
 const axios = require("axios");
 const QuickBooks = require("node-quickbooks");
-const { getNewAccessToken } = require("./oauthToken.controllers");
+const { getNewAccessToken } = require("../utils/getNewAccessToken.utils");
 const { MESSAGES } = require("../common/constants.common");
 const { successMessage, jsonResponse } = require("../common/messages.common");
 const { getOrSetCache, updateCache } = require("../utils/getOrSetCache.utils");
@@ -24,8 +24,7 @@ class Customer {
       getAllCustomers
     );
 
-    if (error)
-      return jsonResponse(res, 404, false, error.Fault.Error[0].Detail);
+    if (error) return jsonResponse(res, 404, false, error);
 
     //// 'customers' now contains an array of customer records from QuickBooksc
     return res.send(successMessage(MESSAGES.FETCHED, customers));

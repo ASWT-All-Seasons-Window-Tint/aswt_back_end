@@ -9,23 +9,26 @@ module.exports = function (handler) {
       const errorResponseLowercase = JSON.parse(
         JSON.stringify(error).toLowerCase()
       );
-      const type = errorResponseLowercase.fault.type;
 
-      if (type === "validationfault") {
-        return res
-          .status(400)
-          .json({ success: false, message: error.Fault.Error[0].Detail });
-      }
+      if (errorResponseLowercase.fault) {
+        const type = errorResponseLowercase.fault.type;
 
-      if (type === "authentention") {
+        if (type === "validationfault") {
+          return res
+            .status(400)
+            .json({ success: false, message: error.Fault.Error[0].Detail });
+        }
+
+        if (type === "authentention") {
+          console.log(errorResponseLowercase.fault);
+          // Requires Human intervention
+          // To do
+        }
+
         console.log(errorResponseLowercase.fault);
-        // Requires Human intervention
-        // To do
+
+        return jsonResponse(res, 500, false, "Something failed");
       }
-
-      console.log(errorResponseLowercase.fault);
-
-      return jsonResponse(res, 500, false, "Something failed");
 
       next();
     }

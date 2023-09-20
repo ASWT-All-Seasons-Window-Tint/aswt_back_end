@@ -5,7 +5,6 @@ const { MESSAGES } = require("../common/constants.common");
 const initializeQuickBooks = require("../utils/initializeQb.utils");
 const { getOrSetCache, updateCache } = require("../utils/getOrSetCache.utils");
 const { getLatestToken } = require("../services/token.services");
-const { getNewAccessToken } = require("./oauthToken.controllers");
 const {
   errorMessage,
   successMessage,
