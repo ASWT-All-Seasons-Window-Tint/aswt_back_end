@@ -82,6 +82,7 @@ const userSchema = new mongoose.Schema(
       },
       totalEarning: {
         type: Number,
+        default: 0,
       },
     },
     isDeleted: {
