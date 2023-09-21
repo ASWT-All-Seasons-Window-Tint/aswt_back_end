@@ -138,10 +138,13 @@ class EntryController {
       ...(entryId ? { entryId } : { customerId }),
     };
 
-    let [entries, [customer]] = await Promise.all([
-      getEntries(getEntriesArgument),
-      userService.getUserByRoleAndId(customerId, "customer"),
-    ]);
+    let entries = await getEntries(getEntriesArgument);
+
+    const { data: customer, error } =
+      await customerService.getOrSetCustomerOnCache(customerId);
+    if (error)
+      return jsonResponse(res, 404, false, error.Fault.Error[0].Detail);
+
     if (entryId) entries = entries[0];
     if (!entries) return res.status(404).send(errorMessage("entry"));
 
@@ -157,7 +160,7 @@ class EntryController {
             numberOfCarsAdded: 0,
             entryDate: null,
             invoice: {},
-            customerName: `${customer.firstName} ${customer.lastName}`,
+            customerName: `${customer.FullyQualifiedName}`,
           },
         ];
       }

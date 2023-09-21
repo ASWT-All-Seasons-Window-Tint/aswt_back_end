@@ -173,7 +173,7 @@ class EntryService {
       match._id = new mongoose.Types.ObjectId(filter.entryId);
     }
     if (filter.customerId) {
-      match.customerId = new mongoose.Types.ObjectId(filter.customerId);
+      match.customerId = filter.customerId;
     }
 
     return await Entry.aggregate([

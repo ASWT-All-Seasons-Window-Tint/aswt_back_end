@@ -37,7 +37,7 @@ router.get(
 router.get(
   "/customer/:customerId",
   auth,
-  validateObjectIdWithXArgMiddleware(["customerId"]),
+  //validateObjectIdWithXArgMiddleware(["customerId"]),
   asyncMiddleware(entryController.getEntryById)
 );
 
