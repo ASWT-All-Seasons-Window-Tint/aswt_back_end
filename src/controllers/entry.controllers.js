@@ -160,7 +160,7 @@ class EntryController {
             numberOfCarsAdded: 0,
             entryDate: null,
             invoice: {},
-            customerName: `${customer.FullyQualifiedName}`,
+            customerName: `${customer.DisplayName}`,
           },
         ];
       }
@@ -173,17 +173,18 @@ class EntryController {
   async getCarsDoneByStaffPerId(req, res) {
     const { entryId, staffId, customerId } = req.params;
 
-    let [staff, customer, [entry]] = await Promise.all([
+    let [staff, { data: customer, error }, [entry]] = await Promise.all([
       userService.getUserById(staffId),
-      customerId ? userService.getUserByRoleAndId(customerId, "customer") : [],
+      customerId ? customerService.getOrSetCustomerOnCache(customerId) : [],
       entryId ? entryService.getEntries({ entryId }) : [],
     ]);
+
+    if (error)
+      return jsonResponse(res, 404, false, error.Fault.Error[0].Detail);
 
     if (Array.isArray(customer)) customer = customer[0];
 
     if (entryId && !entry) return res.status(404).send(errorMessage("entry"));
-    if (customerId && !customer)
-      return res.status(404).send(errorMessage("customer"));
     if (!staff) return res.status(404).send(errorMessage("staff"));
 
     const getCarArgs = { ...(entryId ? { entryId } : { customerId }), staffId };
@@ -211,7 +212,7 @@ class EntryController {
           numberOfCarsAdded: 0,
           entryDate: null,
           invoice: {},
-          customerName: `${customer.firstName} ${customer.lastName}`,
+          customerName: `${customer.DisplayName}`,
         },
       ];
 

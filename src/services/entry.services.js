@@ -47,7 +47,7 @@ class EntryService {
           input: "$$ROOT",
           as: "item",
           cond: {
-            $eq: ["$$item.customerId", new mongoose.Types.ObjectId(customerId)],
+            $eq: ["$$item.customerId", customerId],
           },
         },
       },
@@ -339,8 +339,9 @@ class EntryService {
     if (entryId) {
       match._id = new mongoose.Types.ObjectId(entryId);
     }
+    console.log(customerId);
     if (customerId) {
-      match.customerId = new mongoose.Types.ObjectId(customerId);
+      match.customerId = customerId;
     }
 
     const pipeline = [

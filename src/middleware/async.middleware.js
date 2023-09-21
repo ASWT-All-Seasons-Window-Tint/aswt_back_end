@@ -7,7 +7,9 @@ module.exports = function (handler) {
       await handler(req, res);
     } catch (ex) {
       // this passes control to the next middleware function (error) and takes exception as an argument
-      res.send({ message: ex.message || MESSAGES.ERROR, success: false });
+      res
+        .status(500)
+        .send({ message: ex.message || MESSAGES.ERROR, success: false });
       next(ex);
     }
   };
