@@ -14,16 +14,20 @@ module.exports = function (handler) {
         const type = errorResponseLowercase.fault.type;
 
         if (type === "validationfault") {
+          if (errorResponseLowercase.fault.error[0].code === "610")
+            return res
+              .status(404)
+              .json({ success: false, message: "Resource not found" });
+
           return res
             .status(400)
-            .json({ success: false, message: error.Fault.Error[0].Detail });
+            .json({ success: false, message: error.Fault.Error[0].Message });
         }
 
         if (type === "authentication") {
           console.log(errorResponseLowercase.fault);
           // Requires Human intervention
           return res.redirect("/api/v1/oauth2/");
-          // To do
         }
 
         console.log(errorResponseLowercase.fault);

@@ -14,11 +14,14 @@ const customers = require("../routes/customer.routes");
 const entries = require("../routes/entry.routes");
 const services = require("../routes/service.routes");
 const logout = require("../routes/logout.routes");
+const path = require("path");
 const oauth2 = require("../routes/oauth2.routes");
+const webhook = require("../routes/webhook.routes");
 const session = require("express-session");
 
 module.exports = function (app) {
   app.use(cors());
+  app.use(express.static(path.join(__dirname, "")));
   app.use(express.urlencoded({ extended: false }));
   app.set("views", "views");
   app.use(express.json());
@@ -42,6 +45,7 @@ module.exports = function (app) {
   app.use("/api/v1/users", users);
   app.use("/api/v1/logout", logout);
   app.use("/api/v1/oauth2", oauth2);
+  app.use("/api/v1/webhook", webhook);
   app.use("/api/v1/services", services);
 
   // it calls the error middleware if there was a rejected promise.

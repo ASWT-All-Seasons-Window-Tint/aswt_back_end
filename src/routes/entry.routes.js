@@ -5,6 +5,7 @@ const manager = require("../middleware/manager.middleware");
 const express = require("express");
 const router = express.Router();
 const asyncMiddleware = require("../middleware/async.middleware");
+const qboAsyncMiddleware = require("../middleware/qboAsync.middleware");
 const validateObjectId = require("../middleware/validateObjectId.middleware");
 const entryController = require("../controllers/entry.controllers");
 const validateObjectIdWithXArgMiddleware = require("../middleware/validateObjectIdWithXArg.middleware");
@@ -38,7 +39,7 @@ router.get(
   "/customer/:customerId",
   auth,
   //validateObjectIdWithXArgMiddleware(["customerId"]),
-  asyncMiddleware(entryController.getEntryById)
+  qboAsyncMiddleware(entryController.getEntryById)
 );
 
 router.get(
@@ -52,7 +53,7 @@ router.get(
   "/customer/:customerId/staff/:staffId",
   auth,
   validateObjectIdWithXArgMiddleware(["staffId"]),
-  asyncMiddleware(entryController.getCarsDoneByStaffPerId)
+  qboAsyncMiddleware(entryController.getCarsDoneByStaffPerId)
 );
 
 router.get(

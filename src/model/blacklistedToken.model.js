@@ -4,7 +4,7 @@ const blacklistedTokenSchema = new mongoose.Schema({
   token: {
     type: String,
     minlength: 4,
-    maxlength: 512,
+    maxlength: 4096,
     trim: true,
     required: true,
   },

@@ -18,9 +18,8 @@ const apiUrl = env.qboGetCustomerUrl;
 class Customer {
   async getCustomers(req, res) {
     const qbo = await initializeQbUtils();
-    const id = req.params.id;
     const { data: customers } = await getOrSetCache(
-      `customers?Id=${id}`,
+      `customers`,
       expires,
       customerService.fetchAllCustomers,
       [qbo]

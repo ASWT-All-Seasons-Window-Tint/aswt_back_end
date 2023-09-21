@@ -50,6 +50,7 @@ const constants = {
     yesterday: new Date(new Date().getTime() - 24 * 60 * 60 * 1000),
     twentyFourHoursInMs: 24 * 60 * 60 * 1000,
   },
+  EXPIRES: 1800,
 
   errorMessage: (data) => {
     return {
