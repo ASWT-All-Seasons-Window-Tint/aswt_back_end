@@ -59,10 +59,18 @@ class UserController {
 
   //get user from the database, using their email
   async gethUserById(req, res) {
-    const user = await userService.getUserWithoutPasswordById(req.params.id);
+    const { getUserWithoutPasswordById } = userService;
+    const role = req.user.role;
+    const isUserStaff = role === "staff";
+    const totalArgs = [role];
+
+    isUserStaff ? totalArgs.push(req.user._id) : totalArgs.push(req.params.id);
+
+    const user = await getUserWithoutPasswordById(...totalArgs);
+
     if (!user) return res.status(404).send(errorMessage("user"));
 
-    res.send(successMessage(MESSAGES.FETCHED, user));
+    return res.send(successMessage(MESSAGES.FETCHED, user));
   }
 
   async getStaffsByDepartments(req, res) {

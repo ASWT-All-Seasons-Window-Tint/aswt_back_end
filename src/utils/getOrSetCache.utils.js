@@ -2,7 +2,7 @@ const _ = require("lodash");
 const redis = require("redis");
 require("dotenv").config();
 
-const redisClient = redis.createClient({ url: process.env.redisUrl });
+const redisClient = redis.createClient();
 (async () => {
   redisClient.on("error", (err) => console.log("Redis Client Error", err));
 
@@ -17,45 +17,45 @@ async function getOrSetCache(
   const results = {};
 
   // Get tokens
-  try {
-    let data = await redisClient.get(collection);
 
-    if (data === "null") data = null;
+  let data = await redisClient.get(collection);
 
-    if (data) {
-      // Token found in cache
-      results.data = JSON.parse(data);
+  if (data === "null") data = null;
 
-      return results;
-    } else {
-      data = await getDBDataFunction(...query);
+  if (data) {
+    // Token found in cache
+    results.data = JSON.parse(data);
 
-      const seen = [];
+    return results;
+  } else {
+    data = await getDBDataFunction(...query);
 
-      redisClient.setEx(
-        collection,
-        expires,
-        JSON.stringify(data, replacer, seen)
-      );
-      function replacer(key, value) {
-        if (typeof value === "object" && value !== null) {
-          if (seen.indexOf(value) !== -1) {
-            return;
-          }
-          seen.push(value);
+    const seen = [];
+
+    redisClient.setEx(
+      collection,
+      expires,
+      JSON.stringify(data, replacer, seen)
+    );
+    function replacer(key, value) {
+      if (typeof value === "object" && value !== null) {
+        if (seen.indexOf(value) !== -1) {
+          return;
         }
-        return value;
+        seen.push(value);
       }
-
-      results.data = data;
-      return results;
+      return value;
     }
-  } catch (error) {
-    console.log(error.message);
-    // Log error
-    results.error = error;
+    results.error = null;
+    results.data = data;
     return results;
   }
+  // } catch (error) {
+  //   console.log(error.message);
+  //   // Log error
+  //   results.error = error;
+  //   return results;
+  // }
 }
 
 function updateCache(collection, expires, data) {

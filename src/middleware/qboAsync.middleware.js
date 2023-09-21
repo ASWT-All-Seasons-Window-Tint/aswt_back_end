@@ -19,9 +19,10 @@ module.exports = function (handler) {
             .json({ success: false, message: error.Fault.Error[0].Detail });
         }
 
-        if (type === "authentention") {
+        if (type === "authentication") {
           console.log(errorResponseLowercase.fault);
           // Requires Human intervention
+          return res.redirect("/api/v1/oauth2/");
           // To do
         }
 

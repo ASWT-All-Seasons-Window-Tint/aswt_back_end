@@ -1,5 +1,6 @@
 const validateMiddleware = require("../middleware/validate.middleware");
 const admin = require("../middleware/admin.middleware");
+const staffMiddleware = require("../middleware/staff.middleware");
 const auth = require("../middleware/auth.middleware");
 const bcrypt = require("bcrypt");
 const _ = require("lodash");
@@ -8,7 +9,6 @@ const router = express.Router();
 const asyncMiddleware = require("../middleware/async.middleware");
 const validateObjectId = require("../middleware/validateObjectId.middleware");
 const userController = require("../controllers/user.controllers");
-const blacklistedTokenController = require("../controllers/blacklistedToken.controllers");
 const managerMiddleware = require("../middleware/manager.middleware");
 const adminOrManagerMiddleware = require("../middleware/adminOrManager.middleware");
 const validateroleMiddleware = require("../middleware/validaterole.middleware");
@@ -45,11 +45,19 @@ router.get(
   adminOrManagerMiddleware,
   asyncMiddleware(userController.fetchAllUsers)
 );
+
 router.get(
   "/employees",
   auth,
   adminOrManagerMiddleware,
   asyncMiddleware(userController.getEmployees)
+);
+
+router.get(
+  "/staff",
+  auth,
+  staffMiddleware,
+  asyncMiddleware(userController.gethUserById)
 );
 
 router.get(
@@ -68,9 +76,9 @@ router.get(
 
 router.get(
   "/:id",
-  validateObjectId,
   auth,
-  admin,
+  validateObjectId,
+  adminOrManagerMiddleware,
   asyncMiddleware(userController.gethUserById)
 );
 

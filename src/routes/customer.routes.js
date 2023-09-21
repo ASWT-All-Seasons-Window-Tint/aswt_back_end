@@ -16,7 +16,7 @@ router.post(
   qboAsyncMiddleware(customerController.createCustomer)
 );
 
-router.get("/", qboAsyncMiddleware(customerController.getCustomers));
+router.get("/", auth, qboAsyncMiddleware(customerController.getCustomers));
 
 router.get(
   "/:id",

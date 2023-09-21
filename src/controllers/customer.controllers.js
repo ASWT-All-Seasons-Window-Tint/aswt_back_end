@@ -17,14 +17,14 @@ const apiUrl = env.qboGetCustomerUrl;
 
 class Customer {
   async getCustomers(req, res) {
+    const qbo = await initializeQbUtils();
     const id = req.params.id;
-    const { data: customers, error } = await getOrSetCache(
+    const { data: customers } = await getOrSetCache(
       `customers?Id=${id}`,
       expires,
-      getAllCustomers
+      customerService.fetchAllCustomers,
+      [qbo]
     );
-
-    if (error) return jsonResponse(res, 404, false, error);
 
     //// 'customers' now contains an array of customer records from QuickBooksc
     return res.send(successMessage(MESSAGES.FETCHED, customers));
