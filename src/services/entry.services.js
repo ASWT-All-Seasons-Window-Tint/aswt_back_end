@@ -339,7 +339,6 @@ class EntryService {
     if (entryId) {
       match._id = new mongoose.Types.ObjectId(entryId);
     }
-    console.log(customerId);
     if (customerId) {
       match.customerId = customerId;
     }

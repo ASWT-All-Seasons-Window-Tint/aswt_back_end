@@ -140,11 +140,9 @@ class UserService {
   }
 
   createUserWithAvatar = async (req, user, departments) => {
-    const modifiedPropertiesToPick = this.modifyCustomer(req);
+    if (req.body.role === "staff") propertiesToPick.push("staffDetails");
 
-    user = new User(
-      _.pick(req.body, [...modifiedPropertiesToPick, "password"])
-    );
+    user = new User(_.pick(req.body, [...propertiesToPick, "password"]));
 
     const avatarUrl = await generateRandomAvatar(user.email);
     user.avatarUrl = avatarUrl;
@@ -156,7 +154,6 @@ class UserService {
     user = await this.createUser(user);
 
     const token = user.generateAuthToken();
-
     if (user.role === "staff") propertiesToPick.push("staffDetails");
 
     user = _.pick(user, propertiesToPick);
@@ -173,20 +170,20 @@ class UserService {
     return user;
   }
 
-  modifyCustomer(req) {
-    const { role, password } = req.body;
+  // modifyCustomer(req) {
+  //   const { role, password } = req.body;
 
-    if (role.toLowerCase() == "customer") {
-      if (!password) req.body.password = process.env.customerPassword;
+  //   if (role.toLowerCase() == "customer") {
+  //     if (!password) req.body.password = process.env.customerPassword;
 
-      propertiesToPick.push("customerDetails");
-      const filteredFieldsArray = propertiesToPick.filter(
-        (field) => field !== "departments"
-      );
-      return filteredFieldsArray;
-    }
-    return propertiesToPick;
-  }
+  //     propertiesToPick.push("customerDetails");
+  //     const filteredFieldsArray = propertiesToPick.filter(
+  //       (field) => field !== "departments"
+  //     );
+  //     return filteredFieldsArray;
+  //   }
+  //   return propertiesToPick;
+  // }
   async softDeleteUser(id) {
     const user = await User.findById(id);
 

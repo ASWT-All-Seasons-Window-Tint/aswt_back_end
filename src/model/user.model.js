@@ -10,14 +10,14 @@ const userSchema = new mongoose.Schema(
   {
     firstName: {
       type: String,
-      minlength: 4,
+      minlength: 3,
       maxlength: 255,
       trim: true,
       required: true,
     },
     lastName: {
       type: String,
-      minlength: 4,
+      minlength: 3,
       maxlength: 255,
       trim: true,
       required: true,
@@ -136,7 +136,7 @@ function validate(user) {
       .insensitive(),
     departments: Joi.array().items(Joi.objectId().required()),
     staffDetails: Joi.object({
-      earningRate: Joi.number().required(),
+      earningRate: Joi.number().min(1).required(),
     }).when("role", {
       is: "staff",
       then: Joi.required(),
