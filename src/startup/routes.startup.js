@@ -28,13 +28,7 @@ module.exports = function (app) {
   app.use(cookieParser("brad"));
   app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({ extended: true }));
-  app.use(
-    session({
-      resave: false,
-      saveUninitialized: false,
-      secret: process.env.sessionPassword,
-    })
-  );
+  app.use(session());
 
   app.use("/api/v1/auth", auth);
   app.use("/api/v1/invoices", invoices);
