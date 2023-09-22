@@ -16,40 +16,36 @@ class DepartmentController {
 
   //Create a new department
   async sendInvoice(req, res) {
-    try {
-      const [entry] = await getEntries({ entryId: req.params.id });
+    const [entry] = await getEntries({ entryId: req.params.id });
+    if (!entry) return res.status(404).send(errorMessage("entry"));
 
-      const isInvoiceSent = entry.invoice.sent === true;
-      if (isInvoiceSent)
-        return jsonResponse(
-          res,
-          400,
-          false,
-          "This invoice has been sent already"
-        );
-
-      const { invoice: invoiceData } = convertEntryQbInvoiceReqBody(entry);
-      const qbo = await initializeQbUtils();
-      const { customerEmail } = entry;
-
-      const { invoice } = await invoiceService.createInvoiceOnQuickBooks(
-        qbo,
-        invoiceData,
-        customerEmail
+    const isInvoiceSent = entry.invoice.sent === true;
+    if (isInvoiceSent)
+      return jsonResponse(
+        res,
+        400,
+        false,
+        "This invoice has been sent already"
       );
 
-      entry.invoice.qbId = invoice.Id;
-      entry.invoice.sent = true;
+    const { invoice: invoiceData } = convertEntryQbInvoiceReqBody(entry);
+    const qbo = await initializeQbUtils();
+    const { customerEmail } = entry;
 
-      await updateEntryById(req.params.id, entry);
+    const { invoice } = await invoiceService.createInvoiceOnQuickBooks(
+      qbo,
+      invoiceData,
+      customerEmail
+    );
 
-      return res.send(
-        successMessage("Invoice successfully created and sent", invoice)
-      );
-    } catch (error) {
-      console.log(error);
-      return jsonResponse(res, 400, false, error.Fault.Error[0].Detail);
-    }
+    entry.invoice.qbId = invoice.Id;
+    entry.invoice.sent = true;
+
+    await updateEntryById(req.params.id, entry);
+
+    return res.send(
+      successMessage("Invoice successfully created and sent", invoice)
+    );
   }
 }
 
