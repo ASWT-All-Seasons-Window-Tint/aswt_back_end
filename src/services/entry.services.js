@@ -2,7 +2,8 @@ const mongoose = require("mongoose");
 const { Entry } = require("../model/entry.model");
 const serviceServices = require("./service.services");
 const { DATE } = require("../common/constants.common");
-const { filter } = require("lodash");
+const { getNewAccessToken } = require("../utils/getNewAccessToken.utils");
+const getWebhookDataUtils = require("../utils/getWebhookData.utils");
 
 class EntryService {
   //Create new entry
@@ -217,6 +218,9 @@ class EntryService {
           // Keep existing invoice projection
           invoice: {
             name: "$invoice.name",
+            sent: 1,
+            qbId: 1,
+            paymentDetails: 1,
             carDetails: {
               $map: {
                 input: "$invoice.carDetails",
@@ -662,6 +666,68 @@ class EntryService {
         $gte: DATE.yesterday,
       },
     });
+  }
+
+  updateEntryInvoicePaymentDetails = async (apiEndpoint) => {
+    const { customerId, currency, invoiceId, paymentDate, amount } =
+      await this.getEntryPayMentDetails(apiEndpoint);
+
+    const entry = await this.getEntryForCustomerWithQboId(
+      customerId,
+      invoiceId
+    );
+
+    if (!entry) return;
+
+    entry.invoice.paymentDetails.paymentDate = paymentDate;
+    entry.invoice.paymentDetails.currency = currency;
+
+    const totalAmountPaid = entry.invoice.paymentDetails.amountPaid + amount;
+    entry.invoice.paymentDetails.amountPaid = totalAmountPaid;
+
+    const amountDue = entry.invoice.totalPrice - totalAmountPaid;
+    entry.invoice.paymentDetails.amountDue = amountDue;
+
+    return await this.updateEntryById(entry._id, entry);
+  };
+
+  async getEntryForCustomerWithQboId(customerId, qbId) {
+    return Entry.findOne({
+      customerId,
+      "invoice.qbId": qbId,
+    });
+  }
+
+  getEntryPayMentDetails = async (apiEndpoint) => {
+    const payload = await getWebhookDataUtils(apiEndpoint, getNewAccessToken);
+
+    const customerId = payload.Payment.CustomerRef.value;
+    const amount = payload.Payment.TotalAmt;
+    const currency = payload.Payment.CurrencyRef.value;
+    const { invoiceId } = this.getQbIdAndNumber(payload);
+    const paymentDate = new Date(payload.time);
+
+    return { customerId, currency, invoiceId, paymentDate, amount };
+  };
+
+  getQbIdAndNumber(data) {
+    const invoiceLine = data.Payment.Line.find((item) => {
+      return (
+        item.LinkedTxn &&
+        item.LinkedTxn.length > 0 &&
+        item.LinkedTxn[0].TxnType === "Invoice"
+      );
+    });
+
+    if (invoiceLine) {
+      const invoiceId = invoiceLine.LinkedTxn[0].TxnId;
+      const invoiceNumber = invoiceLine.LineEx.any.find(
+        (item) =>
+          item.name === "{http://schema.intuit.com/finance/v3}NameValue" &&
+          item.value.Name === "txnReferenceNumber"
+      )?.value.Value;
+      return { invoiceId, invoiceNumber };
+    }
   }
 
   createNewEntry = async (customer) => {

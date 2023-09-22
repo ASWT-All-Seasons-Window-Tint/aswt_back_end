@@ -108,6 +108,24 @@ const entrySchema = new mongoose.Schema(
         type: Number,
         default: 0,
       },
+      qbId: String,
+      paymentDetails: {
+        paymentDate: {
+          default: null,
+          type: Date,
+        },
+        amountPaid: {
+          default: 0,
+          type: Number,
+        },
+        amountDue: {
+          type: Number,
+        },
+        currency: {
+          type: String,
+        },
+      },
+      sent: Boolean,
     },
   },
   { toJSON: { virtuals: true } },

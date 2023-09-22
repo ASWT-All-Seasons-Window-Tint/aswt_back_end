@@ -1,13 +1,8 @@
 require("dotenv").config();
 var express = require("express");
-var app = express();
 var crypto = require("crypto");
-const { getNewAccessToken } = require("../utils/getNewAccessToken.utils");
-const getWebhookDataUtils = require("../utils/getWebhookData.utils");
-const { updateCache } = require("../utils/getOrSetCache.utils");
-const { EXPIRES } = require("../common/constants.common");
 const customerService = require("../services/customer.service");
-const initializeQbUtils = require("../utils/initializeQb.utils");
+const entryServices = require("../services/entry.services");
 
 class WebhookControllers {
   async webhook(req, res) {
@@ -35,34 +30,28 @@ class WebhookControllers {
     if (signature === hash) {
       const { eventNotifications } = req.body;
 
-      console.log(
-        "EventNotification: ",
-        eventNotifications[0].dataChangeEvent.entities
-      );
-
       const qboUrl = process.env.qboUrl;
-      const realmId = eventNotifications[0].realmId;
-      const paymentId = eventNotifications[0].dataChangeEvent.entities[0].id;
-      const name =
-        eventNotifications[0].dataChangeEvent.entities[0].name.toLowerCase();
-
-      const apiEndpoint = `${qboUrl}/${realmId}/${name}/${paymentId}`;
-
-      const paymentData = await getWebhookDataUtils(
-        apiEndpoint,
-        getNewAccessToken
+      const realmId = process.env.realmId;
+      const eventNotification = eventNotifications.find(
+        (notification) => notification.realmId === realmId
       );
+      eventNotification.dataChangeEvent.entities.forEach(async (entity) => {
+        const entityNameToLowerCase = entity.name.toLowerCase();
+        const entityId = entity.id;
+        const entryOperation = entity.operation.toLowerCase();
 
-      if (name === "customer") {
-        const id = paymentData.Customer.Id;
-        const customer = paymentData.Customer;
-        const qbo = await initializeQbUtils();
-        const customers = await customerService.fetchAllCustomers(qbo);
-        //console.log(id);
+        const apiEndpoint = `${qboUrl}/${realmId}/${entityNameToLowerCase}/${entityId}`;
 
-        updateCache(`customers?Id=${id}`, EXPIRES, customer);
-        updateCache(`customers`, EXPIRES, customers);
-      }
+        if (entityNameToLowerCase === "customer") {
+          await customerService.updateCustomerOnRedisViaWebhook(apiEndpoint);
+        }
+
+        if (entityNameToLowerCase === "payment") {
+          return await entryServices.updateEntryInvoicePaymentDetails(
+            apiEndpoint
+          );
+        }
+      });
 
       //console.log(`Payment Data: ${paymentData}`);
       /**

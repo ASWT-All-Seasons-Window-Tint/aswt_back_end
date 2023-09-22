@@ -10,7 +10,6 @@ class InvoiceService {
             if (sendErr) {
               reject("Error sending invoice:", sendErr);
             } else {
-              console.log("Invoice sent successfully:");
               results.sendResponse = sendResponse;
             }
           });

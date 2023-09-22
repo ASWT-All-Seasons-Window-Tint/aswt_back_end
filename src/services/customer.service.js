@@ -2,7 +2,8 @@ require("dotenv").config();
 const QuickBooks = require("node-quickbooks");
 const axios = require("axios");
 const { getNewAccessToken } = require("../utils/getNewAccessToken.utils");
-const { getOrSetCache } = require("../utils/getOrSetCache.utils");
+const { getOrSetCache, updateCache } = require("../utils/getOrSetCache.utils");
+const getWebhookDataUtils = require("../utils/getWebhookData.utils");
 const initializeQbUtils = require("../utils/initializeQb.utils");
 
 const { env } = process;
@@ -82,6 +83,18 @@ class CustomerService {
       });
     });
   }
+
+  updateCustomerOnRedisViaWebhook = async (apiEndpoint) => {
+    const payload = await getWebhookDataUtils(apiEndpoint, getNewAccessToken);
+
+    const id = payload.Customer.Id;
+    const customer = payload.Customer;
+    const qbo = await initializeQbUtils();
+    const customers = await this.fetchAllCustomers(qbo);
+
+    updateCache(`customers?Id=${id}`, expires, customer);
+    updateCache(`customers`, expires, customers);
+  };
 
   async updateCustomerById(id, department) {
     return await Customer.findByIdAndUpdate(
