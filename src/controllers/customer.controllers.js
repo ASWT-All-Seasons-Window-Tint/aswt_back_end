@@ -1,19 +1,11 @@
 require("dotenv").config();
-const axios = require("axios");
-const QuickBooks = require("node-quickbooks");
-const { getNewAccessToken } = require("../utils/getNewAccessToken.utils");
 const { MESSAGES } = require("../common/constants.common");
 const { successMessage, jsonResponse } = require("../common/messages.common");
 const { getOrSetCache, updateCache } = require("../utils/getOrSetCache.utils");
-const { getLatestToken } = require("../services/token.services");
-const { getAllCustomers } = require("../services/customer.service");
 const customerService = require("../services/customer.service");
 const initializeQbUtils = require("../utils/initializeQb.utils");
 
-const { env } = process;
 const expires = 1800;
-
-const apiUrl = env.qboGetCustomerUrl;
 
 class Customer {
   async getCustomers(req, res) {
@@ -52,6 +44,7 @@ class Customer {
       PrimaryPhone: req.body.PrimaryPhone,
       BillAddr: req.body.BillAddr,
       Notes: req.body.Notes,
+      CompanyName: req.body.CompanyName,
     };
 
     const createdCustomer = await customerService.createQuickBooksCustomer(
