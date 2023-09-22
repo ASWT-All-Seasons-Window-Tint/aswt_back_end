@@ -1,11 +1,7 @@
 const bcrypt = require("bcrypt");
 const _ = require("lodash");
 const userService = require("../services/user.services");
-const {
-  loginSuccess,
-  loginError,
-  errorMessage,
-} = require("../common/messages.common");
+const { loginSuccess, loginError } = require("../common/messages.common");
 const propertiesToPick = require("../common/propertiesToPick.common");
 
 class AuthController {
@@ -32,6 +28,21 @@ class AuthController {
         description,
         coordinates,
       };
+
+      // Create a session for the authenticated user
+      if (!req.session.users) req.session.users = [];
+
+      const userSession = _.pick(user, propertiesToPick);
+      userSession.currentSignInLocation = newSignInLocation;
+
+      const userIndex = req.session.users.findIndex(
+        (sessionUser) => sessionUser._id.toString() == user._id.toString()
+      );
+
+      const userIsLoggedIn = req.session.users[userIndex];
+
+      if (userIsLoggedIn) req.session.users[userIndex] = userSession;
+      else req.session.users.push(userSession);
 
       await userService.addSignInLocation(email, newSignInLocation);
     }
