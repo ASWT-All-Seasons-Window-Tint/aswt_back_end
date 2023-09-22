@@ -6,11 +6,11 @@ const manager = require("../middleware/manager.middleware");
 const express = require("express");
 const router = express.Router();
 const asyncMiddleware = require("../middleware/async.middleware");
+const qboAsyncMiddleware = require("../middleware/qboAsync.middleware");
 const validateObjectId = require("../middleware/validateObjectId.middleware");
 const serviceController = require("../controllers/service.controllers");
 const invoiceController = require("../controllers/invoice.controllers");
 const {
-  validate,
   validatePatch,
   validateAddDealershipPrice,
   validateWithObj,
@@ -60,7 +60,7 @@ router.put(
     adminOrManager,
     validateMiddleware(validateAddDealershipPrice),
   ],
-  asyncMiddleware(serviceController.addDealershipPrice)
+  qboAsyncMiddleware(serviceController.addDealershipPrice)
 );
 router.put(
   "/update-dealership-price/service/:serviceId/customer/:customerId",

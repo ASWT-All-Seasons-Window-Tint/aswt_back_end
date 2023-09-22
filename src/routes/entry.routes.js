@@ -89,7 +89,7 @@ router.put(
 router.put(
   "/add-car/:id",
   [auth, staffMiddleware, validateMiddleware(validateAddInvoicePatch)],
-  asyncMiddleware(entryController.addInvoice)
+  qboAsyncMiddleware(entryController.addInvoice)
 );
 
 router.put(
