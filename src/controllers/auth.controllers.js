@@ -29,7 +29,6 @@ class AuthController {
         coordinates,
       };
 
-      console.log(req.session);
       // Create a session for the authenticated user
       if (!req.session.users) req.session.users = [];
 

@@ -17,7 +17,7 @@ const logout = require("../routes/logout.routes");
 const path = require("path");
 const oauth2 = require("../routes/oauth2.routes");
 const webhook = require("../routes/webhook.routes");
-const session = require("express-session");
+const session = require("./session.startup");
 
 module.exports = function (app) {
   app.use(cors());

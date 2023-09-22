@@ -125,7 +125,10 @@ const entrySchema = new mongoose.Schema(
           type: String,
         },
       },
-      sent: Boolean,
+      sent: {
+        type: Boolean,
+        default: null,
+      },
     },
   },
   { toJSON: { virtuals: true } },
@@ -169,7 +172,7 @@ const Entry = mongoose.model("Entry", entrySchema);
 
 function validate(entry) {
   const schema = Joi.object({
-    customerId: Joi.objectId().required(),
+    customerId: Joi.string().required(),
     numberOfVehicles: Joi.number().min(1).max(100000).required(),
     vehiclesLeft: Joi.number(),
   });

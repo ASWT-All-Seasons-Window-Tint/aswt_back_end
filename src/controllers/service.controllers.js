@@ -1,6 +1,6 @@
 const { Service } = require("../model/service.model");
 const serviceService = require("../services/service.services");
-const userService = require("../services/user.services");
+const customerService = require("../services/customer.service");
 const { MESSAGES } = require("../common/constants.common");
 const initializeQuickBooks = require("../utils/initializeQb.utils");
 const { getOrSetCache, updateCache } = require("../utils/getOrSetCache.utils");
@@ -145,11 +145,14 @@ class ServiceController {
   async addDealershipPrice(req, res) {
     const { customerId, price } = req.body;
 
-    const [service, [customer], customerDealership] = await Promise.all([
+    const [service, customerDealership] = await Promise.all([
       serviceService.getServiceById(req.params.id),
-      userService.getUserByRoleAndId(customerId, "customer"),
       serviceService.getServiceByCustomer(customerId, req.params.id),
     ]);
+
+    const { data: customer, error } =
+      await customerService.getOrSetCustomerOnCache(customerId);
+
     if (!service) return res.status(404).send(errorMessage("service"));
     if (!customer) return res.status(404).send(errorMessage("customer"));
     if (customerDealership)
