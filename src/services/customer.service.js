@@ -74,7 +74,7 @@ class CustomerService {
   // Function to fetch all customers
   async fetchAllCustomers(qbo) {
     return new Promise((resolve, reject) => {
-      qbo.findCustomers((err, customers) => {
+      qbo.findCustomers({ fetchAll: true }, (err, customers) => {
         if (err) {
           reject(err);
         } else {
