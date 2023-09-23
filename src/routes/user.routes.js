@@ -47,6 +47,13 @@ router.get(
 );
 
 router.get(
+  "/logged-in-users",
+  auth,
+  adminOrManagerMiddleware,
+  asyncMiddleware(userController.getLoggedInStaffs)
+);
+
+router.get(
   "/employees",
   auth,
   adminOrManagerMiddleware,

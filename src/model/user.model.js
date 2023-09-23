@@ -84,6 +84,21 @@ const userSchema = new mongoose.Schema(
         type: Number,
         default: 0,
       },
+      isLoggedIn: Boolean,
+      currentSignInLocation: {
+        timestamp: {
+          type: Date,
+        },
+        description: {
+          type: String,
+          minlength: 3,
+          maxlength: 255,
+        },
+        coordinates: {
+          latitude: { type: Number },
+          longitude: { type: Number },
+        },
+      },
     },
     isDeleted: {
       type: Boolean,

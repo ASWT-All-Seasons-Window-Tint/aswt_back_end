@@ -108,6 +108,35 @@ class UserService {
     );
   }
 
+  async signInStaff(email, currentSignInLocation) {
+    return User.findOneAndUpdate(
+      { email },
+      {
+        $set: {
+          "staffDetails.currentSignInLocation": currentSignInLocation,
+          "staffDetails.isLoggedIn": true,
+        },
+      }
+    );
+  }
+
+  async signOutStaff(email) {
+    return User.findOneAndUpdate(
+      { email },
+      {
+        $set: {
+          "staffDetails.isLoggedIn": false,
+        },
+      }
+    );
+  }
+
+  async getLoggedInStaffs() {
+    return User.find({ "staffDetails.isLoggedIn": true, role: "staff" }).select(
+      "-password -signInLocations"
+    );
+  }
+
   updateStaffTotalEarnings = async (staff) => {
     const results = {};
 

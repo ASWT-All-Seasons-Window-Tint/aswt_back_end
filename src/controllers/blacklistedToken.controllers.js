@@ -2,6 +2,7 @@ const { BlacklistedToken } = require("../model/blacklistedToken.model");
 const blacklistedTokenService = require("../services/blacklistedToken.services");
 const { logoutSuccess } = require("../common/messages.common");
 const { MESSAGES } = require("../common/constants.common");
+const userServices = require("../services/user.services");
 
 class BlacklistedTokenController {
   async getStatus(req, res) {
@@ -11,25 +12,17 @@ class BlacklistedTokenController {
   //Create a new blacklistedToken
   async addTokenToBlacklist(req, res) {
     const token = req.header("x-auth-token");
-
-    if (req.user.role === "staff") {
-      if (req.session.users) {
-        const indexToRemove = req.session.users.findIndex(
-          (user) => user._id.toString() === req.user._id.toString()
-        );
-
-        // Check if the user was found
-        if (indexToRemove !== -1) req.session.users.splice(indexToRemove, 1);
-      }
-    }
+    const email = req.user.email;
+    console.log(email);
 
     let blacklistedToken = new BlacklistedToken({ token });
 
-    blacklistedToken = await blacklistedTokenService.createBlacklistedToken(
-      blacklistedToken
-    );
+    await Promise.all([
+      blacklistedTokenService.createBlacklistedToken(blacklistedToken),
+      userServices.signOutStaff(email),
+    ]);
 
-    res.send(logoutSuccess());
+    return res.send(logoutSuccess());
   }
 }
 
