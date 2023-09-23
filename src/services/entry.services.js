@@ -665,6 +665,7 @@ class EntryService {
       entryDate: {
         $gte: DATE.yesterday,
       },
+      isActive: true,
     });
   }
 
@@ -740,6 +741,7 @@ class EntryService {
       customerName,
       customerEmail,
       entryDate: new Date(),
+      isActive: true,
     });
 
     const invoiceNumber = await Entry.getNextInvoiceNumber();

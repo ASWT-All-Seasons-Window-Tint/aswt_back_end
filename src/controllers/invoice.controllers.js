@@ -39,6 +39,8 @@ class DepartmentController {
     );
 
     entry.invoice.qbId = invoice.Id;
+    entry.isActive = false;
+    entry.invoice.invoiceNumber = invoice.DocNumber;
     entry.invoice.sent = true;
 
     await updateEntryById(req.params.id, entry);

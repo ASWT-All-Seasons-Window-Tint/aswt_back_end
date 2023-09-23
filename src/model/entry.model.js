@@ -109,6 +109,7 @@ const entrySchema = new mongoose.Schema(
         default: 0,
       },
       qbId: String,
+      invoiceNumber: String,
       paymentDetails: {
         paymentDate: {
           default: null,
