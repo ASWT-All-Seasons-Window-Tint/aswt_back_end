@@ -50,7 +50,7 @@ const entrySchema = new mongoose.Schema(
           },
           model: {
             type: String,
-            minlength: 3,
+            minlength: 1,
             maxlength: 255,
             required: true,
           },
@@ -195,7 +195,7 @@ function validateModifyCarDetails(entry) {
     colour: Joi.string().min(3),
     serviceIds: Joi.array().items(Joi.objectId().required()),
     make: Joi.string().min(3).max(255),
-    model: Joi.string().min(3).max(255),
+    model: Joi.string().min(1).max(255),
     note: Joi.string().min(5).max(255),
     category: Joi.string().valid("suv", "sedan", "truck").insensitive(),
   });
@@ -211,7 +211,7 @@ function validateAddInvoicePatch(entry) {
       colour: Joi.string().min(3),
       serviceIds: Joi.array().items(Joi.objectId().required()),
       make: Joi.string().min(3).max(255).required(),
-      model: Joi.string().min(3).max(255).required(),
+      model: Joi.string().min(1).max(255).required(),
       note: Joi.string().min(5).max(255),
       category: Joi.string()
         .valid("suv", "sedan", "truck")
