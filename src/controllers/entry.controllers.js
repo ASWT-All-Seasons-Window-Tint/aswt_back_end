@@ -196,19 +196,19 @@ class EntryController {
       ...filterArguments
     );
 
+    if (entryId) {
+      staffEntries = staffEntries[0];
+      if (staffEntries) staffEntries.id = staffEntries._id;
+    }
+
     if (entryId && staffId && customerId) {
       if (!staffEntries)
         return jsonResponse(
           res,
           404,
           false,
-          "We job done by the staff for customer on this entry"
+          "We are unable to locate any job completed by the staff for the customer in this entry."
         );
-    }
-
-    if (entryId) {
-      staffEntries = staffEntries[0];
-      if (staffEntries) staffEntries.id = staffEntries._id;
     }
 
     if (!staffEntries) {
@@ -349,6 +349,14 @@ class EntryController {
     const { carWithVin, carIndex } = entryService.getCarByVin({ entry, vin });
     if (!carWithVin || carIndex < 0)
       return notFoundResponse(res, "Car with VIN number not found in invoice.");
+
+    if (!entry.isActive)
+      return jsonResponse(
+        res,
+        401,
+        false,
+        "Altering the price of a sent invoice is not allowed."
+      );
 
     if (!entryService.carWasAddedRecently(carWithVin)) {
       return res.status(401).send({
