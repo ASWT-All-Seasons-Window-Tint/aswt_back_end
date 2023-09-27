@@ -1,10 +1,11 @@
+const _ = require("lodash");
 const { Entry } = require("../model/entry.model");
 const entryService = require("../services/entry.services");
 const userService = require("../services/user.services");
 const customerService = require("../services/customer.service");
 const serviceService = require("../services/service.services");
 const { MESSAGES, DATE } = require("../common/constants.common");
-const _ = require("lodash");
+const { getJobCounts, getFilterArguments } = require("../utils/entry.utils");
 const {
   errorMessage,
   successMessage,
@@ -139,11 +140,16 @@ class EntryController {
     };
 
     let entries = await getEntries(getEntriesArgument);
+    let customer = undefined;
 
-    const { data: customer, error } =
-      await customerService.getOrSetCustomerOnCache(customerId);
-    if (error)
-      return jsonResponse(res, 404, false, error.Fault.Error[0].Detail);
+    if (customerId) {
+      const { error, data } = await customerService.getOrSetCustomerOnCache(
+        customerId
+      );
+      if (error)
+        return jsonResponse(res, 404, false, error.Fault.Error[0].Detail);
+      customer = data;
+    }
 
     if (entryId) entries = entries[0];
     if (!entries) return res.status(404).send(errorMessage("entry"));
@@ -187,19 +193,33 @@ class EntryController {
     if (entryId && !entry) return res.status(404).send(errorMessage("entry"));
     if (!staff) return res.status(404).send(errorMessage("staff"));
 
-    const getCarArgs = { ...(entryId ? { entryId } : { customerId }), staffId };
+    const filterArguments = getFilterArguments(req);
 
-    let staffEntries = await entryService.getCarsDoneByStaff(getCarArgs);
+    let staffEntries = await entryService.getCarsDoneByStaff(
+      ...filterArguments
+    );
+
+    if (entryId && staffId && customerId) {
+      if (!staffEntries)
+        return jsonResponse(
+          res,
+          404,
+          false,
+          "We job done by the staff for customer on this entry"
+        );
+    }
 
     if (entryId) {
       staffEntries = staffEntries[0];
       if (staffEntries) staffEntries.id = staffEntries._id;
     }
+
     if (!staffEntries) {
       staffEntries = _.cloneDeep(entry);
       staffEntries.invoice.carDetails = [];
       delete staffEntries.invoice.totalPrice;
     }
+
     if (customerId && Array.isArray(staffEntries)) {
       if (staffEntries.length >= 1)
         staffEntries.map((entry) => (entry.id = entry._id));
@@ -220,11 +240,12 @@ class EntryController {
   }
 
   async getCarsDoneByStaff(req, res) {
-    const { staffId } = req.params;
-    const role = "staff" || "customer";
-    const { getStaffEntriesAndAllEntries } = entryService;
+    const { monthName, year, date } = req.params;
+    const filterArguments = getFilterArguments(req);
 
-    let results = await getStaffEntriesAndAllEntries(staffId, req, role);
+    let results = await entryService.getStaffEntriesAndAllEntries(
+      filterArguments
+    );
     let { entries, staffEntries } = results;
 
     if (staffEntries && staffEntries.length < 1) {
@@ -235,6 +256,19 @@ class EntryController {
           staffEntry.invoice.carDetails = [];
         }
       });
+    }
+
+    if (date || year || monthName) {
+      let result;
+
+      if (date) {
+        result = getJobCounts(staffEntries).dayCounts;
+      } else if (year && monthName) {
+        result = getJobCounts(staffEntries).dayCounts;
+      } else if (year) {
+        result = getJobCounts(staffEntries).monthCounts;
+      }
+      return res.send(successMessage(MESSAGES.FETCHED, result));
     }
 
     staffEntries.map((entry) => (entry.id = entry._id));

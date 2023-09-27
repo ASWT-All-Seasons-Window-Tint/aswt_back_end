@@ -43,10 +43,10 @@ router.get(
 );
 
 router.get(
-  "/entry/:entryId/staff/:staffId",
+  "/entry/:entryId/customer/:customerId/staff/:staffId",
   auth,
-  validateObjectIdWithXArgMiddleware(["entryId", "staffId"]),
-  asyncMiddleware(entryController.getCarsDoneByStaffPerId)
+  validateObjectIdWithXArgMiddleware(["staffId"]),
+  qboAsyncMiddleware(entryController.getCarsDoneByStaffPerId)
 );
 
 router.get(
@@ -54,6 +54,33 @@ router.get(
   auth,
   validateObjectIdWithXArgMiddleware(["staffId"]),
   qboAsyncMiddleware(entryController.getCarsDoneByStaffPerId)
+);
+
+router.get(
+  "/entry/:entryId/staff/:staffId",
+  auth,
+  validateObjectIdWithXArgMiddleware(["entryId", "staffId"]),
+  asyncMiddleware(entryController.getCarsDoneByStaffPerId)
+);
+
+router.get(
+  "/staff/:staffId/date/:date",
+  auth,
+  validateObjectIdWithXArgMiddleware(["staffId"]),
+  asyncMiddleware(entryController.getCarsDoneByStaff)
+);
+router.get(
+  "/staff/:staffId/year/:year",
+  auth,
+  validateObjectIdWithXArgMiddleware(["staffId"]),
+  asyncMiddleware(entryController.getCarsDoneByStaff)
+);
+
+router.get(
+  "/staff/:staffId/month/:monthName/:year",
+  auth,
+  validateObjectIdWithXArgMiddleware(["staffId"]),
+  asyncMiddleware(entryController.getCarsDoneByStaff)
 );
 
 router.get(

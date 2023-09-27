@@ -4,6 +4,8 @@ const serviceServices = require("./service.services");
 const { DATE } = require("../common/constants.common");
 const { getNewAccessToken } = require("../utils/getNewAccessToken.utils");
 const getWebhookDataUtils = require("../utils/getWebhookData.utils");
+const { pipeline, getDateRange } = require("../utils/entry.utils");
+const { validMonthNames } = require("../common/constants.common");
 
 class EntryService {
   //Create new entry
@@ -166,158 +168,10 @@ class EntryService {
     ]);
   }
 
-  getEntries = async (
-    filter = { entryId: undefined, customerId: undefined }
-  ) => {
-    const match = {};
-    if (filter.entryId) {
-      match._id = new mongoose.Types.ObjectId(filter.entryId);
-    }
-    if (filter.customerId) {
-      match.customerId = filter.customerId;
-    }
+  getEntries = async (args = { entryId: undefined, customerId: undefined }) => {
+    const { entryId, customerId } = args;
 
-    return await Entry.aggregate([
-      {
-        $match: match,
-      },
-      {
-        $lookup: {
-          from: "users",
-          localField: "invoice.carDetails.staffId",
-          foreignField: "_id",
-          as: "staff",
-        },
-      },
-
-      {
-        $lookup: {
-          from: "services",
-          localField: "invoice.carDetails.serviceIds",
-          foreignField: "_id",
-          as: "services",
-        },
-      },
-
-      {
-        $project: {
-          customerName: 1,
-          customerEmail: 1,
-          // {
-          //   $concat: [
-          //     { $arrayElemAt: ["$customer.firstName", 0] },
-          //     " ",
-          //     { $arrayElemAt: ["$customer.lastName", 0] },
-          //   ],
-          // },
-          numberOfVehicles: 1,
-          vehiclesLeft: 1,
-          entryDate: 1,
-          customerId: 1,
-          numberOfCarsAdded: 1,
-          // Keep existing invoice projection
-          invoice: {
-            name: "$invoice.name",
-            sent: 1,
-            qbId: 1,
-            paymentDetails: 1,
-            carDetails: {
-              $map: {
-                input: "$invoice.carDetails",
-                as: "car",
-                in: {
-                  $mergeObjects: [
-                    {
-                      $arrayToObject: {
-                        $filter: {
-                          input: { $objectToArray: "$$car" },
-                          as: "item",
-                          cond: { $ne: ["$$item.k", "serviceId"] },
-                        },
-                      },
-                    },
-                    {
-                      serviceNames: {
-                        $map: {
-                          input: "$$car.serviceIds",
-                          as: "serviceId",
-                          in: {
-                            $first: {
-                              $filter: {
-                                input: {
-                                  $map: {
-                                    input: "$services",
-                                    as: "service",
-                                    in: {
-                                      $cond: [
-                                        {
-                                          $eq: [
-                                            "$$service._id",
-                                            { $toObjectId: "$$serviceId" },
-                                          ],
-                                        },
-                                        "$$service.name",
-                                        false,
-                                      ],
-                                    },
-                                  },
-                                },
-                                as: "item",
-                                cond: { $ne: ["$$item", false] },
-                              },
-                            },
-                          },
-                        },
-                      },
-                    },
-                    {
-                      staffName: {
-                        $first: {
-                          $filter: {
-                            input: {
-                              $map: {
-                                input: "$staff",
-                                as: "staff",
-                                in: {
-                                  $cond: [
-                                    {
-                                      $eq: [
-                                        "$$staff._id",
-                                        { $toObjectId: "$$car.staffId" },
-                                      ],
-                                    },
-                                    {
-                                      $concat: [
-                                        "$$staff.firstName",
-                                        " ",
-                                        "$$staff.lastName",
-                                      ],
-                                    },
-                                    null,
-                                  ],
-                                },
-                              },
-                            },
-                            as: "item",
-                            cond: {
-                              $ne: ["$$item", null],
-                            },
-                          },
-                        },
-                      },
-                    },
-                    { serviceId: "$$car.serviceId" },
-                  ],
-                },
-              },
-            },
-            totalPrice: {
-              $sum: "$invoice.carDetails.price",
-            },
-          },
-        },
-      },
-    ]);
+    return await Entry.aggregate(pipeline({ entryId, customerId }));
   };
 
   async validateEntryIds(entryIds) {
@@ -338,326 +192,29 @@ class EntryService {
     return await Entry.findOne({ name: caseInsensitiveName });
   }
 
-  getCarsDoneByStaff = async ({ entryId, staffId, customerId }) => {
-    const match = {};
-    if (entryId) {
-      match._id = new mongoose.Types.ObjectId(entryId);
-    }
-    if (customerId) {
-      match.customerId = customerId;
-    }
-
-    const pipeline = [
-      {
-        $match: match,
-      },
-      {
-        $project: {
-          customerId: 1,
-          customerName: 1,
-          numberOfVehicles: 1,
-          numberOfCarsAdded: 1,
-          vehiclesLeft: 1,
-          entryDate: 1,
-          invoice: 1,
-          filteredDetails: {
-            $filter: {
-              input: "$invoice.carDetails",
-              as: "car",
-              cond: {
-                $eq: ["$$car.staffId", new mongoose.Types.ObjectId(staffId)],
-              },
-            },
-          },
-        },
-      },
-
-      {
-        $lookup: {
-          from: "services",
-          localField: "filteredDetails.serviceIds",
-          foreignField: "_id",
-          as: "services",
-        },
-      },
-
-      {
-        $project: {
-          customerName: 1,
-          numberOfVehicles: 1,
-          numberOfCarsAdded: 1,
-          vehiclesLeft: 1,
-          entryDate: 1,
-          customerId: 1,
-          invoice: {
-            name: 1,
-            carDetails: {
-              $map: {
-                input: "$filteredDetails",
-                as: "car",
-                in: {
-                  vin: "$$car.vin",
-                  year: "$$car.year",
-                  make: "$$car.make",
-                  entryDate: "$$car.entryDate",
-                  model: "$$car.model",
-                  note: "$$car.note",
-                  colour: "$$car.colour",
-                  staffId: "$$car.staffId",
-                  serviceIds: "$$car.serviceIds",
-                  serviceNames: {
-                    $map: {
-                      input: "$$car.serviceIds",
-                      as: "serviceId",
-                      in: {
-                        $first: {
-                          $filter: {
-                            input: {
-                              $map: {
-                                input: "$services",
-                                as: "service",
-                                in: {
-                                  $cond: [
-                                    {
-                                      $eq: [
-                                        "$$service._id",
-                                        { $toObjectId: "$$serviceId" },
-                                      ],
-                                    },
-                                    "$$service.name",
-                                    false,
-                                  ],
-                                },
-                              },
-                            },
-                            as: "item",
-                            cond: { $ne: ["$$item", false] },
-                          },
-                        },
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-      {
-        $match: {
-          "invoice.carDetails": { $ne: [] },
-        },
-      },
-    ];
-
-    return Entry.aggregate(pipeline);
+  getCarsDoneByStaff = async (
+    entryId,
+    staffId,
+    customerId,
+    date,
+    startDate,
+    endDate
+  ) => {
+    return Entry.aggregate(
+      pipeline({ entryId, staffId, customerId, date, startDate, endDate })
+    );
   };
-  // async getCarsDoneByStaffPerEntryId(entryId, staffId) {
-  //   return await Entry.aggregate([
-  //     {
-  //       $match: {
-  //         _id: new mongoose.Types.ObjectId(entryId),
-  //       },
-  //     },
-  //     {
-  //       $project: {
-  //         customerId: 1,
-  //         numberOfVehicles: 1,
-  //         vehiclesLeft: 1,
-  //         filteredDetails: {
-  //           $filter: {
-  //             input: "$invoice.carDetails",
-  //             as: "car",
-  //             cond: {
-  //               $eq: ["$$car.staffId", new mongoose.Types.ObjectId(staffId)],
-  //             },
-  //           },
-  //         },
-  //       },
-  //     },
 
-  //     {
-  //       $lookup: {
-  //         from: "users",
-  //         localField: "customerId",
-  //         foreignField: "_id",
-  //         as: "customer",
-  //       },
-  //     },
+  getStaffEntriesAndAllEntries = async (filterArguments) => {
+    const results = {};
 
-  //     {
-  //       $project: {
-  //         customerName: {
-  //           $concat: [
-  //             { $arrayElemAt: ["$customer.firstName", 0] },
-  //             " ",
-  //             { $arrayElemAt: ["$customer.lastName", 0] },
-  //           ],
-  //         },
-  //         numberOfVehicles: 1,
-  //         vehiclesLeft: 1,
-  //         invoice: {
-  //           name: 1,
-  //           carDetails: {
-  //             $map: {
-  //               input: "$filteredDetails",
-  //               as: "car",
-  //               in: {
-  //                 vin: "$$car.vin",
-  //                 year: "$$car.year",
-  //                 make: "$$car.make",
-  //                 colour: "$$car.colour",
-  //                 staffId: "$$car.staffId",
-  //               },
-  //             },
-  //           },
-  //         },
-  //       },
-  //     },
-  //   ]);
-  // }
-
-  async getAllEntries() {
-    return await Entry.aggregate([
-      {
-        $lookup: {
-          from: "users",
-          localField: "customerId",
-          foreignField: "_id",
-          as: "customer",
-        },
-      },
-      {
-        $lookup: {
-          from: "users",
-          localField: "invoice.carDetails.staffId",
-          foreignField: "_id",
-          as: "staff",
-        },
-      },
-
-      {
-        $lookup: {
-          from: "services",
-          localField: "invoice.carDetails.serviceIds",
-          foreignField: "_id",
-          as: "services",
-        },
-      },
-
-      {
-        $project: {
-          customerName: {
-            $concat: [
-              { $arrayElemAt: ["$customer.firstName", 0] },
-              " ",
-              { $arrayElemAt: ["$customer.lastName", 0] },
-            ],
-          },
-          numberOfVehicles: 1,
-          vehiclesLeft: 1,
-          entryDate: 1,
-
-          // Keep existing invoice projection
-          invoice: {
-            name: "$invoice.name",
-            carDetails: {
-              $map: {
-                input: "$invoice.carDetails",
-                as: "car",
-                in: {
-                  $mergeObjects: [
-                    {
-                      $arrayToObject: {
-                        $filter: {
-                          input: { $objectToArray: "$$car" },
-                          as: "item",
-                          cond: { $ne: ["$$item.k", "serviceId"] },
-                        },
-                      },
-                    },
-                    {
-                      serviceNames: {
-                        $map: {
-                          input: "$$car.serviceIds",
-                          as: "serviceId",
-                          in: {
-                            $first: {
-                              $filter: {
-                                input: {
-                                  $map: {
-                                    input: "$services",
-                                    as: "service",
-                                    in: {
-                                      $cond: [
-                                        {
-                                          $eq: [
-                                            "$$service._id",
-                                            { $toObjectId: "$$serviceId" },
-                                          ],
-                                        },
-                                        "$$service.name",
-                                        false,
-                                      ],
-                                    },
-                                  },
-                                },
-                                as: "item",
-                                cond: { $ne: ["$$item", false] },
-                              },
-                            },
-                          },
-                        },
-                      },
-                    },
-                    {
-                      staffName: {
-                        $first: {
-                          $filter: {
-                            input: {
-                              $map: {
-                                input: "$staff",
-                                as: "staff",
-                                in: {
-                                  $cond: [
-                                    {
-                                      $eq: [
-                                        "$$staff._id",
-                                        { $toObjectId: "$$car.staffId" },
-                                      ],
-                                    },
-                                    {
-                                      $concat: [
-                                        "$$staff.firstName",
-                                        " ",
-                                        "$$staff.lastName",
-                                      ],
-                                    },
-                                    null,
-                                  ],
-                                },
-                              },
-                            },
-                            as: "item",
-                            cond: {
-                              $ne: ["$$item", null],
-                            },
-                          },
-                        },
-                      },
-                    },
-                  ],
-                },
-              },
-            },
-            totalPrice: {
-              $sum: "$invoice.carDetails.price",
-            },
-          },
-        },
-      },
+    [results.staffEntries, results.entries] = await Promise.all([
+      this.getCarsDoneByStaff(...filterArguments),
+      this.getEntries(),
     ]);
-  }
+
+    return results;
+  };
 
   async getEntryForCustomerLast24Hours(customerId) {
     return Entry.findOne({
@@ -958,17 +515,6 @@ class EntryService {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
     return diffDays <= 1;
-  };
-
-  getStaffEntriesAndAllEntries = async (staffId, req, role) => {
-    const results = {};
-
-    [results.staffEntries, results.entries] = await Promise.all([
-      this.getCarsDoneByStaff({ staffId }),
-      this.getEntries(),
-    ]);
-
-    return results;
   };
 
   async deleteEntry(id) {
