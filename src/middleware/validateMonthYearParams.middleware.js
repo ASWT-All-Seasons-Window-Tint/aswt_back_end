@@ -17,7 +17,6 @@ module.exports = function (req, res, next) {
     "Year and month cannot be beyond the current year and month.";
 
   const behindYear = "Year cannot be before 2023";
-  console.log(req.params);
 
   function isNumber(value) {
     return typeof value === "number" || !isNaN(Number(value));

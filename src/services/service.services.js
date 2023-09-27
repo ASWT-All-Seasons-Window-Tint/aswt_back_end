@@ -120,8 +120,6 @@ class ServiceService {
     customer.price = newPrice;
     results.updatedService = service;
 
-    console.log(service);
-
     return results;
   }
 

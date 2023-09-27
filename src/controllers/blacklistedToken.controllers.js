@@ -13,7 +13,6 @@ class BlacklistedTokenController {
   async addTokenToBlacklist(req, res) {
     const token = req.header("x-auth-token");
     const email = req.user.email;
-    console.log(email);
 
     let blacklistedToken = new BlacklistedToken({ token });
 

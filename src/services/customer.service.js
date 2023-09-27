@@ -6,30 +6,11 @@ const { getOrSetCache, updateCache } = require("../utils/getOrSetCache.utils");
 const getWebhookDataUtils = require("../utils/getWebhookData.utils");
 const initializeQbUtils = require("../utils/initializeQb.utils");
 
-const { env } = process;
-const apiUrl =
-  "https://sandbox-quickbooks.api.intuit.com/v3/company/4620816365328527460/query?query=SELECT * FROM Customer";
-
 const expires = 1800;
 class CustomerService {
   //Create new department
   async createCustomer(department) {
     return await department.save();
-  }
-
-  async getAllCustomers() {
-    const accessToken = await getNewAccessToken();
-
-    const config = {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
-    };
-
-    const { data } = await axios.get(apiUrl, config);
-
-    return data.QueryResponse.Customer;
   }
 
   async getCustomerById(qbo, customerId) {

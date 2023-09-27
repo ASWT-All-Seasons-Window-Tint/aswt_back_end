@@ -141,7 +141,7 @@ class UserController {
         if (error) {
           return "Error occurred:", error;
         } else {
-          console.log("Email sent successfully:", info.response);
+          console.log("Email sent successfully");
         }
       }
     );

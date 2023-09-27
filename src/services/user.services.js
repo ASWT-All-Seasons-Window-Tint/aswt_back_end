@@ -140,28 +140,21 @@ class UserService {
   updateStaffTotalEarnings = async (staff) => {
     const results = {};
 
-    try {
-      const staffFromDb = await this.getUserById(staff._id);
-      staff = staffFromDb;
+    const staffFromDb = await this.getUserById(staff._id);
+    staff = staffFromDb;
 
-      const staffEarningRate = staff.staffDetails.earningRate;
-      const previousStaffTotalEarning = staff.staffDetails.totalEarning;
-      const updatedTotalStaffEarning =
-        previousStaffTotalEarning + staffEarningRate;
+    const staffEarningRate = staff.staffDetails.earningRate;
+    const previousStaffTotalEarning = staff.staffDetails.totalEarning;
+    const updatedTotalStaffEarning =
+      previousStaffTotalEarning + staffEarningRate;
 
-      staff.staffDetails.totalEarning = updatedTotalStaffEarning;
+    staff.staffDetails.totalEarning = updatedTotalStaffEarning;
 
-      const updatedStaff = await this.updateUserById(staff._id, staff);
+    const updatedStaff = await this.updateUserById(staff._id, staff);
 
-      results.updatedStaff = updatedStaff;
+    results.updatedStaff = updatedStaff;
 
-      return results;
-    } catch (error) {
-      console.log(error);
-      results.error = error;
-
-      return results;
-    }
+    return results;
   };
 
   async deleteUser(id) {
