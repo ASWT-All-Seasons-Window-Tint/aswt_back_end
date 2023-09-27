@@ -19,6 +19,8 @@ const {
   validateModifyCarDetails,
 } = require("../model/entry.model");
 const validateServiceIdsMiddleware = require("../middleware/validateServiceIds.middleware");
+const validateMonthYearParamsMiddleware = require("../middleware/validateMonthYearParams.middleware");
+const validateDateParams = require("../middleware/validDateParams.middleware");
 
 router.post(
   "/",
@@ -66,12 +68,15 @@ router.get(
 router.get(
   "/staff/:staffId/date/:date",
   auth,
+  validateDateParams,
+  validateMonthYearParamsMiddleware,
   validateObjectIdWithXArgMiddleware(["staffId"]),
   asyncMiddleware(entryController.getCarsDoneByStaff)
 );
 router.get(
   "/staff/:staffId/year/:year",
   auth,
+  validateMonthYearParamsMiddleware,
   validateObjectIdWithXArgMiddleware(["staffId"]),
   asyncMiddleware(entryController.getCarsDoneByStaff)
 );
@@ -80,6 +85,7 @@ router.get(
   "/staff/:staffId/month/:monthName/:year",
   auth,
   validateObjectIdWithXArgMiddleware(["staffId"]),
+  validateMonthYearParamsMiddleware,
   asyncMiddleware(entryController.getCarsDoneByStaff)
 );
 

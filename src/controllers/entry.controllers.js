@@ -251,16 +251,6 @@ class EntryController {
     );
     let { entries, staffEntries } = results;
 
-    if (staffEntries && staffEntries.length < 1) {
-      staffEntries = _.cloneDeep(entries);
-      staffEntries.map((staffEntry) => {
-        {
-          delete staffEntry.invoice.totalPrice;
-          staffEntry.invoice.carDetails = [];
-        }
-      });
-    }
-
     if (date || year || monthName) {
       let result;
 
@@ -271,7 +261,19 @@ class EntryController {
       } else if (year) {
         result = getJobCounts(staffEntries).monthCounts;
       }
-      return res.send(successMessage(MESSAGES.FETCHED, result));
+      return res.send(
+        successMessage(MESSAGES.FETCHED, { staffEntries, count: result })
+      );
+    }
+
+    if (staffEntries && staffEntries.length < 1) {
+      staffEntries = _.cloneDeep(entries);
+      staffEntries.map((staffEntry) => {
+        {
+          delete staffEntry.invoice.totalPrice;
+          staffEntry.invoice.carDetails = [];
+        }
+      });
     }
 
     staffEntries.map((entry) => (entry.id = entry._id));
