@@ -25,8 +25,8 @@ module.exports = function (req, res, next) {
   // Get year
   const year = parsedDate.getFullYear();
 
-  req.params.year = `${year}`;
-  req.params.monthName = monthName;
+  req.parsedYear = `${year}`;
+  req.parsedMonthName = monthName;
 
   // Move to the next middleware or route handler
   next();

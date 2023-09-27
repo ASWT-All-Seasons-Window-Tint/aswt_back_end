@@ -4,7 +4,6 @@ const { days, validMonthNames } = require("../common/constants.common");
 class EntryUtils {
   pipeline = ({ entryId, staffId, date, startDate, endDate, customerId }) => {
     const match = {};
-    console.log(entryId);
     if (entryId) {
       match._id = new mongoose.Types.ObjectId(entryId);
     }

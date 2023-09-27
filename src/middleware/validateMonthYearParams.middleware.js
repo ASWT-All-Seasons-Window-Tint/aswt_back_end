@@ -4,7 +4,12 @@ const { badReqResponse } = require("../common/messages.common");
 // This middleware checks if the user is an educator.
 // The isAdmin property is only given at the database level for authencity
 module.exports = function (req, res, next) {
-  const { monthName, year } = req.params;
+  let { monthName, year } = req.params;
+
+  if (!monthName && !year) {
+    year = req.parsedYear;
+    monthName = req.parsedMonthName;
+  }
   const invalidMonth = "Invalid month name. Please provide a valid month name.";
   const invalidYear =
     "Invalid year. Please provide a valid positive integer year.";
