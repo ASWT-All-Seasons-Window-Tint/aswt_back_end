@@ -79,8 +79,9 @@ class Ouath2Controller {
 
     request.post(postBody, async function (e, r, data) {
       const responseData = JSON.parse(r.body);
+      const realmId = req.query.realmId;
 
-      await tokenServices.updateAccessAndRefreshToken(responseData);
+      await tokenServices.updateAccessAndRefreshToken(responseData, realmId);
     });
 
     res.send(

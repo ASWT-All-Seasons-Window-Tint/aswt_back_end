@@ -15,6 +15,10 @@ const constants = {
   },
   apiEndpoint: `https://sandbox-quickbooks.api.intuit.com/v3/company/${env.realmId}/payment/${env.paymentId}`,
   tokenSchema: new mongoose.Schema({
+    realmId: {
+      type: String,
+      required: true,
+    },
     token: {
       type: String,
       required: true,

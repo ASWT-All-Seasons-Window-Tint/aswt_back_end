@@ -1,13 +1,17 @@
+require("dotenv").config();
 const getUpdatedDate = require("../utils/getUpdatedDate.utils");
 const { AccessToken } = require("../model/accessToken.model");
 const { getOrSetCache, updateCache } = require("../utils/getOrSetCache.utils");
 const { RefreshToken } = require("../model/refreshToken.model");
 
+const { env } = process;
+
 class TokenService {
   //Create new token
-  async createToken({ token, tokenModel, timeInSeconds }) {
+  async createToken({ token, tokenModel, timeInSeconds, realmId }) {
     const newToken = new tokenModel({
       token,
+      realmId,
       expires: getUpdatedDate(timeInSeconds),
     });
 
@@ -22,19 +26,29 @@ class TokenService {
     return await tokenModel.findOne().sort({ createdAt: -1 }).limit(1);
   }
 
-  async updateToken({ formerToken, tokenToUpdate, tokenModel, timeInSeconds }) {
+  async updateToken({
+    formerToken,
+    tokenToUpdate,
+    tokenModel,
+    timeInSeconds,
+    realmId,
+  }) {
     // Find and update query
     const result = await tokenModel.findOneAndUpdate(
       { token: formerToken },
       {
-        $set: { expires: getUpdatedDate(timeInSeconds), token: tokenToUpdate },
+        $set: {
+          expires: getUpdatedDate(timeInSeconds),
+          token: tokenToUpdate,
+          realmId: realmId,
+        },
       },
       { new: true } // Return updated doc
     );
     return result;
   }
 
-  updateAccessAndRefreshToken = async (responseData) => {
+  updateAccessAndRefreshToken = async (responseData, realmId = env.realmId) => {
     const expires = 1800;
 
     const newAccessToken = responseData.access_token;
@@ -46,6 +60,7 @@ class TokenService {
     const updatedAcccesToken = await this.createToken({
       token: newAccessToken,
       tokenModel: AccessToken,
+      realmId,
       timeInSeconds: accessTokenExpiryTime - secondsToOffsetError,
     });
 
@@ -63,6 +78,7 @@ class TokenService {
         formerToken: refreshToken.token,
         tokenToUpdate: newRefreshToken,
         tokenModel: RefreshToken,
+        realmId,
         timeInSeconds: refreshTokenExpiryTime,
       });
 
