@@ -137,24 +137,17 @@ class UserService {
     );
   }
 
-  updateStaffTotalEarnings = async (staff) => {
-    const results = {};
-
-    const staffFromDb = await this.getUserById(staff._id);
+  updateStaffTotalEarnings = async (staff, session) => {
+    const staffFromDb = await User.findById(staff._id).session(session);
     staff = staffFromDb;
 
     const staffEarningRate = staff.staffDetails.earningRate;
-    const previousStaffTotalEarning = staff.staffDetails.totalEarning;
-    const updatedTotalStaffEarning =
-      previousStaffTotalEarning + staffEarningRate;
 
-    staff.staffDetails.totalEarning = updatedTotalStaffEarning;
-
-    const updatedStaff = await this.updateUserById(staff._id, staff);
-
-    results.updatedStaff = updatedStaff;
-
-    return results;
+    return await User.updateOne(
+      { _id: staff._id },
+      { $inc: { "staffDetails.totalEarning": staffEarningRate } },
+      { session }
+    );
   };
 
   async deleteUser(id) {

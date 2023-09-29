@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const { Entry } = require("../model/entry.model");
 const serviceServices = require("./service.services");
-const { DATE } = require("../common/constants.common");
+const { DATE, errorMessage } = require("../common/constants.common");
 const { getNewAccessToken } = require("../utils/getNewAccessToken.utils");
 const getWebhookDataUtils = require("../utils/getWebhookData.utils");
 const { pipeline, getDateRange } = require("../utils/entry.utils");
@@ -212,6 +212,7 @@ class EntryService {
   }
 
   getPriceForService = (services, customerId, category) => {
+    const lowerCaseCategory = category.toLowerCase();
     // To check if customer has a dealership price
     const dealershipPrices = services.filter((service) =>
       service.dealershipPrices.some(
@@ -225,7 +226,9 @@ class EntryService {
       .map((service) => ({
         dealership: false,
         serviceName: service.name,
-        price: service.defaultPrices.find((p) => p.category === category).price,
+        price: service.defaultPrices.find(
+          (p) => p.category === lowerCaseCategory
+        ).price,
         serviceType: service.type,
         serviceId: service._id,
         qbId: service.qbId,
@@ -247,7 +250,7 @@ class EntryService {
 
     const price = this.calculateServicePriceDoneforCar(priceBreakdown);
 
-    return { price, priceBreakdown };
+    return { price, priceBreakdown, lowerCaseCategory };
   };
 
   calculateServicePriceDoneforCar(priceBreakdown) {
@@ -258,13 +261,13 @@ class EntryService {
     return price;
   }
 
-  async updateEntryById(id, entry) {
+  async updateEntryById(id, entry, session) {
     return await Entry.findByIdAndUpdate(
       id,
       {
         $set: entry,
       },
-      { new: true }
+      { session }
     );
   }
 
@@ -350,6 +353,54 @@ class EntryService {
 
       entry.invoice.totalPrice = this.getTotalprice(entry.invoice);
     }
+  };
+
+  errorChecker({ missingIds, entry, services, isCarServiceAdded }) {
+    const errorResult = {};
+
+    const setErrorMessage = (message, status) => {
+      errorResult.message = message;
+      errorResult.status = status;
+      return errorResult;
+    };
+
+    if (missingIds.length > 0) {
+      return setErrorMessage(
+        {
+          message: `Services with IDs: ${missingIds} could not be found`,
+          status: false,
+        },
+        404
+      );
+    }
+
+    if (!entry || !services) {
+      const fieldName = !entry ? "entry" : "services";
+      return setErrorMessage(errorMessage(fieldName), 404);
+    }
+
+    if (isCarServiceAdded) {
+      return setErrorMessage(
+        { message: "Duplicate entry", success: false },
+        400
+      );
+    }
+    return errorResult;
+  }
+
+  updateCarDetails = (entry, carDetails, price, priceBreakdown, staffId) => {
+    carDetails.price = price;
+    carDetails.category = carDetails.category.toLowerCase();
+    carDetails.staffId = staffId;
+    carDetails.priceBreakdown = priceBreakdown;
+
+    entry.invoice.carDetails.push(carDetails);
+    entry.invoice.totalPrice = this.getTotalprice(entry.invoice);
+    entry.numberOfCarsAdded = this.getNumberOfCarsAdded(
+      entry.invoice.carDetails
+    );
+
+    return entry;
   };
 
   carWasAddedRecently = (car) => {

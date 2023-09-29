@@ -87,6 +87,11 @@ const constants = {
     "November",
     "December",
   ],
+  transactionOptions: {
+    readPreference: "primary",
+    readConcern: { level: "local" },
+    writeConcern: { w: "majority" },
+  },
 };
 
 module.exports = constants;

@@ -4,14 +4,17 @@ const entryService = require("../services/entry.services");
 const userService = require("../services/user.services");
 const customerService = require("../services/customer.service");
 const serviceService = require("../services/service.services");
-const { MESSAGES, DATE } = require("../common/constants.common");
+const { MESSAGES } = require("../common/constants.common");
 const { getJobCounts, getFilterArguments } = require("../utils/entry.utils");
+
 const {
   errorMessage,
   successMessage,
   jsonResponse,
   notFoundResponse,
 } = require("../common/messages.common");
+const { default: mongoose } = require("mongoose");
+const mongoTransactionUtils = require("../utils/mongoTransaction.utils");
 
 class EntryController {
   async getStatus(req, res) {
@@ -45,15 +48,7 @@ class EntryController {
     res.send(successMessage(MESSAGES.CREATED, entry));
   }
 
-  async addInvoice(req, res) {
-    const {
-      getServiceAndEntry,
-      updateEntryById,
-      getPriceForService,
-      getTotalprice,
-      checkDuplicateEntry,
-    } = entryService;
-
+  addInvoice = async (req, res) => {
     const { id: customerId } = req.params;
     const { carDetails } = req.body;
     const { category, serviceIds, vin } = carDetails;
@@ -67,54 +62,59 @@ class EntryController {
 
     let [isCarServiceAdded, { services, entry }, missingIds] =
       await Promise.all([
-        checkDuplicateEntry(customerId, vin),
-        getServiceAndEntry(carDetails, customerId, customer),
+        entryService.checkDuplicateEntry(customerId, vin),
+        entryService.getServiceAndEntry(carDetails, customerId, customer),
         serviceService.validateServiceIds(serviceIds),
       ]);
 
     if (Array.isArray(entry)) entry = entry[0];
 
-    if (missingIds.length > 0)
-      return res.status(404).send({
-        message: `Services with IDs: ${missingIds} could not be found`,
-        status: false,
-      });
+    const { message, status } = entryService.errorChecker({
+      missingIds,
+      entry,
+      services,
+      isCarServiceAdded,
+    });
 
-    if (!entry) return res.status(404).send(errorMessage("entry"));
-    if (!services) return res.status(404).send(errorMessage("services"));
-    if (isCarServiceAdded)
-      return res
-        .status(400)
-        .send({ message: "Duplicate entry", succes: false });
+    if (message || status) return res.status(status).send(message);
 
-    const { price, priceBreakdown } = getPriceForService(
+    const { price, priceBreakdown } = entryService.getPriceForService(
       services,
       entry.customerId,
       category
     );
 
-    carDetails.price = price;
-    carDetails.category = category.toLowerCase();
-    carDetails.staffId = req.user._id;
-    carDetails.priceBreakdown = priceBreakdown;
-    carDetails.entryDate = new Date();
+    const staffId = req.user._id;
 
-    entry.invoice.carDetails.push(carDetails);
-    entry.invoice.totalPrice = getTotalprice(entry.invoice);
-    entry.numberOfCarsAdded = entryService.getNumberOfCarsAdded(
-      entry.invoice.carDetails
+    entryService.updateCarDetails(
+      entry,
+      carDetails,
+      price,
+      priceBreakdown,
+      staffId
     );
 
-    await userService.updateStaffTotalEarnings(req.user);
+    const mongoSession = await mongoose.startSession();
 
-    const updatedEntry = await updateEntryById(entry._id, entry);
-    updatedEntry.id = updatedEntry._id;
+    const results = await mongoTransactionUtils(mongoSession, async () => {
+      await userService.updateStaffTotalEarnings(req.user, mongoSession);
+
+      const id = entry._id;
+      const updatedEntry = await entryService.updateEntryById(
+        id,
+        entry,
+        mongoSession
+      );
+
+      updatedEntry.id = updatedEntry._id;
+    });
+    if (results) return jsonResponse(res, 500, false, "Something failed");
 
     delete carDetails.priceBreakdown;
     delete carDetails.price;
 
     res.send(successMessage(MESSAGES.UPDATED, carDetails));
-  }
+  };
 
   //get all entries in the entry collection/table
   async fetchAllEntries(req, res) {

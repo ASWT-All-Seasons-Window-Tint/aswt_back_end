@@ -46,7 +46,7 @@ const entrySchema = new mongoose.Schema(
           },
           entryDate: {
             type: Date,
-            required: true,
+            default: new Date(),
           },
           model: {
             type: String,
