@@ -75,6 +75,18 @@ class ServiceService {
     });
   }
 
+  async fetchAllItems(qbo, Name) {
+    return new Promise((resolve, reject) => {
+      qbo.findItems({ fetchAll: true, asc: "Name" }, (err, service) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(service.QueryResponse.Item);
+        }
+      });
+    });
+  }
+
   defaultPricesInArray(defaultPrices) {
     const defaultPricesInArray = [];
 

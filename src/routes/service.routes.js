@@ -24,10 +24,10 @@ router.post(
   asyncMiddleware(serviceController.createService)
 );
 
-router.post(
-  "/qb",
+router.get(
+  "/qb/:page",
   [auth, adminOrManager],
-  asyncMiddleware(serviceController.createQbService)
+  asyncMiddleware(serviceController.getQbServices)
 );
 
 router.get("/", asyncMiddleware(serviceController.fetchAllServices));

@@ -66,12 +66,8 @@ class ServiceController {
       const serviceData = {
         Name: serviceName,
         IncomeAccountRef: {
-          value: "79",
-          name: "Sales of Product Income",
-        },
-        ExpenseAccountRef: {
-          value: "80",
-          name: "Cost of Goods Sold",
+          value: "1",
+          name: "Services",
         },
         Type: "Service",
       };
@@ -86,6 +82,30 @@ class ServiceController {
       results.error = error;
       return results;
     }
+  }
+
+  async getQbServices(req, res) {
+    const { page } = req.params;
+    const offset = page * 10;
+
+    const qbo = await initializeQuickBooks();
+    const { data: services } = await getOrSetCache(
+      `services?page${page}`,
+      1800,
+      serviceService.fetchAllItems,
+      [qbo, page]
+    );
+
+    // const mappedService = services.map((service) => {
+    //   return {
+    //     Name: service.Name,
+    //     Id: service.Id,
+    //     IncomeAccountRef: service.IncomeAccountRef,
+    //   };
+    // });
+
+    //// 'customers' now contains an array of customer records from QuickBooksc
+    return res.send(successMessage(MESSAGES.FETCHED, services));
   }
 
   //get service from the database, using their email
