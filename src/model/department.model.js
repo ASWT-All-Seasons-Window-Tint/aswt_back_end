@@ -1,22 +1,29 @@
 const mongoose = require("mongoose");
 const Joi = require("joi");
 const { noSpecials } = require("../common/constants.common");
+const addVirtualidUtils = require("../utils/addVirtualId.utils");
 
-const departmentSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    minlength: 4,
-    maxlength: 50,
-    trim: true,
-    required: true,
+const departmentSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      minlength: 4,
+      maxlength: 50,
+      trim: true,
+      required: true,
+    },
+    description: {
+      type: String,
+      minlength: 5,
+      maxlength: 255,
+      trim: true,
+    },
   },
-  description: {
-    type: String,
-    minlength: 5,
-    maxlength: 255,
-    trim: true,
-  },
-});
+  { toJSON: { virtuals: true } },
+  { toObject: { virtuals: true } }
+);
+
+addVirtualidUtils(departmentSchema);
 
 const Department = mongoose.model("Department", departmentSchema);
 

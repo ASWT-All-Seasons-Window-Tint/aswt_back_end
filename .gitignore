@@ -2,10 +2,12 @@
 
 # dependencies
 /node_modules
+/webhook
 /.pnp
 /src/test.js
 .pnp.js
 .env
+test*
 
 # testing
 /coverage

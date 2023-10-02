@@ -7,4 +7,5 @@ module.exports = [
   "avatarImgTag",
   "role",
   "departments",
+  "id",
 ];

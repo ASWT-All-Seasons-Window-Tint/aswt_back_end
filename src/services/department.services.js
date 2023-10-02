@@ -11,15 +11,24 @@ class DepartmentService {
   }
 
   async validateDepartmentIds(departmentIds) {
-    const departments = await Department.find({
+    if (departmentIds) {
+      const departments = await Department.find({
+        _id: { $in: departmentIds },
+      });
+
+      const foundIds = departments.map((d) => d._id.toString());
+
+      const missingIds = departmentIds.filter((id) => !foundIds.includes(id));
+
+      return missingIds;
+    }
+    return [];
+  }
+
+  async getDepartmentsForManager(departmentIds) {
+    return await Department.find({
       _id: { $in: departmentIds },
     });
-
-    const foundIds = departments.map((d) => d._id.toString());
-
-    const missingIds = departmentIds.filter((id) => !foundIds.includes(id));
-
-    return missingIds;
   }
 
   async getDepartmentByName(name) {
