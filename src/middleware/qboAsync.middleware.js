@@ -19,6 +19,7 @@ module.exports = function (handler) {
               .status(404)
               .json({ success: false, message: "Resource not found" });
 
+          console.log(errorResponseLowercase.fault);
           return res
             .status(400)
             .json({ success: false, message: error.Fault.Error[0].Message });
@@ -35,7 +36,26 @@ module.exports = function (handler) {
         return jsonResponse(res, 500, false, "Something failed");
       }
 
-      next();
+      function isStringified(input) {
+        try {
+          const parsed = JSON.parse(input);
+          return typeof parsed === "object" && parsed !== null;
+        } catch (error) {
+          return false;
+        }
+      }
+      let errorMessage = {};
+
+      if (isStringified(error.message))
+        errorMessage = JSON.parse(error.message);
+      jsonResponse(
+        res,
+        errorMessage.status || 500,
+        false,
+        errorMessage.message || "Something failed"
+      );
+
+      next(error);
     }
   };
 };

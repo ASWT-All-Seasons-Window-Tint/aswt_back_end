@@ -1,5 +1,6 @@
 const validateMiddleware = require("../middleware/validate.middleware");
 const admin = require("../middleware/admin.middleware");
+const adminOrManager = require("../middleware/adminOrManager.middleware");
 const auth = require("../middleware/auth.middleware");
 const { validate } = require("../model/customer.model");
 const express = require("express");
@@ -16,7 +17,18 @@ router.post(
   qboAsyncMiddleware(customerController.createCustomer)
 );
 
-router.get("/", qboAsyncMiddleware(customerController.getCustomers));
+router.get("/", auth, qboAsyncMiddleware(customerController.getCustomers));
+
+router.get(
+  "/name/:customerName",
+  [auth, adminOrManager],
+  qboAsyncMiddleware(customerController.fetchCustomersByPage)
+);
+router.get(
+  "/page/:pageNumber",
+  [auth, adminOrManager],
+  qboAsyncMiddleware(customerController.fetchCustomersByPage)
+);
 
 router.get(
   "/:id",

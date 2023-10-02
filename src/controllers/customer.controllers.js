@@ -4,6 +4,7 @@ const { successMessage, jsonResponse } = require("../common/messages.common");
 const { getOrSetCache, updateCache } = require("../utils/getOrSetCache.utils");
 const customerService = require("../services/customer.service");
 const initializeQbUtils = require("../utils/initializeQb.utils");
+const errorChecker = require("../utils/paginationErrorChecker.utils");
 
 const expires = 1800;
 
@@ -18,6 +19,48 @@ class Customer {
     );
 
     //// 'customers' now contains an array of customer records from QuickBooksc
+    return res.send(successMessage(MESSAGES.FETCHED, customers));
+  }
+
+  async fetchCustomersByPage(req, res) {
+    const qbo = await initializeQbUtils();
+    const { pageNumber, customerName } = req.params;
+    const expiryTimeInSecs = 1800;
+    const pageSize = 10;
+
+    if (customerName) {
+      const { data: customer, error } = await getOrSetCache(
+        `customers?name${customerName.toLowerCase()}`,
+        expiryTimeInSecs,
+        customerService.fetchCustomerByName,
+        [qbo, customerName]
+      );
+      if (error) return jsonResponse(res, 404, false, error);
+
+      return res.send(successMessage(MESSAGES.FETCHED, customer));
+    }
+
+    const { data: count } = await getOrSetCache(
+      `customerCount`,
+      expiryTimeInSecs,
+      customerService.fetchCustomersCount,
+      [qbo]
+    );
+
+    const totalPages = Math.ceil(count / pageSize);
+
+    const { message } = errorChecker(pageNumber, totalPages);
+    if (message) return jsonResponse(res, 400, false, message);
+
+    const { data: customers, error: customersError } = await getOrSetCache(
+      `customers?pageNumber${pageNumber}`,
+      expiryTimeInSecs,
+      customerService.fetchAllCustomers,
+      [qbo, pageNumber, pageSize]
+    );
+
+    if (customersError) return jsonResponse(res, 404, false, customersError);
+
     return res.send(successMessage(MESSAGES.FETCHED, customers));
   }
 

@@ -75,13 +75,45 @@ class ServiceService {
     });
   }
 
-  async fetchAllItems(qbo, Name) {
+  async fetchAllItems(qbo, pageNumber, pageSize) {
+    const limit = pageSize;
+    const offset = limit * (pageNumber - 1);
+
     return new Promise((resolve, reject) => {
-      qbo.findItems({ fetchAll: true, asc: "Name" }, (err, service) => {
+      qbo.findItems({ asc: "Id", limit, offset }, (err, service) => {
         if (err) {
           reject(err);
         } else {
           resolve(service.QueryResponse.Item);
+        }
+      });
+    });
+  }
+
+  async fetchItemByName(qbo, itemName) {
+    const Name = itemName;
+
+    return new Promise((resolve, reject) => {
+      qbo.findItems(
+        [{ field: "Name", value: `%${Name}%`, operator: "LIKE" }],
+        (err, service) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(service.QueryResponse.Item);
+          }
+        }
+      );
+    });
+  }
+
+  async fetchItemsCount(qbo) {
+    return new Promise((resolve, reject) => {
+      qbo.findItems({ count: true }, (err, service) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(service.QueryResponse.totalCount);
         }
       });
     });

@@ -65,6 +65,50 @@ class CustomerService {
     });
   }
 
+  async fetchCustomersByPage(qbo, pageNumber, pageSize) {
+    const limit = pageSize;
+    const offset = limit * (pageNumber - 1);
+
+    return new Promise((resolve, reject) => {
+      qbo.findCustomers({ asc: "Id", limit, offset }, (err, service) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(service.QueryResponse.Customer);
+        }
+      });
+    });
+  }
+
+  async fetchCustomerByName(qbo, customerName) {
+    const Name = customerName;
+
+    return new Promise((resolve, reject) => {
+      qbo.findCustomers(
+        [{ field: "DisplayName", value: `%${Name}%`, operator: "LIKE" }],
+        (err, service) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(service.QueryResponse.Customer);
+          }
+        }
+      );
+    });
+  }
+
+  async fetchCustomersCount(qbo) {
+    return new Promise((resolve, reject) => {
+      qbo.findCustomers({ count: true }, (err, service) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(service.QueryResponse.totalCount);
+        }
+      });
+    });
+  }
+
   updateCustomerOnRedisViaWebhook = async (apiEndpoint) => {
     const payload = await getWebhookDataUtils(apiEndpoint, getNewAccessToken);
 
