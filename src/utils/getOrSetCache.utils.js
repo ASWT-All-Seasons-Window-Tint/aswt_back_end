@@ -32,11 +32,15 @@ async function getOrSetCache(
 
     const seen = [];
 
-    redisClient.setEx(
-      collection,
-      expires,
-      JSON.stringify(data, replacer, seen)
-    );
+    if (data == undefined) results.error = "Data not found";
+
+    if (data)
+      redisClient.setEx(
+        collection,
+        expires,
+        JSON.stringify(data, replacer, seen)
+      );
+
     function replacer(key, value) {
       if (typeof value === "object" && value !== null) {
         if (seen.indexOf(value) !== -1) {
@@ -46,7 +50,8 @@ async function getOrSetCache(
       }
       return value;
     }
-    results.error = null;
+
+    results.error = results.error ? results.error : null;
     results.data = data;
     return results;
   }

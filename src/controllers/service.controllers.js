@@ -4,7 +4,7 @@ const customerService = require("../services/customer.service");
 const { MESSAGES } = require("../common/constants.common");
 const initializeQuickBooks = require("../utils/initializeQb.utils");
 const { getOrSetCache, updateCache } = require("../utils/getOrSetCache.utils");
-const { getLatestToken } = require("../services/token.services");
+const errorChecker = require("../utils/paginationErrorChecker.utils");
 const {
   errorMessage,
   successMessage,
@@ -85,26 +85,44 @@ class ServiceController {
   }
 
   async getQbServices(req, res) {
-    const { page } = req.params;
-    const offset = page * 10;
-
     const qbo = await initializeQuickBooks();
-    const { data: services } = await getOrSetCache(
-      `services?page${page}`,
-      1800,
-      serviceService.fetchAllItems,
-      [qbo, page]
+    const { pageNumber, itemName } = req.params;
+    const expiryTimeInSecs = 1800;
+    const pageSize = 10;
+
+    if (itemName) {
+      const { data: service, error } = await getOrSetCache(
+        `services?name${itemName.toLowerCase()}`,
+        expiryTimeInSecs,
+        serviceService.fetchItemByName,
+        [qbo, itemName]
+      );
+      if (error) return jsonResponse(res, 404, false, error);
+
+      return res.send(successMessage(MESSAGES.FETCHED, service));
+    }
+
+    const { data: count } = await getOrSetCache(
+      `serviceCount`,
+      expiryTimeInSecs,
+      serviceService.fetchItemsCount,
+      [qbo]
     );
 
-    // const mappedService = services.map((service) => {
-    //   return {
-    //     Name: service.Name,
-    //     Id: service.Id,
-    //     IncomeAccountRef: service.IncomeAccountRef,
-    //   };
-    // });
+    const totalPages = Math.ceil(count / pageSize);
 
-    //// 'customers' now contains an array of customer records from QuickBooksc
+    const { message } = errorChecker(pageNumber, totalPages);
+    if (message) return jsonResponse(res, 400, false, message);
+
+    const { data: services, error: servicesError } = await getOrSetCache(
+      `services?pageNumber${pageNumber}`,
+      expiryTimeInSecs,
+      serviceService.fetchAllItems,
+      [qbo, pageNumber, pageSize]
+    );
+
+    if (servicesError) return jsonResponse(res, 404, false, servicesError);
+
     return res.send(successMessage(MESSAGES.FETCHED, services));
   }
 

@@ -25,9 +25,14 @@ router.post(
 );
 
 router.get(
-  "/qb/:page",
+  "/qb/name/:itemName",
   [auth, adminOrManager],
-  asyncMiddleware(serviceController.getQbServices)
+  qboAsyncMiddleware(serviceController.getQbServices)
+);
+router.get(
+  "/qb/:pageNumber",
+  [auth, adminOrManager],
+  qboAsyncMiddleware(serviceController.getQbServices)
 );
 
 router.get("/", asyncMiddleware(serviceController.fetchAllServices));

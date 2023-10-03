@@ -3,6 +3,7 @@ const _ = require("lodash");
 const userService = require("../services/user.services");
 const { loginSuccess, loginError } = require("../common/messages.common");
 const propertiesToPick = require("../common/propertiesToPick.common");
+const newDate = require("../utils/newDate.utils");
 
 class AuthController {
   //Create a new user
@@ -24,7 +25,7 @@ class AuthController {
       const { description, coordinates } = req.body.signInLocations;
       // Create a new signed-in location entry
       const newSignInLocation = {
-        timestamp: new Date(),
+        timestamp: newDate(),
         description,
         coordinates,
       };
