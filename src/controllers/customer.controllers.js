@@ -55,7 +55,7 @@ class Customer {
     const { data: customers, error: customersError } = await getOrSetCache(
       `customers?pageNumber${pageNumber}`,
       expiryTimeInSecs,
-      customerService.fetchAllCustomers,
+      customerService.fetchCustomersByPage,
       [qbo, pageNumber, pageSize]
     );
 

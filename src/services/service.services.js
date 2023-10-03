@@ -80,13 +80,16 @@ class ServiceService {
     const offset = limit * (pageNumber - 1);
 
     return new Promise((resolve, reject) => {
-      qbo.findItems({ asc: "Id", limit, offset }, (err, service) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(service.QueryResponse.Item);
+      qbo.findItems(
+        { asc: "Id", limit, offset, type: "Service" },
+        (err, service) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(service.QueryResponse.Item);
+          }
         }
-      });
+      );
     });
   }
 
@@ -109,7 +112,7 @@ class ServiceService {
 
   async fetchItemsCount(qbo) {
     return new Promise((resolve, reject) => {
-      qbo.findItems({ count: true }, (err, service) => {
+      qbo.findItems({ count: true, type: "Service" }, (err, service) => {
         if (err) {
           reject(err);
         } else {
