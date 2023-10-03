@@ -108,6 +108,7 @@ class EntryUtils {
   entryUnFilteredProps = {
     customerId: 1,
     customerName: 1,
+    customerEmail: 1,
     isActive: 1,
     numberOfCarsAdded: 1,
     entryDate: 1,

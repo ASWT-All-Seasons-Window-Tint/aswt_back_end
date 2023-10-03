@@ -32,6 +32,8 @@ class DepartmentController {
     const qbo = await initializeQbUtils();
     const { customerEmail } = entry;
 
+    console.log(customerEmail);
+
     const { invoice } = await invoiceService.createInvoiceOnQuickBooks(
       qbo,
       invoiceData,
