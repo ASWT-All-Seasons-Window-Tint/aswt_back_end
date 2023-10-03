@@ -11,7 +11,6 @@ class InvoiceService {
               console.log(sendErr.Fault.Error[0]);
               reject("Error sending invoice:", sendErr);
             } else {
-              console.log(sendResponse);
               results.sendResponse = sendResponse;
             }
           });
