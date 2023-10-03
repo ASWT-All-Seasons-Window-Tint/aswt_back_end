@@ -8,8 +8,10 @@ class InvoiceService {
         } else {
           qbo.sendInvoicePdf(invoice.Id, emailAddr, (sendErr, sendResponse) => {
             if (sendErr) {
+              console.log(sendErr.Fault.Error[0]);
               reject("Error sending invoice:", sendErr);
             } else {
+              console.log(sendResponse);
               results.sendResponse = sendResponse;
             }
           });
