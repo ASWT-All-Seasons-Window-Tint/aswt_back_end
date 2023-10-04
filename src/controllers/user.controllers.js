@@ -85,10 +85,10 @@ class UserController {
   async getLoggedInStaffs(req, res) {
     const loggedInStaff = await userService.getLoggedInStaffs();
 
-    if (loggedInStaff.length < 1)
-      return res
-        .status(404)
-        .send({ message: "No staff is logged in", success: false });
+    // if (loggedInStaff.length < 1)
+    //   return res
+    //     .status(404)
+    //     .send({ message: "No staff is logged in", success: false });
 
     res.send(successMessage(MESSAGES.FETCHED, loggedInStaff));
   }
