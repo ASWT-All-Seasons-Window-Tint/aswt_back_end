@@ -235,7 +235,7 @@ class ServiceController {
     const { error: customerError } =
       await customerService.getOrSetCustomerOnCache(customerId);
     if (customerError)
-      return jsonResponse(res, 404, false, error.Fault.Error[0].Detail);
+      return jsonResponse(res, 404, false, customerError.Fault.Error[0].Detail);
 
     let { updatedService, error } = serviceService.updateCustomerPrice(
       service,
