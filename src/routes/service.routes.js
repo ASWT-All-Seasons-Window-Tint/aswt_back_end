@@ -80,7 +80,7 @@ router.put(
 
 router.put(
   "/delete-dealership-price/service/:serviceId/customer/:customerId",
-  [auth, admin, validateObjectIdWithXArg(["serviceId", "customerId"])],
+  [auth, admin, validateObjectIdWithXArg(["serviceId"])],
   qboAsyncMiddleware(serviceController.deleteCustomerDealerShip)
 );
 
