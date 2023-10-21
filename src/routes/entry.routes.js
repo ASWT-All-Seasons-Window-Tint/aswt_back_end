@@ -43,6 +43,12 @@ router.get(
 );
 
 router.get(
+  "/vin/:vin",
+  // auth,
+  //validateObjectIdWithXArgMiddleware(["customerId"]),
+  qboAsyncMiddleware(entryController.getCarByVin)
+);
+router.get(
   "/customer/vin/:customerId/:vin",
   // auth,
   //validateObjectIdWithXArgMiddleware(["customerId"]),
@@ -64,6 +70,13 @@ router.get(
 
 router.get(
   "/customer/:customerId/staff/:staffId",
+  auth,
+  validateObjectIdWithXArgMiddleware(["staffId"]),
+  qboAsyncMiddleware(entryController.getCarsDoneByStaffPerId)
+);
+
+router.get(
+  "/customer/:customerId/porter/:staffId",
   auth,
   validateObjectIdWithXArgMiddleware(["staffId"]),
   qboAsyncMiddleware(entryController.getCarsDoneByStaffPerId)

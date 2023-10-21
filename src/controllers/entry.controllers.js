@@ -238,6 +238,7 @@ class EntryController {
     if (!staff) return res.status(404).send(errorMessage("staff"));
 
     const filterArguments = getFilterArguments(req);
+    if (req.user.role === "porter") filterArguments.push(true);
 
     let staffEntries = await entryService.getCarsDoneByStaff(
       ...filterArguments
@@ -389,8 +390,6 @@ class EntryController {
       staffId
     );
 
-    console.log(updatedCarWithVIn);
-
     entry.invoice.carDetails[carIndex] = updatedCarWithVIn;
 
     await entry.save();
@@ -399,6 +398,25 @@ class EntryController {
     delete carWithVin.priceBreakdown;
 
     return res.send(successMessage(MESSAGES.UPDATED, carWithVin));
+  }
+
+  async getCarByVin(req, res) {
+    const { vin } = req.params;
+
+    const entry = await entryService.getEntryByVin(vin);
+    if (!entry) return res.status(404).send(errorMessage("entry"));
+
+    const { carWithVin } = entryService.getCarByVin({ entry, vin });
+
+    if (Array.isArray(carWithVin) && carWithVin.length < 1)
+      return jsonResponse(res, 404, false, "We can't find car with vin");
+
+    console.log(!("waitingList" in carWithVin));
+
+    if (carWithVin.waitingList === undefined)
+      return jsonResponse(res, 400, false, "The car was not added by a porter");
+
+    return res.send(successMessage(MESSAGES.FETCHED, carWithVin));
   }
 
   //Update/edit entry data

@@ -72,7 +72,8 @@ class EntryService {
     date,
     startDate,
     endDate,
-    vin
+    vin,
+    waitingList
   ) => {
     return Entry.aggregate(
       pipeline({
@@ -83,6 +84,7 @@ class EntryService {
         startDate,
         endDate,
         vin,
+        waitingList,
       })
     );
   };
