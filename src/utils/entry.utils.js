@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const { days, validMonthNames, DATE } = require("../common/constants.common");
+const getTodayAndTomorrowUtils = require("./getTodayAndTomorrow.utils");
 
 class EntryUtils {
   pipeline = ({
@@ -10,6 +11,7 @@ class EntryUtils {
     endDate,
     customerId,
     vin,
+    waitingList,
   }) => {
     const match = {};
     if (entryId) {
@@ -31,6 +33,7 @@ class EntryUtils {
             date,
             endDate,
             vin,
+            waitingList,
           }),
         },
       },
@@ -173,6 +176,7 @@ class EntryUtils {
             serviceIds: "$$car.serviceIds",
             category: "$$car.category",
             serviceNames: this.serviceNames,
+            waitingList: "$$car.waitingList",
           },
         },
       },
@@ -294,7 +298,14 @@ class EntryUtils {
     return pipeline;
   };
 
-  filteredDetails = ({ staffId, date, startDate, endDate, vin }) => {
+  filteredDetails = ({
+    staffId,
+    date,
+    startDate,
+    endDate,
+    vin,
+    waitingList,
+  }) => {
     return {
       $filter: {
         input: "$invoice.carDetails",
@@ -305,15 +316,35 @@ class EntryUtils {
           startDate,
           endDate,
           vin,
+          waitingList,
         }),
       },
     };
   };
 
-  dateFilter({ staffId, date, startDate, endDate, vin }) {
+  dateFilter({ staffId, date, startDate, endDate, vin, waitingList }) {
+    const { today, tomorrow } = getTodayAndTomorrowUtils();
+
     const staffFilter = {
       $eq: ["$$car.staffId", new mongoose.Types.ObjectId(staffId)],
     };
+    const waitingListFilter = {
+      $and: [
+        {
+          $gte: ["$entryDate", today],
+        },
+        {
+          $lt: ["$entryDate", tomorrow],
+        },
+        {
+          $eq: ["$$car.waitingList", true],
+        },
+        {
+          $eq: ["$$car.staffId", new mongoose.Types.ObjectId(staffId)],
+        },
+      ],
+    };
+
     const vinFilter = {
       $and: [
         {
@@ -332,6 +363,8 @@ class EntryUtils {
 
     if (staffId && vin) {
       results.$and.push(vinFilter);
+    } else if (staffId && waitingList) {
+      results.$and.push(waitingListFilter);
     } else if (staffId) {
       results.$and.push(staffFilter);
     }
