@@ -1,10 +1,10 @@
 const mongoose = require("mongoose");
 
 const blacklistedTokenSchema = new mongoose.Schema({
-  token: {
+  tokenHash: {
     type: String,
     minlength: 4,
-    maxlength: 4096,
+    maxlength: 128,
     trim: true,
     required: true,
   },
