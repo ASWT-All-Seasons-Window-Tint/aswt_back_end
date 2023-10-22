@@ -1,6 +1,7 @@
 const blacklistedTokenService = require("../services/blacklistedToken.services");
 // This auth property is used to check if a client is authorized to carry out a function or not.
 // It expects a token to be sent as an header in the request sent by the client.
+const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
 const userServices = require("../services/user.services");
 require("dotenv").config();
@@ -13,8 +14,10 @@ module.exports = async function (req, res, next) {
       .status(401)
       .send({ success: false, message: "Access Denied. No token provided" });
 
+  const checkHash = crypto.createHash("sha256").update(token).digest("hex");
+
   const isTokenBlacklisted =
-    await blacklistedTokenService.getBlacklistedTokenByToken(token);
+    await blacklistedTokenService.getBlacklistedTokenByToken(checkHash);
 
   if (isTokenBlacklisted)
     return res

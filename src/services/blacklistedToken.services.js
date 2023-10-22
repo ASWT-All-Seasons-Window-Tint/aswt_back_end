@@ -10,8 +10,8 @@ class BlacklistedTokenService {
     return await BlacklistedToken.findById(blacklistedTokenId);
   }
 
-  async getBlacklistedTokenByToken(token) {
-    return await BlacklistedToken.findOne({ token });
+  async getBlacklistedTokenByToken(tokenHash) {
+    return await BlacklistedToken.findOne({ tokenHash });
   }
 
   async getAllBlacklistedTokens() {
