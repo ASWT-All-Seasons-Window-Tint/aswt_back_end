@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 const Joi = require("joi");
-const { User } = require("./user.model");
+const { User } = require("./user.model").user;
 const addVirtualIdUtils = require("../utils/addVirtualId.utils");
 const newDate = require("../utils/newDate.utils");
 

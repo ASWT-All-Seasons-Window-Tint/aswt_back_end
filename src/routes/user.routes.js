@@ -12,13 +12,16 @@ const userController = require("../controllers/user.controllers");
 const managerMiddleware = require("../middleware/manager.middleware");
 const adminOrManagerMiddleware = require("../middleware/adminOrManager.middleware");
 const validateroleMiddleware = require("../middleware/validaterole.middleware");
+const { user } = require("../model/user.model");
+const validateObjectIdWithXArgMiddleware = require("../middleware/validateObjectIdWithXArg.middleware");
+
 const {
   validate,
   validatePatch,
   validateUpdatePassword,
   validateResetPassword,
   validateRequestResetPassword,
-} = require("../model/user.model");
+} = user;
 
 // This is used for registering a new user.
 router.post(
@@ -94,6 +97,15 @@ router.put(
   auth,
   validateMiddleware(validateUpdatePassword),
   asyncMiddleware(userController.updateUserPassword)
+);
+
+router.put(
+  "/update-staff-permission-for-manager/:managerId",
+  auth,
+  admin,
+  validateObjectIdWithXArgMiddleware(["managerId"]),
+  validateMiddleware(user.updateManagerPermission),
+  asyncMiddleware(userController.updateStaffLocationsVisibleToManager)
 );
 
 router.put(

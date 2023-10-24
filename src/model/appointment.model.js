@@ -1,7 +1,7 @@
 require("dotenv").config();
 const mongoose = require("mongoose");
 const Joi = require("joi");
-const { User } = require("./user.model");
+const { User } = require("./user.model").user;
 const { Service } = require("./service.model");
 const addVirtualIdUtils = require("../utils/addVirtualId.utils");
 

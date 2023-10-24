@@ -84,14 +84,92 @@ class UserController {
   }
 
   async getLoggedInStaffs(req, res) {
-    const loggedInStaff = await userService.getLoggedInStaffs();
+    const { role } = req.user;
 
-    // if (loggedInStaff.length < 1)
-    //   return res
-    //     .status(404)
-    //     .send({ message: "No staff is logged in", success: false });
+    let loggedInStaff = [];
+
+    let staffIds = undefined;
+    if (role === "manager") {
+      const manager = await userService.getUserById(req.user._id);
+      if (!manager) return res.status(404).send(errorMessage("manager"));
+
+      if (!manager.managerDetails) manager.managerDetails = {};
+
+      staffIds = manager.managerDetails.staffLocationsVisibleToManager;
+
+      if (!staffIds || staffIds.length < 1)
+        return res.send(successMessage(MESSAGES.FETCHED, loggedInStaff));
+    }
+
+    loggedInStaff = await userService.getLoggedInStaffs(staffIds);
 
     res.send(successMessage(MESSAGES.FETCHED, loggedInStaff));
+  }
+
+  async updateStaffLocationsVisibleToManager(req, res) {
+    const { managerId } = req.params;
+    const { idToAdd, idToRemove } = req.body;
+
+    const [manager] = await userService.getUserByRoleAndId(
+      managerId,
+      "manager"
+    );
+    if (!manager) return res.status(404).send(errorMessage("manager"));
+
+    if (idToAdd === idToRemove)
+      return jsonResponse(
+        res,
+        403,
+        false,
+        "You are not allowed to add and remove the same staff"
+      );
+
+    if (idToAdd) {
+      if (!manager.managerDetails) manager.managerDetails = {};
+
+      const staffIds = manager.managerDetails.staffLocationsVisibleToManager;
+
+      if (staffIds) {
+        const staffIdsToString =
+          staffIds.length > 0 ? staffIds.map((id) => id.toString()) : staffIds;
+
+        if (staffIdsToString.includes(idToAdd))
+          return badReqResponse(res, "User already added for this manager");
+      }
+    }
+
+    const definedIds = [idToAdd, idToRemove].filter((id) => id);
+
+    const { users, missingIds } = await userService.getUsersByIdArray(
+      definedIds
+    );
+
+    if (missingIds.length > 0)
+      return jsonResponse(
+        res,
+        400,
+        false,
+        `Users with IDs: [${missingIds}] could not be found`
+      );
+
+    for (const user of users) {
+      const role = user.role;
+      const staffRoles = userService.staffRoles;
+      if (!staffRoles.includes(role))
+        return badReqResponse(
+          res,
+          "Only staffs and porters can be added or removed"
+        );
+    }
+
+    const updatedManageer =
+      await userService.updateStaffLocationsVisibleToManager({
+        managerId,
+        idToAdd,
+        idToRemove,
+      });
+
+    res.send(successMessage(MESSAGES.UPDATED, updatedManageer));
   }
 
   //get all users in the user collection/table

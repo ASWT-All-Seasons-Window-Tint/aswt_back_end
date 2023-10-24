@@ -62,6 +62,13 @@ const customerDetailsSchema = new mongoose.Schema({
   },
 });
 
+const managerDetailsSchema = new mongoose.Schema({
+  staffLocationsVisibleToManager: {
+    type: [mongoose.Schema.Types.ObjectId],
+    default: [],
+  },
+});
+
 const userSchema = new mongoose.Schema(
   {
     firstName: {
@@ -115,6 +122,10 @@ const userSchema = new mongoose.Schema(
     resetToken: {
       type: String,
     },
+    managerDetails: {
+      type: managerDetailsSchema,
+      default: undefined,
+    },
     staffDetails: {
       type: staffDetailsSchema,
       default: undefined,
@@ -152,6 +163,7 @@ userSchema.methods.generateAuthToken = function () {
       role: this.role,
       departments: this.departments,
       staffDetails: this.staffDetails,
+      managerDetails: this.managerDetails,
       avatarUrl: this.avatarUrl,
     },
     process.env.jwtPrivateKey
@@ -189,6 +201,15 @@ function validate(user) {
     }).when("role", {
       is: Joi.valid("staff", "porter"),
       then: Joi.required(),
+      otherwise: Joi.forbidden(),
+    }),
+    managerDetails: Joi.object({
+      staffLocationsVisibleToManager: Joi.array().items(
+        Joi.objectId().required()
+      ),
+    }).when("role", {
+      is: "manager",
+      then: Joi.optional(),
       otherwise: Joi.forbidden(),
     }),
   });
@@ -235,6 +256,15 @@ function validateResetPassword(user) {
 
   return schema.validate(user);
 }
+
+function updateManagerPermission(user) {
+  const schema = Joi.object({
+    idToAdd: Joi.objectId(),
+    idToRemove: Joi.objectId(),
+  });
+
+  return schema.validate(user);
+}
 function validateRequestResetPassword(user) {
   const schema = Joi.object({
     email: Joi.string().email().min(5).max(255).required(),
@@ -242,9 +272,13 @@ function validateRequestResetPassword(user) {
 
   return schema.validate(user);
 }
-exports.validatePatch = validatePatch;
-exports.validate = validate;
-exports.validateUpdatePassword = validateUpdatePassword;
-exports.validateResetPassword = validateResetPassword;
-exports.validateRequestResetPassword = validateRequestResetPassword;
-exports.User = User;
+
+exports.user = {
+  validate,
+  validatePatch,
+  validateResetPassword,
+  validateUpdatePassword,
+  validateRequestResetPassword,
+  updateManagerPermission,
+  User,
+};
