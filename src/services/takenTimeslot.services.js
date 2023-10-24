@@ -2,8 +2,9 @@ const { TakenTimeslot } = require("../model/takenTimeslot.model");
 const { VALID_TIME_SLOTS } =
   require("../common/constants.common").FREE_TIME_SLOTS;
 const freeTimeSlotServices = require("../services/freeTimeSlot.services");
-const timeSlotsInDecimal =
-  freeTimeSlotServices.convertTimeArrayToDecimal(VALID_TIME_SLOTS);
+const timeSlotsInDecimal = freeTimeSlotServices.convertTimeArrayToDecimal(
+  VALID_TIME_SLOTS()
+);
 
 class TakenTimeslotService {
   arraysAreEqual(arr1, arr2) {
@@ -96,8 +97,9 @@ class TakenTimeslotService {
   }
 
   getTakenTimes(timeString, timeOfCompletion) {
-    const timeslotsInDecimal =
-      freeTimeSlotServices.convertTimeArrayToDecimal(VALID_TIME_SLOTS);
+    const timeslotsInDecimal = freeTimeSlotServices.convertTimeArrayToDecimal(
+      VALID_TIME_SLOTS()
+    );
 
     const timeInDecimal = freeTimeSlotServices.convertTimetoDecimal({
       timeString,

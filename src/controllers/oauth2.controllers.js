@@ -82,6 +82,8 @@ class Ouath2Controller {
       const responseData = JSON.parse(r.body);
       const realmId = req.query.realmId;
 
+      console.log(responseData);
+
       await tokenServices.updateAccessAndRefreshToken(responseData, realmId);
     });
 

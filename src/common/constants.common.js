@@ -92,28 +92,33 @@ const constants = {
     "December",
   ],
   FREE_TIME_SLOTS: {
-    VALID_TIME_SLOTS: [
-      "09:00",
-      "09:30",
-      "10:00",
-      "10:30",
-      "11:00",
-      "11:30",
-      "12:00",
-      "12:30",
-      "13:00",
-      "13:30",
-      "14:00",
-      "14:30",
-      "15:00",
-      "15:30",
-      "16:00",
-      "16:30",
-      "17:00",
-      "17:30",
-      "18:00",
-      "18:30",
-    ],
+    VALID_TIME_SLOTS() {
+      const VALID_TIME_SLOTS = [];
+      const startTime = "09:00";
+      const endTime = "18:00";
+
+      // Split the start and end time into hours and minutes
+      const [startHour, startMinute] = startTime.split(":").map(Number);
+      const [endHour, endMinute] = endTime.split(":").map(Number);
+
+      // Loop through the time slots
+      for (let hour = startHour; hour <= endHour; hour++) {
+        for (let minute = 0; minute < 60; minute += 15) {
+          // Format the hour and minute as "hh:mm"
+          const formattedHour = String(hour).padStart(2, "0");
+          const formattedMinute = String(minute).padStart(2, "0");
+          const currentTime = `${formattedHour}:${formattedMinute}`;
+
+          // Check if the current time exceeds the end time and stop if necessary
+          if (currentTime > endTime) {
+            break;
+          }
+
+          VALID_TIME_SLOTS.push(currentTime);
+        }
+      }
+      return VALID_TIME_SLOTS;
+    },
     COMPLETION_TIME_HOURS: 3,
     START_OF_BUSINESS: 9,
     TIME_OFFSET: 0.001,

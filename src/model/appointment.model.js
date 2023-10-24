@@ -72,12 +72,21 @@ const carDetailsSchema = new mongoose.Schema({
   category: {
     type: String,
   },
-  serviceIds: {
-    type: [mongoose.Schema.Types.ObjectId],
-    ref: Service,
-  },
+  serviceDetails: [
+    {
+      serviceId: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: true,
+      },
+      filmQualityId: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: true,
+      },
+    },
+  ],
   priceBreakdown: [
     {
+      filmQuality: String,
       serviceName: String,
       serviceType: String,
       price: Number,
@@ -100,6 +109,13 @@ const appointmentSchema = new mongoose.Schema({
   },
   customerEmail: {
     type: String,
+    ref: User,
+    required: true,
+  },
+  customerName: {
+    type: String,
+    minlength: 2,
+    maxlength: 255,
     ref: User,
     required: true,
   },
@@ -160,6 +176,7 @@ function validate(appointment) {
       .insensitive()
       .required(),
     customerEmail: Joi.string().email().required(),
+    customerName: Joi.string().min(2).max(255).required(),
     customerNumber: Joi.string().required(),
     startTime: Joi.date().required(),
     description: Joi.string().max(255).min(3),
@@ -171,7 +188,12 @@ function validate(appointment) {
         .min(1)
         .valid("sedan", "suv", "truck")
         .insensitive(),
-      serviceIds: Joi.array().items(Joi.objectId().required()),
+      serviceDetails: Joi.array().items(
+        Joi.object({
+          serviceId: Joi.objectId().required(),
+          filmQualityId: Joi.objectId(),
+        })
+      ),
     }).when("appointmentType", {
       is: "auto",
       then: Joi.required(),

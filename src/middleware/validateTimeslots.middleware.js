@@ -11,7 +11,7 @@ module.exports = function (req, res, next) {
     return jsonResponse(res, 400, false, "Invalid date-time format");
 
   const { formattedTime } = freeTimeSlotServices.getFormattedDate(startTime);
-  if (!VALID_TIME_SLOTS.includes(formattedTime))
+  if (!VALID_TIME_SLOTS().includes(formattedTime))
     return jsonResponse(res, 400, false, "You provided an invalid time");
 
   if (!isFutureDateTime(startTime))

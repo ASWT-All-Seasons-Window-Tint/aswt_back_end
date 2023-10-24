@@ -5,6 +5,7 @@ const {
   successMessage,
   jsonResponse,
   SMS,
+  badReqResponse,
 } = require("../common/messages.common");
 const { MESSAGES } = require("../common/constants.common");
 const freeTimeSlotServices = require("../services/freeTimeSlot.services");
@@ -33,7 +34,10 @@ class AppointmentController {
     let { formattedDate: date, formattedTime: timeString } =
       freeTimeSlotServices.getFormattedDate(startTime);
 
-    const { serviceIds, category } = carDetails;
+    const { serviceDetails, category } = carDetails;
+
+    const { serviceIds, filmQualityIds } =
+      appointmentService.getServiceIdsAndfilmQualityIds(serviceDetails);
 
     const smsDate = getSmsDateUtils(startTime);
 
@@ -53,16 +57,14 @@ class AppointmentController {
     const timeOfCompletion =
       appointmentService.calculateTotalTimeOfCompletion(services);
 
-    const { priceBreakdown, price, lowerCaseCategory } =
-      appointmentService.getPriceForService(services, category);
+    const { priceBreakdownArray, error, price } =
+      await appointmentService.getPriceBreakdown(serviceDetails);
 
-    req.body.carDetails.priceBreakdown = priceBreakdown;
+    if (error.message) return badReqResponse(res, error.message);
+
+    req.body.carDetails.priceBreakdown = priceBreakdownArray;
     req.body.carDetails.price = price;
-    req.body.carDetails.category = lowerCaseCategory;
-
-    const startTimeInDecimal = freeTimeSlotServices.convertTimetoDecimal({
-      timeString,
-    });
+    req.body.carDetails.category = carDetails.category;
 
     const takenTimeslotsDetails =
       await takenTimeslotsControllers.generateTakenTimeslots({
@@ -105,20 +107,20 @@ class AppointmentController {
       staffId: takenTimeSlotForStaff.staffId,
     });
 
-    const delay = this.getDelay(startTime);
-    const { nowBody, reminderBody } = SMS;
+    // const delay = this.getDelay(startTime);
+    // const { nowBody, reminderBody } = SMS;
 
-    sendTextMessage(customerNumber, nowBody(smsDate));
+    // sendTextMessage(customerNumber, nowBody(smsDate));
 
-    appointmentQueue.add(
-      {
-        customerNumber,
-        body: reminderBody(smsDate),
-      },
-      {
-        delay,
-      }
-    );
+    // appointmentQueue.add(
+    //   {
+    //     customerNumber,
+    //     body: reminderBody(smsDate),
+    //   },
+    //   {
+    //     delay,
+    //   }
+    // );
 
     res.send(successMessage(MESSAGES.CREATED, appointment));
   };

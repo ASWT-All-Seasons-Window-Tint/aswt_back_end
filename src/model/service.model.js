@@ -32,6 +32,10 @@ const serviceSchema = new mongoose.Schema(
         price: { type: Number, min: 1, required: true },
       },
     ],
+    timeOfCompletion: {
+      type: Number,
+      required: true,
+    },
   },
   { toJSON: { virtuals: true } },
   { toObject: { virtuals: true } }
@@ -45,6 +49,7 @@ function validate(service) {
   const schema = Joi.object({
     name: Joi.string().min(3).max(255).required(),
     type: Joi.string().valid("installation", "removal").required(),
+    timeOfCompletion: Joi.number().min(0.25).max(9).required(),
     defaultPrices: Joi.array()
       .items(
         Joi.object({
@@ -62,6 +67,7 @@ function validateWithObj(service) {
   const schema = Joi.object({
     name: Joi.string().min(3).max(255).required(),
     type: Joi.string().valid("installation", "removal").required(),
+    timeOfCompletion: Joi.number().min(0.25).max(9).required(),
     defaultPrices: Joi.object({
       suv: Joi.number().min(1).required(),
       sedan: Joi.number().min(1).required(),
@@ -76,6 +82,7 @@ function validatePatch(service) {
   const schema = Joi.object({
     name: Joi.string().min(5).max(255),
     type: Joi.string().valid("installation", "removal"),
+    timeOfCompletion: Joi.number().min(0.25).max(9),
   });
 
   return schema.validate(service);

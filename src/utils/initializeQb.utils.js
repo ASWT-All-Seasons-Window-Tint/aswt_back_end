@@ -23,8 +23,8 @@ module.exports = async function () {
     accessToken,
     false,
     env.realmId,
-    false,
-    false,
+    true,
+    true,
     null,
     "2.0",
     refreshToken

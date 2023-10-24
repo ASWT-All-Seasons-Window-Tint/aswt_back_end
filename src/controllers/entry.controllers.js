@@ -16,6 +16,7 @@ const {
 } = require("../common/messages.common");
 const { default: mongoose } = require("mongoose");
 const mongoTransactionUtils = require("../utils/mongoTransaction.utils");
+const entryServices = require("../services/entry.services");
 
 class EntryController {
   async getStatus(req, res) {
@@ -92,15 +93,23 @@ class EntryController {
         false,
         "Customer does not have a primary email address"
       );
+    let staffId;
+    let porterId;
 
-    if (role === "porter") carDetails.waitingList = true;
+    if (role === "porter") {
+      carDetails.waitingList = true;
+      porterId = req.user._id;
+    } else if (role === "staff") {
+      staffId = req.user._id;
+    }
 
     carDetails.serviceIds = [...new Set(serviceIds)];
 
     req.params = {
       ...req.params,
       vin,
-      staffId: req.user._id,
+      staffId,
+      porterId,
     };
 
     const filterArguments = getFilterArguments(req);
@@ -130,15 +139,14 @@ class EntryController {
       category
     );
 
-    const staffId = req.user._id;
-
     entryService.updateCarDetails(
       entry,
       carDetails,
       price,
       priceBreakdown,
       staffId,
-      carExist
+      carExist,
+      porterId
     );
 
     const mongoSession = await mongoose.startSession();
@@ -221,10 +229,10 @@ class EntryController {
   }
 
   async getCarsDoneByStaffPerId(req, res) {
-    const { entryId, staffId, customerId } = req.params;
+    const { entryId, staffId, customerId, porterId } = req.params;
 
     let [staff, { data: customer, error }, [entry]] = await Promise.all([
-      userService.getUserById(staffId),
+      userService.getUserById(staffId || porterId),
       customerId ? customerService.getOrSetCustomerOnCache(customerId) : [],
       entryId ? entryService.getEntries({ entryId }) : [],
     ]);
@@ -237,8 +245,9 @@ class EntryController {
     if (entryId && !entry) return res.status(404).send(errorMessage("entry"));
     if (!staff) return res.status(404).send(errorMessage("staff"));
 
+    if (porterId) req.params.waitingList = true;
+
     const filterArguments = getFilterArguments(req);
-    if (req.user.role === "porter") filterArguments.push(true);
 
     let staffEntries = await entryService.getCarsDoneByStaff(
       ...filterArguments
@@ -263,6 +272,7 @@ class EntryController {
       staffEntries = _.cloneDeep(entry);
       staffEntries.invoice.carDetails = [];
       delete staffEntries.invoice.totalPrice;
+      delete staffEntries.invoice.paymentDetails;
     }
 
     if (customerId && Array.isArray(staffEntries)) {
@@ -337,6 +347,30 @@ class EntryController {
     res.send(successMessage(MESSAGES.FETCHED, carsDoneForCustomer));
   }
 
+  async sortCarDetailsByPrice(req, res) {
+    const { customerId } = req.params;
+
+    const entry = await entryService.getEntryForCustomerLast24Hours(
+      customerId,
+      true
+    );
+    if (!entry)
+      return jsonResponse(
+        res,
+        404,
+        false,
+        "No entry has been added for the customer today"
+      );
+
+    const carDetails = entry.invoice.carDetails;
+    const sortedCarDetailsWithoutPrice =
+      entryServices.sortCarDetailsByPrice(carDetails);
+
+    return res.send(
+      successMessage(MESSAGES.FETCHED, sortedCarDetailsWithoutPrice)
+    );
+  }
+
   //Update/edit entry data
   async updateEntry(req, res) {
     const [entry] = await entryService.getEntries({ entryId: req.params.id });
@@ -403,7 +437,7 @@ class EntryController {
   async getCarByVin(req, res) {
     const { vin } = req.params;
 
-    const entry = await entryService.getEntryByVin(vin);
+    const entry = await entryService.getEntryByVin(vin, true);
     if (!entry) return res.status(404).send(errorMessage("entry"));
 
     const { carWithVin } = entryService.getCarByVin({ entry, vin });
@@ -411,12 +445,15 @@ class EntryController {
     if (Array.isArray(carWithVin) && carWithVin.length < 1)
       return jsonResponse(res, 404, false, "We can't find car with vin");
 
-    console.log(!("waitingList" in carWithVin));
-
     if (carWithVin.waitingList === undefined)
       return jsonResponse(res, 400, false, "The car was not added by a porter");
 
-    return res.send(successMessage(MESSAGES.FETCHED, carWithVin));
+    const { price, priceBreakdown, ...carWithVinWithoutPrice } = carWithVin;
+    const serviceIds = carWithVinWithoutPrice.serviceIds;
+
+    for (const serviceId of serviceIds) serviceId.id = serviceId._id;
+
+    return res.send(successMessage(MESSAGES.FETCHED, carWithVinWithoutPrice));
   }
 
   //Update/edit entry data

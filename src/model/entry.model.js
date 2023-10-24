@@ -2,170 +2,180 @@ const mongoose = require("mongoose");
 const Joi = require("joi");
 const addVirtualIdUtils = require("../utils/addVirtualId.utils");
 const newDate = require("../utils/newDate.utils");
+const { Service } = require("./service.model");
 
-const entrySchema = new mongoose.Schema(
+const carDetails = [
   {
-    customerId: {
-      type: String,
-      required: true,
+    waitingList: {
+      type: Boolean,
     },
-    customerName: {
-      type: String,
-      required: true,
+    isCompleted: {
+      type: Boolean,
     },
-    customerEmail: {
+    vin: { type: String, required: true },
+    year: { type: Number },
+    make: {
       type: String,
-      required: true,
+      minlength: 3,
+      maxlength: 255,
     },
     entryDate: {
       type: Date,
-      default: newDate(),
     },
-    isActive: {
-      type: Boolean,
-      default: true,
+    model: {
+      type: String,
+      minlength: 1,
+      maxlength: 255,
     },
-    numberOfCarsAdded: {
-      type: Number,
-      default: 0,
+    colour: {
+      type: String,
+      minlength: 3,
+      maxlength: 255,
     },
-    numberOfVehicles: {
-      type: Number,
-      default: 0,
-    },
-    invoice: {
-      name: {
+    serviceIds: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: Service,
+      },
+    ],
+    servicesDone: [
+      {
+        serviceId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "service",
+        },
+        staffId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "user",
+        },
+      },
+    ],
+    geoLocation: {
+      description: {
         type: String,
-        minlength: 5,
+        minlength: 3,
         maxlength: 255,
       },
-      carDetails: [
-        {
-          waitingList: {
-            type: Boolean,
-          },
-          isCompleted: {
-            type: Boolean,
-          },
-          vin: { type: String, required: true },
-          year: { type: Number },
-          make: {
-            type: String,
-            minlength: 3,
-            maxlength: 255,
-          },
-          entryDate: {
-            type: Date,
-          },
-          model: {
-            type: String,
-            minlength: 1,
-            maxlength: 255,
-          },
-          colour: {
-            type: String,
-            minlength: 3,
-            maxlength: 255,
-          },
-          serviceIds: [
-            {
-              type: mongoose.Schema.Types.ObjectId,
-              ref: "service",
-            },
-          ],
-          servicesDone: [
-            {
-              serviceId: {
-                type: mongoose.Schema.Types.ObjectId,
-                ref: "service",
-              },
-              staffId: {
-                type: mongoose.Schema.Types.ObjectId,
-                ref: "user",
-              },
-            },
-          ],
-          geoLocation: {
-            description: {
-              type: String,
-              minlength: 3,
-              maxlength: 255,
-            },
-            coordinates: {
-              latitude: { type: Number, required: true },
-              longitude: { type: Number, required: true },
-            },
-          },
-          customerNote: {
-            type: String,
-            minlength: 5,
-            maxlength: 512,
-          },
-          note: {
-            type: String,
-            minlength: 5,
-            maxlength: 512,
-          },
-          price: {
-            type: Number,
-            default: 0,
-          },
-          category: {
-            type: String,
-            minlength: 3,
-            maxlength: 10,
-          },
-          staffId: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "user",
-            default: null,
-          },
-          priceBreakdown: [
-            {
-              serviceName: String,
-              serviceType: String,
-              price: Number,
-              serviceId: {
-                type: mongoose.Schema.Types.ObjectId,
-              },
-              dealership: {
-                type: Boolean,
-              },
-              qbId: {
-                type: String,
-              },
-            },
-          ],
-        },
-      ],
-      totalPrice: {
-        type: Number,
-        default: 0,
+      coordinates: {
+        latitude: { type: Number, required: true },
+        longitude: { type: Number, required: true },
       },
-      qbId: String,
-      invoiceNumber: String,
-      paymentDetails: {
-        paymentDate: {
-          default: null,
-          type: Date,
+    },
+    customerNote: {
+      type: String,
+      minlength: 5,
+      maxlength: 512,
+    },
+    note: {
+      type: String,
+      minlength: 5,
+      maxlength: 512,
+    },
+    price: {
+      type: Number,
+      default: 0,
+    },
+    category: {
+      type: String,
+      minlength: 3,
+      maxlength: 10,
+    },
+    staffId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "user",
+      default: null,
+    },
+    porterId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "user",
+      default: null,
+    },
+    priceBreakdown: [
+      {
+        serviceName: String,
+        serviceType: String,
+        price: Number,
+        serviceId: {
+          type: mongoose.Schema.Types.ObjectId,
         },
-        amountPaid: {
-          default: 0,
-          type: Number,
+        dealership: {
+          type: Boolean,
         },
-        amountDue: {
-          type: Number,
-        },
-        currency: {
+        qbId: {
           type: String,
         },
       },
-      sent: {
-        type: Boolean,
+    ],
+  },
+];
+
+const entry = {
+  customerId: {
+    type: String,
+    required: true,
+  },
+  customerName: {
+    type: String,
+    required: true,
+  },
+  customerEmail: {
+    type: String,
+    required: true,
+  },
+  entryDate: {
+    type: Date,
+    default: newDate(),
+  },
+  isActive: {
+    type: Boolean,
+    default: true,
+  },
+  numberOfCarsAdded: {
+    type: Number,
+    default: 0,
+  },
+  numberOfVehicles: {
+    type: Number,
+    default: 0,
+  },
+  invoice: {
+    name: {
+      type: String,
+      minlength: 5,
+      maxlength: 255,
+    },
+    carDetails,
+    totalPrice: {
+      type: Number,
+      default: 0,
+    },
+    qbId: String,
+    invoiceNumber: String,
+    paymentDetails: {
+      paymentDate: {
         default: null,
+        type: Date,
+      },
+      amountPaid: {
+        default: 0,
+        type: Number,
+      },
+      amountDue: {
+        type: Number,
+      },
+      currency: {
+        type: String,
       },
     },
+    sent: {
+      type: Boolean,
+      default: null,
+    },
   },
+};
+
+const entrySchema = new mongoose.Schema(
+  entry,
   { toJSON: { virtuals: true } },
   { toObject: { virtuals: true } }
 );
@@ -300,5 +310,7 @@ exports.joiValidator = {
   validateAddInvoicePatch,
   validateModifyCarDetails,
   validateModifyServiceDone,
+  carDetailsProperties: Object.keys(carDetails[0]),
+  entryProperties: Object.keys(entry),
 };
 exports.Entry = Entry;

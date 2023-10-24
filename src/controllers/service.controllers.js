@@ -18,7 +18,7 @@ class ServiceController {
 
   //Create a new service
   createService = async (req, res) => {
-    let { type, name, defaultPrices } = req.body;
+    let { type, name, defaultPrices, timeOfCompletion } = req.body;
     // const categoryNames = Object.keys(defaultPrices);
 
     // const [missingNames, categoriesMissing] = await Promise.all([
@@ -50,6 +50,7 @@ class ServiceController {
       name,
       defaultPrices,
       qbId,
+      timeOfCompletion,
     });
 
     service = await serviceService.createService(service);
