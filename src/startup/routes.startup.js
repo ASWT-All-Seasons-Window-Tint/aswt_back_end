@@ -2,26 +2,28 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
 const error = require("../middleware/error.middleware");
 const auth = require("../routes/auth.routes");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
-const users = require("../routes/user.routes");
+const appointments = require("../routes/appointment.routes");
+const articles = require("../routes/article.routes");
 const departments = require("../routes/department.routes");
 const invoices = require("../routes/invoice.routes");
 const categories = require("../routes/category.routes");
 const customers = require("../routes/customer.routes");
 const entries = require("../routes/entry.routes");
-const services = require("../routes/service.routes");
 const logout = require("../routes/logout.routes");
-const path = require("path");
+const priceLists = require("../routes/priceList.routes");
+const filmQualities = require("../routes/filmQuality.routes");
 const forms = require("../routes/form.routes");
 const oauth2 = require("../routes/oauth2.routes");
 const webhook = require("../routes/webhook.routes");
+const services = require("../routes/service.routes");
 const stripe = require("../routes/stripe.routes");
-const appointments = require("../routes/appointment.routes");
-const articles = require("../routes/article.routes");
 const session = require("./session.startup");
+const users = require("../routes/user.routes");
 
 const { localEndpoint } = process.env;
 
@@ -50,6 +52,8 @@ module.exports = function (app) {
   app.use(`${localEndpoint}/entries`, entries);
   app.use(`${localEndpoint}/categories`, categories);
   app.use(`${localEndpoint}/customers`, customers);
+  app.use(`${localEndpoint}/price-lists`, priceLists);
+  app.use(`${localEndpoint}/film-qualities`, filmQualities);
   app.use(`${localEndpoint}/users`, users);
   app.use(`${localEndpoint}/forms`, forms);
   app.use(`${localEndpoint}/logout`, logout);

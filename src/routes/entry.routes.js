@@ -44,7 +44,7 @@ router.get(
 
 router.get(
   "/vin/:vin",
-  // auth,
+  auth,
   //validateObjectIdWithXArgMiddleware(["customerId"]),
   qboAsyncMiddleware(entryController.getCarByVin)
 );
@@ -60,11 +60,25 @@ router.get(
   //validateObjectIdWithXArgMiddleware(["customerId"]),
   qboAsyncMiddleware(entryController.getEntryById)
 );
+router.get(
+  "/highest-to-lowest-roi/:customerId",
+  auth,
+  roleBaseAuth(["porter"]),
+  //validateObjectIdWithXArgMiddleware(["customerId"]),
+  asyncMiddleware(entryController.sortCarDetailsByPrice)
+);
 
 router.get(
   "/entry/:entryId/customer/:customerId/staff/:staffId",
   auth,
   validateObjectIdWithXArgMiddleware(["staffId"]),
+  qboAsyncMiddleware(entryController.getCarsDoneByStaffPerId)
+);
+
+router.get(
+  "/entry/:entryId/customer/:customerId/porterId/:porterId",
+  auth,
+  validateObjectIdWithXArgMiddleware(["porterId", "entryId"]),
   qboAsyncMiddleware(entryController.getCarsDoneByStaffPerId)
 );
 
@@ -76,9 +90,9 @@ router.get(
 );
 
 router.get(
-  "/customer/:customerId/porter/:staffId",
+  "/customer/:customerId/porter/:porterId",
   auth,
-  validateObjectIdWithXArgMiddleware(["staffId"]),
+  validateObjectIdWithXArgMiddleware(["porterId"]),
   qboAsyncMiddleware(entryController.getCarsDoneByStaffPerId)
 );
 
@@ -125,7 +139,7 @@ router.put(
   [
     validateObjectId,
     auth,
-    staffMiddleware,
+    roleBaseAuth(["staff", "porter"]),
     validateMiddleware(validateModifyCarDetails),
     validateServiceIdsMiddleware,
   ],

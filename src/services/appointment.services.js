@@ -3,6 +3,7 @@ const entryUtils = require("../utils/entry.utils");
 const entryService = require("../services/entry.services");
 const newDateUtils = require("../utils/newDate.utils");
 const freeTimeSlotServices = require("./freeTimeSlot.services");
+const priceListServices = require("./priceList.services");
 
 class AppointmentService {
   //Create new appointment
@@ -136,6 +137,91 @@ class AppointmentService {
 
     return { price, priceBreakdown, lowerCaseCategory };
   };
+
+  getServiceIdsAndfilmQualityIds(serviceDetails) {
+    const filmQualityIds = [];
+    const serviceIds = [];
+
+    for (const serviceDetail of serviceDetails) {
+      if (serviceDetail.filmQualityId) {
+        const filmQualityId = serviceDetail.filmQualityId;
+
+        filmQualityIds.push(filmQualityId);
+      }
+
+      serviceIds.push(serviceDetail.serviceId);
+    }
+
+    return { filmQualityIds, serviceIds };
+  }
+
+  async getPriceBreakdown(serviceDetails) {
+    const results = {};
+
+    results.error = {};
+    results.priceBreakdownArray = [];
+
+    for (const serviceDetail of serviceDetails) {
+      if (serviceDetail.filmQualityId) {
+        const priceBreakdown = {};
+        const filmQualityId = serviceDetail.filmQualityId;
+        const serviceId = serviceDetail.serviceId;
+
+        const priceList =
+          await priceListServices.getPriceListByFilmQualityIdIdAndServiceId(
+            serviceId,
+            filmQualityId
+          );
+
+        if (!priceList) {
+          results.error.message =
+            "Can't find price list for the service and film quality";
+          return results;
+        }
+
+        priceBreakdown.serviceId = priceList.serviceId.id;
+        priceBreakdown.serviceName = priceList.serviceId.name;
+        priceBreakdown.price = priceList.price;
+        priceBreakdown.filmQuality = priceList.filmQualityId.name;
+        priceBreakdown.serviceType = priceList.serviceId.type;
+
+        results.priceBreakdownArray.push(priceBreakdown);
+      } else if (!serviceDetail.filmQualityId) {
+        const priceBreakdown = {};
+        const serviceId = serviceDetail.serviceId;
+
+        const priceList = await priceListServices.getPriceListByServiceId(
+          serviceId
+        );
+
+        if (!priceList) {
+          results.error.message =
+            "Can't find price list for the service and film quality";
+          return results;
+        }
+
+        const serviceType = priceList.serviceId.type;
+
+        if (serviceType !== "removal") {
+          results.error.message =
+            "Film quality is required for installation types of service";
+          return results;
+        }
+
+        priceBreakdown.serviceId = priceList.serviceId.id;
+        priceBreakdown.serviceName = priceList.serviceId.name;
+        priceBreakdown.price = priceList.price;
+        priceBreakdown.serviceType = priceList.serviceId.type;
+
+        results.priceBreakdownArray.push(priceBreakdown);
+      }
+    }
+    results.price = entryService.calculateServicePriceDoneforCar(
+      results.priceBreakdownArray
+    );
+
+    return results;
+  }
 
   async validateAppointmentIds(appointmentIds) {
     const appointments = await Appointment.find({

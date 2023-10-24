@@ -32,7 +32,7 @@ function validate(freeTimeSlot) {
     timeSlots: Joi.array().items(
       Joi.string()
         .required()
-        .valid(...VALID_TIME_SLOTS)
+        .valid(...VALID_TIME_SLOTS())
     ),
   });
 

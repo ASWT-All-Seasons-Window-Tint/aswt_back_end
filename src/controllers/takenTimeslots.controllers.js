@@ -58,7 +58,7 @@ class TakenTimeslotControllers {
       takenTimeslotsServices.getTakenTimeslotsForAllStaffs(takenTimeslots, 2);
 
     const isDateFilledUp = takenTimeslotsServices.arraysAreEqual(
-      VALID_TIME_SLOTS,
+      VALID_TIME_SLOTS(),
       takenTimeslotsForAllStaffs.takenTimeslots
     );
 
