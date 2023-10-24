@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const { User } = require("./user.model");
+const { User } = require("./user.model").user;
 const addVirtualIdUtils = require("../utils/addVirtualId.utils");
 
 const takenTimeslotSchema = new mongoose.Schema(

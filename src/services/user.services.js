@@ -1,7 +1,7 @@
 require("dotenv").config();
 const _ = require("lodash");
 const bcrypt = require("bcrypt");
-const { User } = require("../model/user.model");
+const { User } = require("../model/user.model").user;
 const propertiesToPick = require("../common/propertiesToPick.common");
 const generateRandomAvatar = require("../utils/generateRandomAvatar.utils");
 
@@ -30,6 +30,18 @@ class UserService {
       return missingIds;
     }
     return [];
+  }
+
+  async getUsersByIdArray(userIds) {
+    const users = await User.find({
+      _id: { $in: userIds },
+    });
+
+    const foundIds = users.map((d) => d._id.toString());
+
+    const missingIds = userIds.filter((id) => !foundIds.includes(id));
+
+    return { missingIds, users };
   }
 
   async fetchIdsOfStaffsWhoCanTakeAppointments() {
@@ -201,10 +213,37 @@ class UserService {
     );
   }
 
-  async getLoggedInStaffs() {
-    return User.find({ "staffDetails.isLoggedIn": true, role: "staff" }).select(
+  async getLoggedInStaffs(staffIds) {
+    const findQuery = { $and: [{ "staffDetails.isLoggedIn": true }] };
+    if (staffIds) findQuery.$and.push({ _id: { $in: staffIds } });
+
+    return User.find(findQuery).select(
       "-password -staffDetails.signInLocations"
     );
+  }
+
+  async updateStaffLocationsVisibleToManager({
+    managerId,
+    idToAdd,
+    idToRemove,
+  }) {
+    const update = {};
+    if (idToAdd) {
+      update.$push = {
+        "managerDetails.staffLocationsVisibleToManager": idToAdd,
+      };
+    }
+    if (idToRemove) {
+      update.$pull = {
+        "managerDetails.staffLocationsVisibleToManager": idToRemove,
+      };
+    }
+
+    return await User.findOneAndUpdate(
+      { _id: managerId }, // Find the user by their ID
+      update, // Use $pull to remove the locationIdToRemove from the array
+      { new: true }
+    ).select("-password");
   }
 
   updateStaffTotalEarnings = async (staff, session) => {
