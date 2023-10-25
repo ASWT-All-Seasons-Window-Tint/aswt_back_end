@@ -146,6 +146,14 @@ class ServiceController {
     res.send(successMessage(MESSAGES.FETCHED, service));
   }
 
+  async getServiceByType(req, res) {
+    const serviceType = req.params.type;
+
+    const services = await serviceService.getServiceByType(serviceType);
+
+    res.send(successMessage(MESSAGES.FETCHED, services));
+  }
+
   async getServiceByEntryIdAndStaffId(req, res) {
     const { entryId, staffId } = req.body;
 

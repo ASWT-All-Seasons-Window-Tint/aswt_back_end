@@ -17,6 +17,7 @@ const {
   validateUpdateDealershipPrice,
 } = require("../model/service.model");
 const validateObjectIdWithXArg = require("../middleware/validateObjectIdWithXArg.middleware");
+const validServiceTypeMiddleware = require("../middleware/validServiceType.middleware");
 
 router.post(
   "/",
@@ -39,6 +40,12 @@ router.get("/", asyncMiddleware(serviceController.fetchAllServices));
 router.post("/invoice/:id", asyncMiddleware(invoiceController.sendInvoice));
 router.get("/web", asyncMiddleware(serviceController.fetchAllServicesWeb));
 router.get("/multiple", asyncMiddleware(serviceController.getMultipleServices));
+
+router.get(
+  "/type/:type",
+  validServiceTypeMiddleware,
+  asyncMiddleware(serviceController.getServiceByType)
+);
 
 router.get(
   "/:id",

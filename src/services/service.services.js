@@ -31,6 +31,12 @@ class ServiceService {
     return await Service.findOne({ name: caseInsensitiveName });
   }
 
+  async getServiceByType(type) {
+    const caseInsensitiveType = new RegExp(type, "i");
+
+    return await Service.find({ type: caseInsensitiveType });
+  }
+
   async getAllServices(lean = { lean: false }) {
     return lean.lean
       ? await Service.find().lean().sort({ _id: -1 })
