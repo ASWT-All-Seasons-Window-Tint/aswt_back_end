@@ -65,6 +65,7 @@ class AppointmentController {
     req.body.carDetails.priceBreakdown = priceBreakdownArray;
     req.body.carDetails.price = price;
     req.body.carDetails.category = carDetails.category;
+    req.body.appointmentType = req.body.appointmentType.toLowerCase();
 
     const takenTimeslotsDetails =
       await takenTimeslotsControllers.generateTakenTimeslots({
