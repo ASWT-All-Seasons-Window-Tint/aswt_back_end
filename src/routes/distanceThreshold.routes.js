@@ -9,13 +9,13 @@ const validateObjectId = require("../middleware/validateObjectId.middleware");
 const distanceThresholdController = require("../controllers/distanceThreshold.controllers");
 const { getCustomers } = require("../controllers/customer.controllers");
 
-// router.post(
-//   "/",
-//   auth,
-//   admin,
-//   validateMiddleware(validate),
-//   asyncMiddleware(distanceThresholdController.createDistanceThreshold)
-// );
+router.post(
+  "/",
+  auth,
+  admin,
+  validateMiddleware(validate),
+  asyncMiddleware(distanceThresholdController.createDistanceThreshold)
+);
 
 // router.get("/", asyncMiddleware(distanceThresholdController.fetchAllCategories));
 router.get(
