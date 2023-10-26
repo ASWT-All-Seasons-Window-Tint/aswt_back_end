@@ -2,7 +2,6 @@ const validateMiddleware = require("../middleware/validate.middleware");
 const admin = require("../middleware/admin.middleware");
 const staffMiddleware = require("../middleware/staff.middleware");
 const auth = require("../middleware/auth.middleware");
-const bcrypt = require("bcrypt");
 const _ = require("lodash");
 const express = require("express");
 const router = express.Router();
@@ -14,6 +13,7 @@ const adminOrManagerMiddleware = require("../middleware/adminOrManager.middlewar
 const validateroleMiddleware = require("../middleware/validaterole.middleware");
 const { user } = require("../model/user.model");
 const validateObjectIdWithXArgMiddleware = require("../middleware/validateObjectIdWithXArg.middleware");
+const roleBaseAuthMiddleware = require("../middleware/roleBaseAuth.middleware.");
 
 const {
   validate,
@@ -113,7 +113,7 @@ router.put(
   validateObjectId,
   // auth is used to make authenticate a user.
   auth,
-  admin,
+  roleBaseAuthMiddleware(["admin", "gm", "manager"]),
   validateMiddleware(validatePatch),
   asyncMiddleware(userController.updateUserProfile)
 );

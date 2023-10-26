@@ -263,17 +263,39 @@ class UserController {
   }
   //Update/edit user data
   async updateUserProfile(req, res) {
-    const { role } = req.body;
-    if (role) req.body.role = role.toLowerCase();
+    let { role } = req.body;
+
+    const roleOfUserMakingRequest = req.user.role;
+    const forbiddenRolesForManager = ["admin", "gm", "manager"];
 
     const user = await userService.getUserById(req.params.id);
     if (!user) return res.status(404).send(errorMessage("user"));
 
-    if (user.isAdmin && role)
-      return badReqResponse(res, "Cannot change role of an admin");
+    if (role) {
+      req.body.role = role.toLowerCase();
+      role = role.toLowerCase();
 
-    if (role && user.role === role.toLowerCase())
-      return badReqResponse(res, `The user is already a ${role}`);
+      if (user.isAdmin)
+        return badReqResponse(res, "Cannot change role of an admin");
+
+      // if (user.role === role)
+      //   return badReqResponse(res, `The user is already a ${role}`);
+
+      if (roleOfUserMakingRequest === "manager") {
+        if (forbiddenRolesForManager.includes(role))
+          forbiddenResponse(
+            res,
+            `A manager cannot promote the requested user to ${role}.`
+          );
+
+        if (forbiddenRolesForManager.includes(user.role)) {
+          forbiddenResponse(
+            res,
+            `Managers can not modify the details of ${user.role.toUpperCase()}s.`
+          );
+        }
+      }
+    }
 
     let updatedUser = req.body;
 
