@@ -283,15 +283,15 @@ class UserController {
 
       if (roleOfUserMakingRequest === "manager") {
         if (forbiddenRolesForManager.includes(role))
-          forbiddenResponse(
+          return forbiddenResponse(
             res,
-            `A manager cannot promote the requested user to ${role}.`
+            `A manager cannot promote the requested user to ${role} role.`
           );
 
         if (forbiddenRolesForManager.includes(user.role)) {
-          forbiddenResponse(
+          return forbiddenResponse(
             res,
-            `Managers can not modify the details of ${user.role.toUpperCase()}s.`
+            `Managers can not modify the details of ${user.role.toUpperCase()}S.`
           );
         }
       }
