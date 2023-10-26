@@ -16,6 +16,7 @@ const validateServiceIdsMiddleware = require("../middleware/validateServiceIds.m
 const validateMonthYearParamsMiddleware = require("../middleware/validateMonthYearParams.middleware");
 const validateDateParams = require("../middleware/validDateParams.middleware");
 const roleBaseAuth = require("../middleware/roleBaseAuth.middleware.");
+const addLocationTypeMiddleware = require("../middleware/addLocationType.middleware");
 
 const {
   validate,
@@ -25,6 +26,7 @@ const {
   validateModifyPrice,
   validateModifyCarDetails,
   validateModifyServiceDone,
+  validateAddCarGeolocation,
 } = joiValidator;
 
 router.post(
@@ -144,6 +146,17 @@ router.put(
     validateServiceIdsMiddleware,
   ],
   asyncMiddleware(entryController.modifyCarDetails)
+);
+
+router.put(
+  "/add/:locationType/location/:vin",
+  [
+    auth,
+    roleBaseAuth(["porter"]),
+    validateMiddleware(validateAddCarGeolocation),
+    addLocationTypeMiddleware(),
+  ],
+  asyncMiddleware(entryController.addCarGeoLocation)
 );
 
 router.put(

@@ -259,6 +259,14 @@ class UserService {
     );
   };
 
+  updatePorterCurrentLocation = async (porter, session, geoLocation) => {
+    return await User.updateOne(
+      { _id: porter._id },
+      { $set: { "staffDetails.currentTrip": geoLocation } },
+      { session }
+    );
+  };
+
   async deleteUser(id) {
     return await User.findByIdAndRemove(id);
   }

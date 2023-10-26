@@ -12,6 +12,9 @@ const carDetails = [
     isCompleted: {
       type: Boolean,
     },
+    isDroppedOff: {
+      type: Boolean,
+    },
     vin: { type: String, required: true },
     year: { type: Number },
     make: {
@@ -50,17 +53,33 @@ const carDetails = [
         },
       },
     ],
-    geoLocation: {
-      description: {
-        type: String,
-        minlength: 3,
-        maxlength: 255,
+    geoLocations: [
+      {
+        timestamp: {
+          type: Date,
+        },
+        locationType: {
+          type: String,
+          enum: [
+            "Scanned",
+            "PickupFromDealership",
+            "TakenToShop",
+            "TakenFromShop",
+            "DropOffCompleted",
+          ],
+          required: true,
+        },
+        description: {
+          type: String,
+          minlength: 3,
+          maxlength: 255,
+        },
+        coordinates: {
+          latitude: { type: Number, required: true },
+          longitude: { type: Number, required: true },
+        },
       },
-      coordinates: {
-        latitude: { type: Number, required: true },
-        longitude: { type: Number, required: true },
-      },
-    },
+    ],
     customerNote: {
       type: String,
       minlength: 5,
@@ -284,6 +303,19 @@ function validateAddInvoicePatch(entry) {
   return schema.validate(entry);
 }
 
+function validateAddCarGeolocation(entry) {
+  const schema = Joi.object({
+    geoLocation: Joi.object({
+      description: Joi.string().required(),
+      coordinates: Joi.object({
+        longitude: Joi.number().required(),
+        latitude: Joi.number().required(),
+      }).required(),
+    }).required(),
+  });
+
+  return schema.validate(entry);
+}
 function validateModifyPrice(entry) {
   const schema = Joi.object({
     vin: Joi.string().required(),
@@ -310,6 +342,7 @@ exports.joiValidator = {
   validateAddInvoicePatch,
   validateModifyCarDetails,
   validateModifyServiceDone,
+  validateAddCarGeolocation,
   carDetailsProperties: Object.keys(carDetails[0]),
   entryProperties: Object.keys(entry),
 };

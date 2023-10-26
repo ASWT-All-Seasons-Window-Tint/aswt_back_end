@@ -52,6 +52,20 @@ class EntryService {
       : query;
   };
 
+  getEntryWithCompletedCarVin = async (vin) => {
+    const query = Entry.findOne({
+      "invoice.carDetails": {
+        $elemMatch: {
+          vin,
+          isCompleted: true,
+          isDroppedOff: undefined,
+        },
+      },
+    }).sort({ createdAt: -1 });
+
+    return query.populate("invoice.carDetails.serviceIds", "name").lean();
+  };
+
   async validateEntryIds(entryIds) {
     const entrys = await Entry.find({
       _id: { $in: entryIds },
@@ -361,6 +375,41 @@ class EntryService {
     return sortedCarDetailsWithoutPrice;
   }
 
+  calculateHaversineDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Earth's radius in kilometers
+    const dLat = (lat2 - lat1) * (Math.PI / 180);
+    const dLon = (lon2 - lon1) * (Math.PI / 180);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * (Math.PI / 180)) *
+        Math.cos(lat2 * (Math.PI / 180)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c;
+
+    return distance; // The distance in kilometers
+  }
+
+  getHaversineDistanceArgs({ initialLocation, finalLocation }) {
+    const haversineDistanceArgs = [
+      initialLocation.coordinates.latitude,
+      initialLocation.coordinates.longitude,
+      finalLocation.coordinates.latitude,
+      finalLocation.coordinates.longitude,
+    ];
+
+    return haversineDistanceArgs;
+  }
+
+  getCarLocationByType(car, locationType) {
+    const locationByType = car.geoLocations.find(
+      (location) => location.locationType === locationType
+    );
+
+    return locationByType;
+  }
+
   //Create new entry
   async createEntry(entry) {
     return await entry.save();
@@ -588,11 +637,23 @@ class EntryService {
     carExist,
     porterId
   ) => {
+    const newDate = new Date();
+
     carDetails.price = price;
     carDetails.category = carDetails.category.toLowerCase();
     staffId ? (carDetails.staffId = staffId) : (carDetails.porterId = porterId);
     carDetails.priceBreakdown = priceBreakdown;
-    carDetails.entryDate = newDateUtils();
+    carDetails.entryDate = newDate;
+
+    if (carDetails.geoLocation) {
+      carDetails.geoLocations = [
+        {
+          timeStamp: newDate,
+          locationType: "Scanned",
+          ...carDetails.geoLocation,
+        },
+      ];
+    }
 
     if (carExist) {
       const { carIndex, carAddedByCustomer } = this.getCarAddedByCustomer(

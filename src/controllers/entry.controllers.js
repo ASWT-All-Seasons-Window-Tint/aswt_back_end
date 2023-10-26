@@ -171,6 +171,101 @@ class EntryController {
     res.send(successMessage(MESSAGES.UPDATED, carDetails));
   };
 
+  async addCarGeoLocation(req, res) {
+    const { vin, locationType } = req.params;
+    const { geoLocation } = req.body;
+
+    const pickupLocationType = ["PickupFromDealership", "TakenToShop"].includes(
+      locationType
+    );
+
+    geoLocation.timestamp = new Date();
+
+    const entry = pickupLocationType
+      ? await entryService.getEntryByVin(vin, true)
+      : await entryService.getEntryWithCompletedCarVin(vin);
+
+    if (!entry) return res.status(404).send(errorMessage("entry"));
+
+    const { carIndex, carWithVin } = entryService.getCarByVin({ entry, vin });
+
+    const locationByType = entryService.getCarLocationByType(
+      carWithVin,
+      locationType
+    );
+    if (locationByType)
+      return badReqResponse(
+        res,
+        `${locationType} location has already been added`
+      );
+
+    const scannedLocation = entryService.getCarLocationByType(
+      carWithVin,
+      "Scanned"
+    );
+
+    if (!scannedLocation)
+      return badReqResponse(res, "First scanning has to be done");
+
+    if (["PickupFromDealership", "DropOffCompleted"].includes(locationType)) {
+      let threshold = 3 / 1000;
+
+      const haversineDistanceArgs = entryService.getHaversineDistanceArgs({
+        initialLocation: scannedLocation,
+        finalLocation: geoLocation,
+      });
+
+      const distance = entryService.calculateHaversineDistance(
+        ...haversineDistanceArgs
+      );
+
+      if (locationType === "DropOffCompleted") {
+        threshold = 10 / 1000;
+        const takenFromShopLocation = entryService.getCarLocationByType(
+          carWithVin,
+          "TakenFromShop"
+        );
+
+        if (!takenFromShopLocation)
+          return badReqResponse(res, "No taken from shop location");
+      }
+
+      if (distance > threshold)
+        return badReqResponse(
+          res,
+          "The car is not within the within the Dealership location"
+        );
+    }
+
+    carWithVin.geoLocations.push(geoLocation);
+
+    entry.invoice.carDetails[carIndex] = carWithVin;
+
+    const { price, priceBreakdown, ...carWithoutPrice } = carWithVin;
+
+    if (["PickupFromDealership", "TakenFromShop"].includes(locationType)) {
+      const mongoSession = await mongoose.startSession();
+
+      const results = await mongoTransactionUtils(mongoSession, async () => {
+        await userService.updatePorterCurrentLocation(
+          req.user,
+          mongoSession,
+          geoLocation
+        );
+
+        const id = entry._id;
+        await entryService.updateEntryById(id, entry, mongoSession);
+      });
+      if (results) return jsonResponse(res, 500, false, "Something failed");
+
+      return res.send(successMessage(MESSAGES.UPDATED, carWithoutPrice));
+    }
+
+    await entryService.updateEntryById(entry._id, entry);
+
+    res.send(successMessage(MESSAGES.UPDATED, carWithoutPrice));
+  }
+
   //get all entries in the entry collection/table
   async fetchAllEntries(req, res) {
     const { getEntries } = entryService;
@@ -349,6 +444,7 @@ class EntryController {
 
   async sortCarDetailsByPrice(req, res) {
     const { customerId } = req.params;
+    const porterId = req.user._id;
 
     const entry = await entryService.getEntryForCustomerLast24Hours(
       customerId,
@@ -362,7 +458,11 @@ class EntryController {
         "No entry has been added for the customer today"
       );
 
-    const carDetails = entry.invoice.carDetails;
+    const carDetails = entry.invoice.carDetails.filter((car) => {
+      if (car.porterId) {
+        return car.porterId.toString() === porterId.toString();
+      }
+    });
     const sortedCarDetailsWithoutPrice =
       entryServices.sortCarDetailsByPrice(carDetails);
 
