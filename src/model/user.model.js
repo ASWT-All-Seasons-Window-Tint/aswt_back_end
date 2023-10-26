@@ -6,6 +6,15 @@ const { Department } = require("./department.model");
 const addVirtualIdUtils = require("../utils/addVirtualId.utils");
 require("dotenv").config();
 
+const validUserRoles = [
+  "staff",
+  "manager",
+  "receptionist",
+  "editor",
+  "gm",
+  "porter",
+];
+
 const staffDetailsSchema = new mongoose.Schema({
   signInLocations: [
     {
@@ -110,6 +119,7 @@ const userSchema = new mongoose.Schema(
     role: {
       type: String,
       required: true,
+      enum: validUserRoles,
     },
     departments: {
       type: [mongoose.Schema.Types.ObjectId],
@@ -183,7 +193,7 @@ function validate(user) {
       .min(4)
       .max(255)
       .required()
-      .valid("staff", "manager", "receptionist", "editor", "gm", "porter")
+      .valid(...validUserRoles)
       .insensitive(),
     departments: Joi.array()
       .items(Joi.objectId().required())
@@ -224,7 +234,7 @@ function validatePatch(user) {
     role: Joi.string()
       .min(4)
       .max(255)
-      .valid("staff", "manager", "receptionist", "editor")
+      .valid(...validUserRoles)
       .insensitive(),
     departments: Joi.array()
       .items(Joi.objectId().required())
