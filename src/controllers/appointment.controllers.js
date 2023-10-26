@@ -1,4 +1,4 @@
-// const Queue = require("bull");
+const Queue = require("bull");
 const appointmentService = require("../services/appointment.services");
 const {
   errorMessage,
@@ -21,7 +21,7 @@ const serviceServices = require("../services/service.services");
 const { initiateRefund } = require("./stripe.controllers");
 
 const redisConnection = { url: process.env.redisUrl };
-// const appointmentQueue = new Queue("reminders", redisConnection);
+const appointmentQueue = new Queue("reminders", redisConnection);
 
 class AppointmentController {
   async getStatus(req, res) {
@@ -395,9 +395,9 @@ class AppointmentController {
     return delay > 0 ? delay : delay + oneHour;
   }
 
-  // exportQueue() {
-  //   return appointmentQueue;
-  // }
+  exportQueue() {
+    return appointmentQueue;
+  }
 }
 
 module.exports = new AppointmentController();
