@@ -15,6 +15,21 @@ const validUserRoles = [
   "porter",
 ];
 
+const geoLocationObject = {
+  timestamp: {
+    type: Date,
+  },
+  description: {
+    type: String,
+    minlength: 3,
+    maxlength: 255,
+  },
+  coordinates: {
+    latitude: { type: Number },
+    longitude: { type: Number },
+  },
+};
+
 const staffDetailsSchema = new mongoose.Schema({
   signInLocations: [
     {
@@ -46,6 +61,9 @@ const staffDetailsSchema = new mongoose.Schema({
     default: 0,
   },
   isLoggedIn: Boolean,
+  currentTrip: {
+    ...geoLocationObject,
+  },
   currentSignInLocation: {
     timestamp: {
       type: Date,
