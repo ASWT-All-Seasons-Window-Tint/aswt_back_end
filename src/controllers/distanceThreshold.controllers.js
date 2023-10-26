@@ -1,7 +1,11 @@
 const { DistanceThreshold } = require("../model/distanceThreshold.model");
 const distanceThresholdService = require("../services/distanceThreshold.services");
 const { MESSAGES } = require("../common/constants.common");
-const { successMessage, jsonResponse } = require("../common/messages.common");
+const {
+  successMessage,
+  jsonResponse,
+  forbiddenResponse,
+} = require("../common/messages.common");
 const { validLocationType } = require("../model/entry.model").joiValidator;
 
 class DistanceThresholdController {
@@ -15,7 +19,10 @@ class DistanceThresholdController {
       await distanceThresholdService.getDistanceThreshold();
 
     if (thresholdDistance)
-      return jsonResponse(res, "Threshold distance can only be added once");
+      return forbiddenResponse(
+        res,
+        "Threshold distance can only be added once"
+      );
 
     const {
       Scanned,
