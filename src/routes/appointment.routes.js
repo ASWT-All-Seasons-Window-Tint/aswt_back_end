@@ -11,36 +11,37 @@ const {
 } = require("../model/appointment.model");
 const validateTimeslotsMiddleware = require("../middleware/validateTimeslots.middleware");
 const takenTimeslotsControllers = require("../controllers/takenTimeslots.controllers");
+const asyncMiddleware = require("../middleware/async.middleware");
 
 router.post(
   "/",
   validateMiddleware(validate),
   validateTimeslotsMiddleware,
-  appointmentControllers.createAppointment
+  asyncMiddleware(appointmentControllers.createAppointment)
 );
 router.delete(
   "/:id",
   auth,
   receptionistMiddleware,
-  appointmentControllers.cancelAppointment
+  asyncMiddleware(appointmentControllers.cancelAppointment)
 );
 
 router.get(
   "/:date",
   auth,
   receptionistMiddleware,
-  appointmentControllers.getAppointmentsByDate
+  asyncMiddleware(appointmentControllers.getAppointmentsByDate)
 );
 
 router.post(
   "/available-time-slots",
-  takenTimeslotsControllers.getTakenTimeSlots
+  asyncMiddleware(takenTimeslotsControllers.getTakenTimeSlots)
 );
 router.put(
   "/clear-out-appointment",
   auth,
   receptionistMiddleware,
-  freeTimeSlotControllers.clearOutAppointment
+  asyncMiddleware(freeTimeSlotControllers.clearOutAppointment)
 );
 
 module.exports = router;
