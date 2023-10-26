@@ -204,6 +204,15 @@ function validate(appointment) {
   return schema.validate(appointment);
 }
 
+function validateGetTakenTimeslots(appointment) {
+  const schema = Joi.object({
+    date: Joi.date().required(),
+    serviceIds: Joi.array().items(Joi.objectId()),
+  });
+
+  return schema.validate(appointment);
+}
+
 function validatePatch(appointment) {
   const schema = Joi.object({
     appointmentType: Joi.string().valid("auto", "commercial").insensitive(),
@@ -223,6 +232,11 @@ function validatePatch(appointment) {
   return schema.validate(appointment);
 }
 
+exports.joiValidators = {
+  validate,
+  validatePatch,
+  validateGetTakenTimeslots,
+};
 exports.validate = validate;
 exports.validatePatch = validatePatch;
 exports.Appointment = Appointment;
