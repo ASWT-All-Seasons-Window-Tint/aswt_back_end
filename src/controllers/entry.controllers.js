@@ -1,5 +1,5 @@
 const _ = require("lodash");
-const { Entry } = require("../model/entry.model");
+const { DistanceThreshold } = require("../model/distanceThreshold.model");
 const entryService = require("../services/entry.services");
 const userService = require("../services/user.services");
 const customerService = require("../services/customer.service");
@@ -208,7 +208,14 @@ class EntryController {
       return badReqResponse(res, "First scanning has to be done");
 
     if (["PickupFromDealership", "DropOffCompleted"].includes(locationType)) {
-      let threshold = 3 / 1000;
+      const distanceThreshold = await DistanceThreshold.findOne()
+        .limit(1)
+        .lean();
+
+      if (!distanceThreshold)
+        return res.status(404).send(errorMessage("distanceThreshold"));
+
+      const threshold = distanceThreshold[locationType];
 
       const haversineDistanceArgs = entryService.getHaversineDistanceArgs({
         initialLocation: scannedLocation,
@@ -220,7 +227,6 @@ class EntryController {
       );
 
       if (locationType === "DropOffCompleted") {
-        threshold = 10 / 1000;
         const takenFromShopLocation = entryService.getCarLocationByType(
           carWithVin,
           "TakenFromShop"

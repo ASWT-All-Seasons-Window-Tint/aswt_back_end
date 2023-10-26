@@ -5,13 +5,12 @@ const freeTimeSlotControllers = require("../controllers/freeTimeSlot.controllers
 const router = express.Router();
 const validateMiddleware = require("../middleware/validate.middleware");
 const receptionistMiddleware = require("../middleware/receptionist.middleware");
-const {
-  validate,
-  validateAvailableTimeSlot,
-} = require("../model/appointment.model");
+const { joiValidators } = require("../model/appointment.model");
 const validateTimeslotsMiddleware = require("../middleware/validateTimeslots.middleware");
 const takenTimeslotsControllers = require("../controllers/takenTimeslots.controllers");
 const asyncMiddleware = require("../middleware/async.middleware");
+
+const { validate, validateGetTakenTimeslots } = joiValidators;
 
 router.post(
   "/",
@@ -35,6 +34,7 @@ router.get(
 
 router.post(
   "/available-time-slots",
+  validateMiddleware(validateGetTakenTimeslots),
   asyncMiddleware(takenTimeslotsControllers.getTakenTimeSlots)
 );
 router.put(

@@ -5,14 +5,33 @@ const { MESSAGES } = require("../common/constants.common");
 const { VALID_TIME_SLOTS } =
   require("../common/constants.common").FREE_TIME_SLOTS;
 const freeTimeSlotServices = require("../services/freeTimeSlot.services");
+const serviceServices = require("../services/service.services");
+const appointmentServices = require("../services/appointment.services");
 
 class TakenTimeslotControllers {
   getTakenTimeSlots = async (req, res) => {
-    const { date } = req.body;
+    const { date, serviceIds } = req.body;
+
+    const [services, missingIds] = await Promise.all([
+      serviceServices.getMultipleServices(serviceIds, true),
+      serviceServices.validateServiceIds(serviceIds),
+    ]);
+
+    if (missingIds.length > 0)
+      return jsonResponse(
+        res,
+        404,
+        false,
+        `Services with IDs: [${missingIds}] could not be found`
+      );
+
+    const timeOfCompletion =
+      appointmentServices.calculateTotalTimeOfCompletion(services);
 
     const takenTimeslotsForAllStaffs = await this.generateTakenTimeslots({
       res,
       date,
+      timeOfCompletion,
     });
 
     if (takenTimeslotsForAllStaffs.statusCode) return;
@@ -22,7 +41,7 @@ class TakenTimeslotControllers {
     );
   };
 
-  async generateTakenTimeslots({ res, date }) {
+  async generateTakenTimeslots({ res, date, timeOfCompletion }) {
     const staffIds = await userService.fetchIdsOfStaffsWhoCanTakeAppointments();
     const { formattedDate } = freeTimeSlotServices.getFormattedDate(date);
 
@@ -55,7 +74,10 @@ class TakenTimeslotControllers {
     }
 
     const takenTimeslotsForAllStaffs =
-      takenTimeslotsServices.getTakenTimeslotsForAllStaffs(takenTimeslots, 2);
+      takenTimeslotsServices.getTakenTimeslotsForAllStaffs(
+        takenTimeslots,
+        timeOfCompletion
+      );
 
     const isDateFilledUp = takenTimeslotsServices.arraysAreEqual(
       VALID_TIME_SLOTS(),

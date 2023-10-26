@@ -3,8 +3,12 @@ const Joi = require("joi");
 const addVirtualIdUtils = require("../utils/addVirtualId.utils");
 const { validLocationType } = require("./entry.model").joiValidator;
 
+const distanceThresholdLocationType = validLocationType.filter(
+  (location) => location !== "Scanned"
+);
+
 const schema = {};
-for (location of validLocationType) {
+for (location of distanceThresholdLocationType) {
   schema[location] = {
     type: Number,
     required: true,
@@ -19,28 +23,29 @@ const distanceThresholdSchema = new mongoose.Schema(
 
 addVirtualIdUtils(distanceThresholdSchema);
 
-const Job = mongoose.model("Job", jobSchema);
+const DistanceThreshold = mongoose.model(
+  "DistanceThreshold",
+  distanceThresholdSchema
+);
 
-function validate(job) {
-  const schema = Joi.object({
-    staffId: Joi.objectId().require(),
-    entryId: Joi.objectId().require(),
-    serviceId: Joi.objectId().require(),
-  });
+const joiValidate = {};
 
-  return schema.validate(job);
+for (location of distanceThresholdLocationType) {
+  joiValidate[location] = Joi.number();
 }
 
-function validatePatch(job) {
-  const schema = Joi.object({
-    staffId: Joi.objectId().require(),
-    entryId: Joi.objectId().require(),
-    serviceId: Joi.objectId().require(),
-  });
+function validate(distanceThreshold) {
+  const schema = Joi.object(joiValidate);
 
-  return schema.validate(job);
+  return schema.validate(distanceThreshold);
+}
+
+function validatePatch(distanceThreshold) {
+  const schema = Joi.object(joiValidate);
+
+  return schema.validate(distanceThreshold);
 }
 
 exports.validatePatch = validatePatch;
 exports.validate = validate;
-exports.Job = Job;
+exports.DistanceThreshold = DistanceThreshold;
