@@ -51,7 +51,7 @@ class AppointmentController {
         res,
         404,
         false,
-        `Services with IDs: ${missingIds} could not be found`
+        `Services with IDs: [${missingIds}] could not be found`
       );
 
     const timeOfCompletion =
@@ -71,6 +71,7 @@ class AppointmentController {
       await takenTimeslotsControllers.generateTakenTimeslots({
         date,
         res,
+        timeOfCompletion,
       });
 
     if (takenTimeslotsDetails.statusCode) return;

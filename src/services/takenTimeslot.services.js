@@ -42,7 +42,7 @@ class TakenTimeslotService {
       freeTimeSlotServices.convertTimeArrayToDecimal(staff.timeslots);
     let unAvailableTimeSlot = [];
 
-    for (let i = 0; i <= expectedTimeOfCompletion; i += 0.5) {
+    for (let i = 0; i <= expectedTimeOfCompletion; i += 0.25) {
       timeSlotsInDecimal.forEach((timeslot) => {
         if (staffTimeSlotsInDecimal.includes(timeslot + i)) {
           unAvailableTimeSlot.push(timeslot);
