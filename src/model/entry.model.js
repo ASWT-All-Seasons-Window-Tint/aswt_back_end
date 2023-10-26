@@ -4,6 +4,13 @@ const addVirtualIdUtils = require("../utils/addVirtualId.utils");
 const newDate = require("../utils/newDate.utils");
 const { Service } = require("./service.model");
 
+const validLocationType = [
+  "Scanned",
+  "PickupFromDealership",
+  "TakenToShop",
+  "TakenFromShop",
+  "DropOffCompleted",
+];
 const carDetails = [
   {
     waitingList: {
@@ -60,13 +67,7 @@ const carDetails = [
         },
         locationType: {
           type: String,
-          enum: [
-            "Scanned",
-            "PickupFromDealership",
-            "TakenToShop",
-            "TakenFromShop",
-            "DropOffCompleted",
-          ],
+          enum: validLocationType,
           required: true,
         },
         description: {
@@ -345,5 +346,6 @@ exports.joiValidator = {
   validateAddCarGeolocation,
   carDetailsProperties: Object.keys(carDetails[0]),
   entryProperties: Object.keys(entry),
+  validLocationType,
 };
 exports.Entry = Entry;
