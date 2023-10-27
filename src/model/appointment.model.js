@@ -223,14 +223,15 @@ function validateGetTakenTimeslots(appointment) {
 
 function validatePatch(appointment) {
   const schema = Joi.object({
-    appointmentType: Joi.string().valid("auto", "commercial").insensitive(),
-    staffIds: Joi.array().items(Joi.objectId().required()),
     startTime: Joi.date().required(),
     description: Joi.string().max(255).min(3),
     carDetails: Joi.object({
-      year: Joi.string().min(4).max(4),
-      make: Joi.string().min(1).max(255),
-      model: Joi.string().min(1).max(255),
+      serviceDetails: Joi.array().items(
+        Joi.object({
+          serviceId: Joi.objectId().required(),
+          filmQualityId: Joi.objectId(),
+        })
+      ),
     }).when("appointmentType", {
       is: "commercial",
       then: Joi.forbidden(),

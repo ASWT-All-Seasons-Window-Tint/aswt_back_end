@@ -8,6 +8,7 @@ const receptionistMiddleware = require("../middleware/receptionist.middleware");
 const { joiValidators } = require("../model/appointment.model");
 const validateTimeslotsMiddleware = require("../middleware/validateTimeslots.middleware");
 const takenTimeslotsControllers = require("../controllers/takenTimeslots.controllers");
+const validateObjectId = require("../middleware/validateObjectId.middleware");
 const asyncMiddleware = require("../middleware/async.middleware");
 
 const { validate, validateGetTakenTimeslots } = joiValidators;
@@ -42,6 +43,15 @@ router.put(
   auth,
   receptionistMiddleware,
   asyncMiddleware(freeTimeSlotControllers.clearOutAppointment)
+);
+
+router.put(
+  "/:id",
+  validateObjectId,
+  auth,
+  receptionistMiddleware,
+  validateMiddleware(validate),
+  asyncMiddleware(appointmentControllers.updateAppointment)
 );
 
 module.exports = router;

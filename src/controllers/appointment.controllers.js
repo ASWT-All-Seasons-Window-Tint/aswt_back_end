@@ -235,7 +235,7 @@ class AppointmentController {
 
   //Update/edit appointment data
   updateAppointment = async (req, res) => {
-    const { startTime, serviceIds } = req.body;
+    const { startTime, serviceDetails } = req.body;
     const appointment = await appointmentService.getAppointmentById(
       req.params.id
     );
@@ -244,11 +244,15 @@ class AppointmentController {
     }
 
     if (startTime) {
+      const { serviceIds } = appointmentService.getServiceIdsAndfilmQualityIds(
+        appointment.carDetails.serviceDetails
+      );
+
       let services = await serviceServices.getMultipleServices(
-        appointment.carDetails.serviceIds,
+        serviceIds,
         true
       );
-      if (serviceIds) {
+      if (serviceDetails) {
         services = await serviceServices.getMultipleServices(
           appointment.carDetails.serviceIds,
           true
@@ -259,7 +263,10 @@ class AppointmentController {
         appointmentService.calculateTotalTimeOfCompletion(services);
 
       const staffTakenTimeSlot =
-        await takenTimeslotServices.retriveTakenTimeslots(appointment);
+        await takenTimeslotServices.retriveTakenTimeslots(
+          appointment,
+          timeOfCompletion
+        );
 
       let { formattedDate: date, formattedTime: timeString } =
         freeTimeSlotServices.getFormattedDate(startTime);
@@ -267,6 +274,7 @@ class AppointmentController {
         await takenTimeslotsControllers.generateTakenTimeslots({
           date,
           res,
+          timeOfCompletion,
         });
 
       if (takenTimeslotsDetails.statusCode) return;
@@ -286,7 +294,7 @@ class AppointmentController {
       const takenTimeSlotForStaff =
         takenTimeslotServices.getTakenTimeslotForStaff(freeStaffPerTime);
 
-      await staffTakenTimeSlot.save();
+      if (staffTakenTimeSlot) await staffTakenTimeSlot.save();
 
       await takenTimeslotServices.updateTakenTimeslotsForStaff(
         takenTimeSlotForStaff,
