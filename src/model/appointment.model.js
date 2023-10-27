@@ -5,6 +5,15 @@ const { User } = require("./user.model").user;
 const { Service } = require("./service.model");
 const addVirtualIdUtils = require("../utils/addVirtualId.utils");
 
+const validCarTypes = [
+  "2Or4DoorsCar",
+  "4DoorsSuv",
+  "6+DoorsSuv",
+  "MiniVan",
+  "TruckStd.Cab",
+  "Truck4Doors",
+];
+
 const paymentDetailsSchema = new mongoose.Schema({
   paymentDate: {
     default: null,
@@ -71,6 +80,7 @@ const carDetailsSchema = new mongoose.Schema({
   },
   category: {
     type: String,
+    enum: validCarTypes,
   },
   serviceDetails: [
     {
@@ -186,8 +196,7 @@ function validate(appointment) {
       model: Joi.string().min(1).max(255).required(),
       category: Joi.string()
         .min(1)
-        .valid("sedan", "suv", "truck")
-        .insensitive(),
+        .valid(...validCarTypes),
       serviceDetails: Joi.array().items(
         Joi.object({
           serviceId: Joi.objectId().required(),
