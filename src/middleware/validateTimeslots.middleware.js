@@ -25,9 +25,20 @@ module.exports = function (req, res, next) {
   next();
 };
 
-function validateTimeString(timeString) {
-  const pattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}\+\d{2}:\d{2}$/;
-  return pattern.test(timeString);
+function validateTimeString(dateString) {
+  const date = new Date(dateString);
+
+  // Check if the date is valid
+  // The Date object will return 'Invalid Date' for invalid dates
+  if (isNaN(date)) {
+    return false;
+  }
+
+  // Additional checks can be done if necessary
+  // For example, you can compare the parsed date with the original input
+
+  // Return true if the date is valid
+  return true;
 }
 
 function isFutureDateTime(dateTimeString) {
