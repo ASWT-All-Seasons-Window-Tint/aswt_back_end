@@ -42,7 +42,7 @@ router.put(
   "/clear-out-appointment",
   auth,
   receptionistMiddleware,
-  asyncMiddleware(freeTimeSlotControllers.clearOutAppointment)
+  asyncMiddleware(takenTimeslotsControllers.clearOutAppointment)
 );
 
 router.put(

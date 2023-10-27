@@ -37,6 +37,10 @@ class TakenTimeslotService {
     return await takenTimeslot.save();
   }
 
+  async clearOutAppointment(date) {
+    return TakenTimeslot.updateMany({ date }, { $set: { clearedOut: true } });
+  }
+
   findUnavailableTimeSlots(staff, expectedTimeOfCompletion) {
     const staffTimeSlotsInDecimal =
       freeTimeSlotServices.convertTimeArrayToDecimal(staff.timeslots);
