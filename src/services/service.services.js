@@ -31,6 +31,10 @@ class ServiceService {
     return await Service.findOne({ name: caseInsensitiveName });
   }
 
+  async getSunRoofServices() {
+    return await Service.find({ sunRoof: true });
+  }
+
   async getServiceByType(type) {
     const caseInsensitiveType = new RegExp(type, "i");
 

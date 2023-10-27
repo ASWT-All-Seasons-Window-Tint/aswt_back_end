@@ -40,6 +40,7 @@ const serviceSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    sunRoof: Boolean,
   },
   { toJSON: { virtuals: true } },
   { toObject: { virtuals: true } }
