@@ -185,6 +185,14 @@ class EntryController {
       ? await entryService.getEntryByVin(vin, true)
       : await entryService.getEntryWithCompletedCarVin(vin);
 
+    if (!pickupLocationType && !entry)
+      return jsonResponse(
+        res,
+        404,
+        false,
+        "This car has either not had its services completed or has not been added to the system."
+      );
+
     if (!entry) return res.status(404).send(errorMessage("entry"));
 
     const { carIndex, carWithVin } = entryService.getCarByVin({ entry, vin });

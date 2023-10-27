@@ -33,7 +33,7 @@ router.get(
 );
 
 router.post(
-  "/available-time-slots",
+  "/taken-time-slots",
   validateMiddleware(validateGetTakenTimeslots),
   asyncMiddleware(takenTimeslotsControllers.getTakenTimeSlots)
 );
