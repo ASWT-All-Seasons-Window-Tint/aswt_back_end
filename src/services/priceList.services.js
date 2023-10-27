@@ -22,7 +22,25 @@ class PriceListService {
     return missingIds;
   }
 
-  async getPriceListByFilmQualityIdIdAndServiceId(serviceId, filmQualityId) {
+  async getPriceListByFilmQualityIdIdAndServiceId(
+    serviceId,
+    filmQualityId,
+    categoryId
+  ) {
+    if (!filmQualityId && categoryId) {
+      return await PriceList.findOne({
+        serviceId,
+        categoryId,
+      }).populate(["serviceId", "categoryId"]);
+    }
+    if (categoryId) {
+      return await PriceList.findOne({
+        serviceId,
+        filmQualityId,
+        categoryId,
+      }).populate(["serviceId", "filmQualityId", "categoryId"]);
+    }
+
     return await PriceList.findOne({ serviceId, filmQualityId }).populate([
       "serviceId",
       "filmQualityId",
@@ -33,7 +51,9 @@ class PriceListService {
   }
 
   async getAllPriceLists() {
-    return await PriceList.find().sort({ _id: -1 });
+    return await PriceList.find()
+      .sort({ _id: -1 })
+      .populate(["serviceId", "filmQualityId", "categoryId"]);
   }
 
   async updatePriceListById(id, priceList) {

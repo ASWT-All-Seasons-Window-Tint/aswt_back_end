@@ -27,7 +27,7 @@ class FilmQualityService {
   }
 
   async getAllFilmQualities() {
-    return await FilmQuality.find().sort({ _id: -1 });
+    return await FilmQuality.find({ type: undefined }).sort({ _id: -1 });
   }
 
   async updateFilmQualityById(id, filmQuality) {

@@ -58,7 +58,7 @@ class AppointmentController {
       appointmentService.calculateTotalTimeOfCompletion(services);
 
     const { priceBreakdownArray, error, price } =
-      await appointmentService.getPriceBreakdown(serviceDetails);
+      await appointmentService.getPriceBreakdown(serviceDetails, category);
 
     if (error.message) return badReqResponse(res, error.message);
 

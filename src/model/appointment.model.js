@@ -90,7 +90,6 @@ const carDetailsSchema = new mongoose.Schema({
       },
       filmQualityId: {
         type: mongoose.Schema.Types.ObjectId,
-        required: true,
       },
     },
   ],

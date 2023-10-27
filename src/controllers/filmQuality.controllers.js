@@ -10,11 +10,12 @@ class FilmQualityController {
 
   //Create a new filmQuality
   async createFilmQuality(req, res) {
-    const { name, description } = req.body;
+    const { name, description, type } = req.body;
 
     let filmQuality = new FilmQuality({
-      name,
+      name: name.toUpperCase(),
       description,
+      type,
     });
 
     filmQuality = await filmQualityService.createFilmQuality(filmQuality);
