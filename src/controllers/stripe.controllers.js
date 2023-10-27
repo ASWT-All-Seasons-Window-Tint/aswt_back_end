@@ -3,6 +3,7 @@ const { jsonResponse, errorMessage } = require("../common/messages.common");
 const appointmentServices = require("../services/appointment.services");
 const stripe = require("stripe")(process.env.stripeSecretKey);
 const stripeAccount = process.env.stripeAccount;
+const Joi = require("joi");
 
 class StripeController {
   async stripeCheckoutSession(req, res) {
@@ -77,6 +78,14 @@ class StripeController {
     }
 
     return results;
+  }
+
+  validate(entry) {
+    const schema = Joi.object({
+      appointmentId: Joi.objectId().required(),
+    });
+
+    return schema.validate(entry);
   }
 }
 
