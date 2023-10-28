@@ -88,14 +88,14 @@ class UserService {
     return await User.findOne({ _id: userId, isDeleted: undefined });
   }
 
-  async getUserWithoutPasswordById(role, userId) {
-    const isUserStaff = role === "staff";
+  getUserWithoutPasswordById = async (role, userId) => {
+    const isUserStaff = this.staffRoles.includes(role);
     const selectArgs = isUserStaff ? "-password" : "-password -staffDetails";
 
     return await User.findOne({ _id: userId, isDeleted: undefined }).select(
       selectArgs
     );
-  }
+  };
 
   query = (role, selectArg) =>
     User.find({ role, isDeleted: undefined }).select(selectArg);
