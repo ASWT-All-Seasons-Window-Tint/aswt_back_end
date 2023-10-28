@@ -37,6 +37,10 @@ class TakenTimeslotService {
     return await takenTimeslot.save();
   }
 
+  async clearOutAppointment(date) {
+    return TakenTimeslot.updateMany({ date }, { $set: { clearedOut: true } });
+  }
+
   findUnavailableTimeSlots(staff, expectedTimeOfCompletion) {
     const staffTimeSlotsInDecimal =
       freeTimeSlotServices.convertTimeArrayToDecimal(staff.timeslots);
@@ -171,7 +175,7 @@ class TakenTimeslotService {
     };
   }
 
-  retriveTakenTimeslots = async (appointment) => {
+  retriveTakenTimeslots = async (appointment, timeOfCompletion) => {
     const staffId = appointment.staffId;
     const startTime = appointment.startTime;
     const { formattedDate, formattedTime } =
@@ -182,7 +186,9 @@ class TakenTimeslotService {
       staffId,
     });
 
-    const timeTaken = this.getTakenTimes(formattedTime, 2);
+    if (!staffTakenTimeSlot) return null;
+
+    const timeTaken = this.getTakenTimes(formattedTime, timeOfCompletion);
 
     const updatedRetrievedTime = staffTakenTimeSlot.timeslots.filter(
       (timeslot) => !timeTaken.includes(timeslot)
@@ -216,7 +222,12 @@ class TakenTimeslotService {
 
     const takenTimes = this.getTakenTimes(timeString, timeOfCompletion);
 
-    if (timeslots.length < 1) {
+    const staffTakenTimeslots = await this.getTakenTimeSlotsByDateAndStaffId({
+      staffId,
+      date,
+    });
+
+    if (timeslots.length < 1 && !staffTakenTimeslots) {
       const updatedTakenTimeSlots = [...new Set([...timeslots, ...takenTimes])];
       const sortedUpdatedTakenTimeslots = this.sortTimeArray(
         updatedTakenTimeSlots
@@ -230,11 +241,6 @@ class TakenTimeslotService {
 
       return newTimeslots;
     }
-
-    const staffTakenTimeslots = await this.getTakenTimeSlotsByDateAndStaffId({
-      staffId,
-      date,
-    });
 
     timeslots = staffTakenTimeslots.timeslots;
 

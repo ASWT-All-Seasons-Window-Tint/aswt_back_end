@@ -135,6 +135,12 @@ class ServiceController {
     res.send(successMessage(MESSAGES.FETCHED, service));
   }
 
+  async getSunRoofServices(req, res) {
+    const services = await serviceService.getSunRoofServices();
+
+    res.send(successMessage(MESSAGES.FETCHED, services));
+  }
+
   async getServiceByIdWeb(req, res) {
     let service = await serviceService.getServiceById(req.params.id, {
       lean: true,

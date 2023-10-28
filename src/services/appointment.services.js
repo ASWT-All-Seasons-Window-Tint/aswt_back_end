@@ -2,8 +2,10 @@ const { Appointment } = require("../model/appointment.model");
 const entryUtils = require("../utils/entry.utils");
 const entryService = require("../services/entry.services");
 const newDateUtils = require("../utils/newDate.utils");
-const freeTimeSlotServices = require("./freeTimeSlot.services");
+const serviceServices = require("./service.services");
 const priceListServices = require("./priceList.services");
+const categoryService = require("./category.services");
+const convertToLowerCaseAndRemoveNonAlphanumeric = require("../utils/convertToLowerCaseAndRemoveNonAlphanumeric.utils");
 
 class AppointmentService {
   //Create new appointment
@@ -155,23 +157,47 @@ class AppointmentService {
     return { filmQualityIds, serviceIds };
   }
 
-  async getPriceBreakdown(serviceDetails) {
+  async getPriceBreakdown(serviceDetails, categoryName) {
     const results = {};
 
     results.error = {};
     results.priceBreakdownArray = [];
 
     for (const serviceDetail of serviceDetails) {
-      if (serviceDetail.filmQualityId) {
-        const priceBreakdown = {};
-        const filmQualityId = serviceDetail.filmQualityId;
-        const serviceId = serviceDetail.serviceId;
+      const { filmQualityId, serviceId } = serviceDetail;
 
-        const priceList =
-          await priceListServices.getPriceListByFilmQualityIdIdAndServiceId(
-            serviceId,
-            filmQualityId
-          );
+      const categoryNameWithoutSpecialCharacters =
+        convertToLowerCaseAndRemoveNonAlphanumeric(categoryName);
+
+      const [service, category] = await Promise.all([
+        serviceServices.getServiceById(serviceId),
+        categoryService.getCategoryByName(categoryNameWithoutSpecialCharacters),
+      ]);
+
+      const serviceType = service.type;
+
+      if (!category) return res.status(404).send(errorMessage("category"));
+      const categoryId = category._id;
+
+      if (serviceType === "installation" && !filmQualityId) {
+        results.error.message =
+          "Film quality is required for installation services";
+        return results;
+      }
+
+      if (serviceType === "installation") {
+        const priceBreakdown = {};
+
+        const priceList = service.isFull
+          ? await priceListServices.getPriceListByFilmQualityIdIdAndServiceId(
+              serviceId,
+              filmQualityId,
+              categoryId
+            )
+          : await priceListServices.getPriceListByFilmQualityIdIdAndServiceId(
+              serviceId,
+              filmQualityId
+            );
 
         if (!priceList) {
           results.error.message =
@@ -186,25 +212,22 @@ class AppointmentService {
         priceBreakdown.serviceType = priceList.serviceId.type;
 
         results.priceBreakdownArray.push(priceBreakdown);
-      } else if (!serviceDetail.filmQualityId) {
+      }
+      if (serviceType === "removal") {
         const priceBreakdown = {};
-        const serviceId = serviceDetail.serviceId;
 
-        const priceList = await priceListServices.getPriceListByServiceId(
-          serviceId
-        );
+        console.log(serviceId, categoryId);
+
+        const priceList = !service.isFull
+          ? await priceListServices.getPriceListByServiceId(serviceId)
+          : await priceListServices.getPriceListByFilmQualityIdIdAndServiceId(
+              serviceId,
+              undefined,
+              categoryId
+            );
 
         if (!priceList) {
-          results.error.message =
-            "Can't find price list for the service and film quality";
-          return results;
-        }
-
-        const serviceType = priceList.serviceId.type;
-
-        if (serviceType !== "removal") {
-          results.error.message =
-            "Film quality is required for installation types of service";
+          results.error.message = "Can't find price list for the service";
           return results;
         }
 
@@ -215,11 +238,10 @@ class AppointmentService {
 
         results.priceBreakdownArray.push(priceBreakdown);
       }
+      results.price = entryService.calculateServicePriceDoneforCar(
+        results.priceBreakdownArray
+      );
     }
-    results.price = entryService.calculateServicePriceDoneforCar(
-      results.priceBreakdownArray
-    );
-
     return results;
   }
 

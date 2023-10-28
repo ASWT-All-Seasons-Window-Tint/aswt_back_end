@@ -7,8 +7,36 @@ const { VALID_TIME_SLOTS } =
 const freeTimeSlotServices = require("../services/freeTimeSlot.services");
 const serviceServices = require("../services/service.services");
 const appointmentServices = require("../services/appointment.services");
+const { TakenTimeslot } = require("../model/takenTimeslot.model");
 
 class TakenTimeslotControllers {
+  async clearOutAppointment(req, res) {
+    const { date } = req.body;
+
+    const takenTimeslot = await takenTimeslotsServices.getTakenTimeSlotsByDate({
+      date,
+    });
+
+    if (takenTimeslot.length < 1) {
+      const newTakenTimeslot = new TakenTimeslot({
+        clearedOut: true,
+        date,
+      });
+
+      await newTakenTimeslot.save();
+
+      return res.send(successMessage("Successfully cleared out date", null));
+    }
+
+    const { err, nModified } = await takenTimeslotsServices.clearOutAppointment(
+      date
+    );
+
+    if (err) return jsonResponse(res, 500, false, "Something Failed");
+
+    return res.send(successMessage("Successfully cleared out date", null));
+  }
+
   getTakenTimeSlots = async (req, res) => {
     const { date, serviceIds } = req.body;
 
@@ -49,6 +77,16 @@ class TakenTimeslotControllers {
       date: formattedDate,
     });
 
+    for (const timeslot of takenTimeslots) {
+      if (timeslot.clearedOut)
+        return jsonResponse(
+          res,
+          400,
+          false,
+          "No free time slot for the specified date"
+        );
+    }
+
     if (takenTimeslots.length < 1) {
       const freeTimeSlots = takenTimeslotsServices.noTakenTimslot(staffIds);
       return freeTimeSlots;
@@ -58,14 +96,6 @@ class TakenTimeslotControllers {
       takenTimeslots,
       staffIds
     );
-
-    if (takenTimeslots[0].clearedOut)
-      return jsonResponse(
-        res,
-        400,
-        false,
-        "No free time slot for the specified date"
-      );
 
     if (availableStaffIds.length > 0) {
       const freeTimeSlots =

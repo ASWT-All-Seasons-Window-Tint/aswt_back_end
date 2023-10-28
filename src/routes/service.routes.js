@@ -39,6 +39,7 @@ router.get(
 router.get("/", asyncMiddleware(serviceController.fetchAllServices));
 router.post("/invoice/:id", asyncMiddleware(invoiceController.sendInvoice));
 router.get("/web", asyncMiddleware(serviceController.fetchAllServicesWeb));
+router.get("/sunroof", asyncMiddleware(serviceController.getSunRoofServices));
 router.get("/multiple", asyncMiddleware(serviceController.getMultipleServices));
 
 router.get(
