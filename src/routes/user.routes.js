@@ -9,6 +9,7 @@ const asyncMiddleware = require("../middleware/async.middleware");
 const validateObjectId = require("../middleware/validateObjectId.middleware");
 const userController = require("../controllers/user.controllers");
 const managerMiddleware = require("../middleware/manager.middleware");
+const roleBaseAuth = require("../middleware/roleBaseAuth.middleware.");
 const adminOrManagerMiddleware = require("../middleware/adminOrManager.middleware");
 const validateroleMiddleware = require("../middleware/validaterole.middleware");
 const { user } = require("../model/user.model");
@@ -66,7 +67,7 @@ router.get(
 router.get(
   "/staff",
   auth,
-  staffMiddleware,
+  roleBaseAuth(["porter", "staff"]),
   asyncMiddleware(userController.gethUserById)
 );
 
