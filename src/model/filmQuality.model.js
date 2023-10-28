@@ -2,6 +2,8 @@ const mongoose = require("mongoose");
 const Joi = require("joi");
 const addVirtualIdUtils = require("../utils/addVirtualId.utils");
 
+const filmQualityType = ["auto", "residential"];
+
 const filmQualitySchema = new mongoose.Schema(
   {
     name: {
@@ -14,6 +16,11 @@ const filmQualitySchema = new mongoose.Schema(
       type: String,
       minlength: 3,
       maxlength: 255,
+      required: true,
+    },
+    type: {
+      type: String,
+      enum: filmQualityType,
       required: true,
     },
   },
@@ -29,6 +36,9 @@ function validate(filmQuality) {
   const schema = Joi.object({
     name: Joi.string().min(3).max(255).required(),
     description: Joi.string().min(3).max(255).required(),
+    type: Joi.string()
+      .valid(...filmQualityType)
+      .required(),
   });
 
   return schema.validate(filmQuality);

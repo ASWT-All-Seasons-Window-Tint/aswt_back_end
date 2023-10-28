@@ -2,13 +2,14 @@ const { PriceList } = require("../model/priceList.model").priceList;
 const priceListService = require("../services/priceList.services");
 const filmQualityService = require("../services/filmQuality.services");
 const serviceService = require("../services/service.services");
-const entryService = require("../services/entry.services");
+const categoryService = require("../services/category.services");
 const {
   errorMessage,
   successMessage,
   badReqResponse,
 } = require("../common/messages.common");
 const { MESSAGES, errorAlreadyExists } = require("../common/constants.common");
+const convertToLowerCaseAndRemoveNonAlphanumeric = require("../utils/convertToLowerCaseAndRemoveNonAlphanumeric.utils");
 
 class PriceListController {
   async getStatus(req, res) {
@@ -17,7 +18,7 @@ class PriceListController {
 
   //Create a new priceList
   async createPriceList(req, res) {
-    const { filmQualityId, serviceId, price } = req.body;
+    const { filmQualityId, serviceId, price, categoryName } = req.body;
 
     const [filmQuality, service, priceListExist] = await Promise.all([
       filmQualityService.getFilmQualityById(filmQualityId),
@@ -28,18 +29,60 @@ class PriceListController {
       ),
     ]);
 
-    if (!filmQuality) return res.status(404).send(errorMessage("filmQuality"));
+    const serviceType = service.type;
+
+    if (serviceType === "installation" && !filmQuality)
+      return res.status(404).send(errorMessage("filmQuality"));
     if (!service) return res.status(404).send(errorMessage("service"));
-    if (priceListExist)
+    if (priceListExist && !service.isFull)
       return badReqResponse(
         res,
         "Price list has already been added for film quality and service type"
       );
 
+    let categoryId = undefined;
+
+    if (service.isFull) {
+      if (!categoryName)
+        return badReqResponse(
+          res,
+          "Car category is needed for full tint and full removal"
+        );
+
+      const categoryNameWithoutSpecialCharacters =
+        convertToLowerCaseAndRemoveNonAlphanumeric(categoryName);
+
+      const category = await categoryService.getCategoryByName(
+        categoryNameWithoutSpecialCharacters
+      );
+      if (!category) return res.status(404).send(errorMessage("category"));
+
+      categoryId = category._id;
+
+      const priceListWithCategoryIdExist = filmQualityId
+        ? await priceListService.getPriceListByFilmQualityIdIdAndServiceId(
+            serviceId,
+            filmQualityId,
+            categoryId
+          )
+        : await priceListService.getPriceListByFilmQualityIdIdAndServiceId(
+            serviceId,
+            undefined,
+            categoryId
+          );
+
+      if (priceListWithCategoryIdExist)
+        return badReqResponse(
+          res,
+          "Price list has already been added for film quality, category and service type"
+        );
+    }
+
     let priceList = new PriceList({
       filmQualityId,
       serviceId,
       price,
+      categoryId,
     });
 
     priceList = await priceListService.createPriceList(priceList);

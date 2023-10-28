@@ -49,7 +49,9 @@ class CategoryService {
   }
 
   async getAllCategories() {
-    return await Category.find().sort({ _id: -1 });
+    return await Category.find({ updated: undefined })
+      .sort({ _id: -1 })
+      .select("-updated");
   }
 
   async updateCategoryById(id, category) {

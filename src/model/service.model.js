@@ -36,6 +36,11 @@ const serviceSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    isFull: {
+      type: Boolean,
+      default: false,
+    },
+    sunRoof: Boolean,
   },
   { toJSON: { virtuals: true } },
   { toObject: { virtuals: true } }
@@ -48,6 +53,7 @@ const Service = mongoose.model("Service", serviceSchema);
 function validate(service) {
   const schema = Joi.object({
     name: Joi.string().min(3).max(255).required(),
+    isFull: Joi.boolean(),
     type: Joi.string().valid("installation", "removal").required(),
     timeOfCompletion: Joi.number().min(0.25).max(9).required(),
     defaultPrices: Joi.array()
@@ -66,6 +72,7 @@ function validate(service) {
 function validateWithObj(service) {
   const schema = Joi.object({
     name: Joi.string().min(3).max(255).required(),
+    isFull: Joi.boolean(),
     type: Joi.string().valid("installation", "removal").required(),
     timeOfCompletion: Joi.number().min(0.25).max(9).required(),
     defaultPrices: Joi.object({
@@ -81,6 +88,7 @@ function validateWithObj(service) {
 function validatePatch(service) {
   const schema = Joi.object({
     name: Joi.string().min(5).max(255),
+    isFull: Joi.boolean(),
     type: Joi.string().valid("installation", "removal"),
     timeOfCompletion: Joi.number().min(0.25).max(9),
   });
