@@ -23,6 +23,15 @@ const filmQualitySchema = new mongoose.Schema(
       enum: filmQualityType,
       required: true,
     },
+    pricePerSqFt: {
+      type: Number,
+      validate: {
+        validator: function (value) {
+          return value > 0;
+        },
+        message: (props) => `${props.value} should be greater than 0!`,
+      },
+    },
   },
   { toJSON: { virtuals: true } },
   { toObject: { virtuals: true } }

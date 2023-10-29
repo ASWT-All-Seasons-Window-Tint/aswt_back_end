@@ -4,6 +4,7 @@ const Joi = require("joi");
 const { User } = require("./user.model").user;
 const { Service } = require("./service.model");
 const addVirtualIdUtils = require("../utils/addVirtualId.utils");
+const convertToInchesUtils = require("../utils/calculateSquareFeetutils");
 
 const validCarTypes = [
   "2Or4DoorsCar",
@@ -13,6 +14,8 @@ const validCarTypes = [
   "TruckStd.Cab",
   "Truck4Doors",
 ];
+
+const validUnits = convertToInchesUtils();
 
 const paymentDetailsSchema = new mongoose.Schema({
   paymentDate: {
@@ -59,6 +62,26 @@ const refundDetailsSchema = new mongoose.Schema({
   },
   paymentIntentId: {
     type: String,
+  },
+});
+const residentialDetailsSchema = new mongoose.Schema({
+  customerMeasurementAwareness: {
+    type: Boolean,
+  },
+  measurementDetails: {
+    unit: {
+      type: String,
+      enum: validUnits,
+    },
+    length: {
+      type: Number,
+    },
+    width: {
+      type: Number,
+    },
+    filmQualityId: {
+      type: mongoose.Schema.Types.ObjectId,
+    },
   },
 });
 
@@ -162,6 +185,10 @@ const appointmentSchema = new mongoose.Schema({
     type: carDetailsSchema,
     default: undefined,
   },
+  residentialDetails: {
+    type: residentialDetailsSchema,
+    default: undefined,
+  },
 });
 
 addVirtualIdUtils(appointmentSchema);
@@ -171,6 +198,12 @@ appointmentSchema.pre("validate", function (next) {
     this.invalidate(
       "carDetails",
       "carDetails is required for auto appointments"
+    );
+  }
+  if (this.appointmentType === "commercial" && !this.residentialDetails) {
+    this.invalidate(
+      "residentialDetails",
+      "Residential details is required for auto appointments"
     );
   }
   next();
@@ -204,6 +237,25 @@ function validate(appointment) {
       ),
     }).when("appointmentType", {
       is: "auto",
+      then: Joi.required(),
+      otherwise: Joi.forbidden(),
+    }),
+    residentialDetails: Joi.object({
+      customerMeasurementAwareness: Joi.boolean().required(),
+      measurementDetails: Joi.object({
+        unit: Joi.string()
+          .valid(...validUnits)
+          .required(),
+        length: Joi.number().greater(0).required(),
+        width: Joi.number().greater(0).required(),
+        filmQualityId: Joi.objectId().required(),
+      }).when("customerMeasurementAwareness", {
+        is: true,
+        then: Joi.required(),
+        otherwise: Joi.forbidden(),
+      }),
+    }).when("appointmentType", {
+      is: "commercial",
       then: Joi.required(),
       otherwise: Joi.forbidden(),
     }),

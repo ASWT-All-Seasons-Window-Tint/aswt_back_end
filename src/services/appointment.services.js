@@ -37,6 +37,10 @@ class AppointmentService {
     return endTime;
   }
 
+  async fetchAllAppointments() {
+    return Appointment.find();
+  }
+
   calculateTotalTimeOfCompletion(services) {
     // Using the reduce function to sum up all timeOfCompletion values
     const totalTime = services.reduce(
@@ -157,7 +161,7 @@ class AppointmentService {
     return { filmQualityIds, serviceIds };
   }
 
-  async getPriceBreakdown(serviceDetails, categoryName) {
+  async getPriceBreakdown({ serviceDetails, categoryName, commercial }) {
     const results = {};
 
     results.error = {};
