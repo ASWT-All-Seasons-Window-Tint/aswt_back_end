@@ -45,7 +45,7 @@ class StripeController {
             },
           },
 
-          success_url: `${process.env.apiUrl}/client/success.html`,
+          success_url: process.env.stripeSuccessUrl,
           cancel_url: `${process.env.apiUrl}/client/cancel.html`,
         },
         {
