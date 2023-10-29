@@ -10,6 +10,7 @@ const validateTimeslotsMiddleware = require("../middleware/validateTimeslots.mid
 const takenTimeslotsControllers = require("../controllers/takenTimeslots.controllers");
 const validateObjectId = require("../middleware/validateObjectId.middleware");
 const asyncMiddleware = require("../middleware/async.middleware");
+const roleBaseAuthMiddleware = require("../middleware/roleBaseAuth.middleware.");
 
 const { validate, validateGetTakenTimeslots } = joiValidators;
 
@@ -27,9 +28,16 @@ router.delete(
 );
 
 router.get(
+  "/",
+  auth,
+  roleBaseAuthMiddleware(["receptionist", "admin"]),
+  asyncMiddleware(appointmentControllers.fetchAllAppointments)
+);
+
+router.get(
   "/:date",
   auth,
-  receptionistMiddleware,
+  roleBaseAuthMiddleware(["receptionist", "admin"]),
   asyncMiddleware(appointmentControllers.getAppointmentsByDate)
 );
 
@@ -41,7 +49,7 @@ router.post(
 router.put(
   "/clear-out-appointment",
   auth,
-  receptionistMiddleware,
+  roleBaseAuthMiddleware(["receptionist", "admin"]),
   asyncMiddleware(takenTimeslotsControllers.clearOutAppointment)
 );
 

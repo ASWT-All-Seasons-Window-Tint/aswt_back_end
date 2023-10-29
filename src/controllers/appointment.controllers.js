@@ -58,7 +58,7 @@ class AppointmentController {
       appointmentService.calculateTotalTimeOfCompletion(services);
 
     const { priceBreakdownArray, error, price } =
-      await appointmentService.getPriceBreakdown(serviceDetails, category);
+      await appointmentService.getPriceBreakdown({ serviceDetails, category });
 
     if (error.message) return badReqResponse(res, error.message);
 
@@ -216,11 +216,11 @@ class AppointmentController {
     res.send(successMessage(MESSAGES.FETCHED, appointment));
   }
 
-  //get all entries in the appointment collection/table
+  //get all appointments in the appointment collection/table
   async fetchAllAppointments(req, res) {
-    const entries = await appointmentService.getAllAppointments();
+    const appointments = await appointmentService.fetchAllAppointments();
 
-    res.send(successMessage(MESSAGES.FETCHED, entries));
+    res.send(successMessage(MESSAGES.FETCHED, appointments));
   }
 
   async getAppointmentsByDate(req, res) {
