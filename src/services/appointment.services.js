@@ -180,7 +180,10 @@ class AppointmentService {
 
       const serviceType = service.type;
 
-      if (!category) return res.status(404).send(errorMessage("category"));
+      if (!category) {
+        results.error.message = "Can't find car category";
+        return results;
+      }
       const categoryId = category._id;
 
       if (serviceType === "installation" && !filmQualityId) {
