@@ -13,6 +13,7 @@ const {
   jsonResponse,
   notFoundResponse,
   badReqResponse,
+  forbiddenResponse,
 } = require("../common/messages.common");
 const { default: mongoose } = require("mongoose");
 const mongoTransactionUtils = require("../utils/mongoTransaction.utils");
@@ -477,8 +478,13 @@ class EntryController {
         return car.porterId.toString() === porterId.toString();
       }
     });
-    const sortedCarDetailsWithoutPrice =
-      entryServices.sortCarDetailsByPrice(carDetails);
+
+    const carsThatHasNotBeenPickedUp =
+      entryService.getCarsThatHasNotBeenPickedUp(carDetails);
+
+    const sortedCarDetailsWithoutPrice = entryServices.sortCarDetailsByPrice(
+      carsThatHasNotBeenPickedUp
+    );
 
     return res.send(
       successMessage(MESSAGES.FETCHED, sortedCarDetailsWithoutPrice)
@@ -588,6 +594,19 @@ class EntryController {
       return res
         .status(401)
         .send({ message: MESSAGES.UNAUTHORIZE("update"), succes: false });
+
+    const geoLocations = carDoneByStaff.geoLocations;
+
+    if (geoLocations) {
+      for (const geoLocation of geoLocations) {
+        if (geoLocation.locationType !== "Scanned") {
+          return forbiddenResponse(
+            res,
+            "Cannot modify a car after it has been picked up"
+          );
+        }
+      }
+    }
 
     if (!entryService.carWasAddedRecently(carDoneByStaff)) {
       return res.status(401).send({

@@ -13,6 +13,20 @@ const { validMonthNames } = require("../common/constants.common");
 const newDateUtils = require("../utils/newDate.utils");
 
 class EntryService {
+  getCarsThatHasNotBeenPickedUp(carDetails) {
+    const filteredCarDetails = carDetails.filter((car) => {
+      // Check if geoLocations array has only "Scanned" locationType
+      const hasOnlyScanned = car.geoLocations.every(
+        (location) => location.locationType === "Scanned"
+      );
+
+      // Return only the car details with geoLocation of locationType "Scanned"
+      return hasOnlyScanned;
+    });
+
+    return filteredCarDetails;
+  }
+
   getEntries = async (args = { entryId: undefined, customerId: undefined }) => {
     const { entryId, customerId } = args;
 
