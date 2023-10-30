@@ -259,6 +259,8 @@ class EntryController {
     const { price, priceBreakdown, ...carWithoutPrice } = carWithVin;
 
     if (["PickupFromDealership", "TakenFromShop"].includes(locationType)) {
+      geoLocation.locationType = locationType;
+
       const mongoSession = await mongoose.startSession();
 
       const results = await mongoTransactionUtils(mongoSession, async () => {

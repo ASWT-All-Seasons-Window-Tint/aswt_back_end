@@ -170,21 +170,38 @@ class AppointmentService {
     for (const serviceDetail of serviceDetails) {
       const { filmQualityId, serviceId } = serviceDetail;
 
-      const categoryNameWithoutSpecialCharacters =
-        convertToLowerCaseAndRemoveNonAlphanumeric(categoryName);
+      const service = await serviceServices.getServiceById(serviceId);
 
-      const [service, category] = await Promise.all([
-        serviceServices.getServiceById(serviceId),
-        categoryService.getCategoryByName(categoryNameWithoutSpecialCharacters),
-      ]);
-
-      const serviceType = service.type;
-
-      if (!category) {
-        results.error.message = "Can't find car category";
+      if (!service) {
+        results.error.message = "Can't find service with the given ID";
         return results;
       }
-      const categoryId = category._id;
+
+      let category = undefined;
+
+      if (service.isFull) {
+        if (!categoryName) {
+          (results.error.message =
+            "Car category is required for full services"),
+            (results.error.code = 400);
+
+          return results;
+        }
+
+        const categoryNameWithoutSpecialCharacters =
+          convertToLowerCaseAndRemoveNonAlphanumeric(categoryName);
+
+        category = await categoryService.getCategoryByName(
+          categoryNameWithoutSpecialCharacters
+        );
+
+        if (!category) {
+          results.error.message = "Can't find car category";
+          return results;
+        }
+      }
+
+      const serviceType = service.type;
 
       if (serviceType === "installation" && !filmQualityId) {
         results.error.message =
@@ -199,7 +216,7 @@ class AppointmentService {
           ? await priceListServices.getPriceListByFilmQualityIdIdAndServiceId(
               serviceId,
               filmQualityId,
-              categoryId
+              category._id
             )
           : await priceListServices.getPriceListByFilmQualityIdIdAndServiceId(
               serviceId,
@@ -223,14 +240,12 @@ class AppointmentService {
       if (serviceType === "removal") {
         const priceBreakdown = {};
 
-        console.log(serviceId, categoryId);
-
         const priceList = !service.isFull
           ? await priceListServices.getPriceListByServiceId(serviceId)
           : await priceListServices.getPriceListByFilmQualityIdIdAndServiceId(
               serviceId,
               undefined,
-              categoryId
+              category._id
             );
 
         if (!priceList) {
