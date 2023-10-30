@@ -14,7 +14,7 @@ module.exports = () => {
     const { locationType } = req.params;
 
     if (!validActions.includes(locationType))
-      badReqResponse(res, `Cannot PUT ${req.originalUrl}`);
+      return badReqResponse(res, `Cannot PUT ${req.originalUrl}`);
 
     req.body.geoLocation.locationType = locationType;
 

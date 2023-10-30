@@ -260,9 +260,30 @@ class UserService {
   };
 
   updatePorterCurrentLocation = async (porter, session, geoLocation) => {
+    const porterFromDB = await User.findById(porter._id).lean();
+    const locationType = geoLocation.locationType;
+
+    let currentTrips = porterFromDB.staffDetails.currentTrips;
+
+    if (!currentTrips) {
+      currentTrips = [];
+    }
+
+    for (let currentTrip of currentTrips) {
+      if (currentTrip.locationType === locationType) {
+        currentTrip = geoLocation;
+      } else if (currentTrips.length < 2) {
+        currentTrips.push(geoLocation);
+      }
+    }
+
+    if (currentTrips.length < 1) {
+      currentTrips.push(geoLocation);
+    }
+
     return await User.updateOne(
       { _id: porter._id },
-      { $set: { "staffDetails.currentTrip": geoLocation } },
+      { $set: { "staffDetails.currentTrips": currentTrips } },
       { session }
     );
   };
