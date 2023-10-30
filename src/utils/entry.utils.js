@@ -197,6 +197,7 @@ class EntryUtils {
             category: "$$car.category",
             serviceNames: this.serviceNames,
             waitingList: "$$car.waitingList",
+            geoLocations: "$$car.geoLocations",
           },
         },
       },
