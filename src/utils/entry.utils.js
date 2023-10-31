@@ -413,6 +413,59 @@ class EntryUtils {
       ],
     };
 
+    const pendingDropOffFilter = {
+      $and: [
+        {
+          $eq: ["$$car.waitingList", waitingList],
+        },
+        {
+          $eq: ["$$car.porterId", new mongoose.Types.ObjectId(porterId)],
+        },
+        {
+          $not: {
+            $or: [
+              {
+                $or: [
+                  { $not: { $ifNull: ["$$car.geoLocations", ""] } }, // Checking if car.geoLocations is not null or empty
+                  { $eq: ["$$car.geoLocations", []] },
+                ],
+              },
+              {
+                $in: ["TakenFromShop", "$$car.geoLocations.locationType"],
+              },
+              {
+                $in: ["DropOffCompleted", "$$car.geoLocations.locationType"],
+              },
+            ],
+          },
+        },
+      ],
+    };
+
+    const completedTripFilter = {
+      $and: [
+        {
+          $eq: ["$$car.waitingList", waitingList.value],
+        },
+        {
+          $eq: ["$$car.porterId", new mongoose.Types.ObjectId(porterId)],
+        },
+        {
+          $or: [
+            {
+              $or: [
+                { $not: { $ifNull: ["$$car.geoLocations", ""] } }, // Checking if car.geoLocations is not null or empty
+                { $eq: ["$$car.geoLocations", []] },
+              ],
+            },
+            {
+              $in: ["DropOffCompleted", "$$car.geoLocations.locationType"],
+            },
+          ],
+        },
+      ],
+    };
+
     const vinFilter = (id) => {
       return {
         $and: [
@@ -435,8 +488,12 @@ class EntryUtils {
       results.$and.push(vinFilter("staffId"));
     } else if (porterId && vin) {
       results.$and.push(vinFilter("porterId"));
+    } else if (porterId && waitingList.value === false) {
+      results.$and.push(completedTripFilter);
     } else if (porterId && waitingList) {
       results.$and.push(waitingListFilter);
+    } else if (porterId && waitingList === false) {
+      results.$and.push(pendingDropOffFilter);
     } else if (staffId) {
       results.$and.push(staffFilter);
     } else if (porterId) {
