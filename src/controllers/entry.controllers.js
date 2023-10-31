@@ -346,10 +346,22 @@ class EntryController {
   async getCurrentLocation(req, res) {
     const { porterId, locationType } = req.params;
 
+    const porter = await userService.getUserByRoleAndId(porterId, "porter");
+    if (!porter) return res.status(404).send(errorMessage("entry"));
+
     const [carWithCurrentLocation] = await entryService.getCurrentLoction(
       porterId,
       locationType
     );
+
+    if (!carWithCurrentLocation)
+      return jsonResponse(
+        res,
+        400,
+        false,
+        "Can't find current car for the porter"
+      );
+
     const { carDetails } = carWithCurrentLocation;
 
     res.send(successMessage(MESSAGES.FETCHED, carDetails));
