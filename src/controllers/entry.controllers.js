@@ -417,9 +417,9 @@ class EntryController {
         staffEntries.map((entry) => (entry.id = entry._id));
     }
 
-    if (Array.isArray(staffEntries) && staffEntries.length < 1)
+    if (Array.isArray(staffEntries) && staffEntries.length < 1) {
       staffEntries =
-        req.params.waitingList !== false
+        req.params.waitingList === undefined
           ? [
               {
                 customerId,
@@ -430,6 +430,7 @@ class EntryController {
               },
             ]
           : [];
+    }
 
     res.send(successMessage(MESSAGES.FETCHED, staffEntries));
   }
