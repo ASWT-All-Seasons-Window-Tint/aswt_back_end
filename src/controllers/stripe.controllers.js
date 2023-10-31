@@ -13,27 +13,42 @@ class StripeController {
       const appointment = await appointmentServices.getAppointmentById(
         appointmentId
       );
+      const appointmentType = appointment.appointmentType;
+      const autoAppointmentType = appointmentType === "auto";
+
       if (!appointment)
         return res.status(404).send(errorMessage("appointment"));
 
       if (appointment.paymentDetails.hasPaid)
         return jsonResponse(res, 400, false, "Payment has already been made");
 
-      const priceBreakdown = appointment.carDetails.priceBreakdown;
+      const priceBreakdown = autoAppointmentType
+        ? appointment.carDetails.priceBreakdown
+        : appointment.residentialDetails.priceBreakdown;
 
       const session = await stripe.checkout.sessions.create(
         {
           payment_method_types: ["card"],
           mode: "payment",
           line_items: priceBreakdown.map((item) => {
-            const thirtyPercentOfPriceInCents = item.price * 30;
+            let customerMeasurementAwareness = true;
+            const thirtyPercentOfPriceInCents = Math.round(item.price * 10) * 3;
+            const priceInCents = item.price * 100;
+
+            if (!autoAppointmentType) {
+              customerMeasurementAwareness =
+                appointment.residentialDetails.customerMeasurementAwareness;
+            }
+
             return {
               price_data: {
                 currency: "usd",
                 product_data: {
                   name: item.serviceName,
                 },
-                unit_amount: thirtyPercentOfPriceInCents,
+                unit_amount: customerMeasurementAwareness
+                  ? thirtyPercentOfPriceInCents
+                  : priceInCents,
               },
               quantity: 1,
             };

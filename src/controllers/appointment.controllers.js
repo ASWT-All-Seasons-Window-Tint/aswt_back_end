@@ -30,45 +30,80 @@ class AppointmentController {
 
   //Create a new appointment
   createAppointment = async (req, res) => {
-    const { startTime, customerNumber, carDetails } = req.body;
+    const {
+      startTime,
+      customerNumber,
+      carDetails,
+      appointmentType,
+      residentialDetails,
+    } = req.body;
     let { formattedDate: date, formattedTime: timeString } =
       freeTimeSlotServices.getFormattedDate(startTime);
 
-    const { serviceDetails, category } = carDetails;
-
-    const { serviceIds, filmQualityIds } =
-      appointmentService.getServiceIdsAndfilmQualityIds(serviceDetails);
-
     const smsDate = getSmsDateUtils(startTime);
 
-    const [services, missingIds] = await Promise.all([
-      serviceServices.getMultipleServices(serviceIds, true),
-      serviceServices.validateServiceIds(serviceIds),
-    ]);
+    let timeOfCompletion = 8;
 
-    if (missingIds.length > 0)
-      return jsonResponse(
-        res,
-        404,
-        false,
-        `Services with IDs: [${missingIds}] could not be found`
-      );
+    if (appointmentType.toLowerCase() === "auto") {
+      const { serviceDetails, category } = carDetails;
 
-    const timeOfCompletion =
-      appointmentService.calculateTotalTimeOfCompletion(services);
+      const { serviceIds, filmQualityIds } =
+        appointmentService.getServiceIdsAndfilmQualityIds(serviceDetails); //Auto
 
-    const { priceBreakdownArray, error, price } =
-      await appointmentService.getPriceBreakdown({
-        serviceDetails,
-        categoryName: category,
-      });
+      const [services, missingIds] = await Promise.all([
+        serviceServices.getMultipleServices(serviceIds, true),
+        serviceServices.validateServiceIds(serviceIds),
+      ]); // Auto
 
-    if (error.message) return badReqResponse(res, error.message);
+      if (missingIds.length > 0)
+        return jsonResponse(
+          res,
+          404,
+          false,
+          `Services with IDs: [${missingIds}] could not be found`
+        ); // Auto
 
-    req.body.carDetails.priceBreakdown = priceBreakdownArray;
-    req.body.carDetails.price = price;
-    req.body.carDetails.category = carDetails.category;
-    req.body.appointmentType = req.body.appointmentType.toLowerCase();
+      timeOfCompletion =
+        appointmentService.calculateTotalTimeOfCompletion(services); // Auto
+
+      const { priceBreakdownArray, error, price } =
+        await appointmentService.getPriceBreakdown({
+          serviceDetails,
+          categoryName: category,
+          type: appointmentType.toLowerCase(),
+        }); // Auto
+
+      if (error.message) {
+        if (error.code)
+          return jsonResponse(res, error.code, false, error.message);
+
+        return badReqResponse(res, error.message);
+      }
+
+      req.body.carDetails.priceBreakdown = priceBreakdownArray;
+      req.body.carDetails.price = price;
+      req.body.carDetails.category = carDetails.category;
+      req.body.appointmentType = req.body.appointmentType.toLowerCase(); // Auto
+    }
+
+    if (appointmentType.toLowerCase() === "commercial") {
+      const { priceBreakdownArray, error, price } =
+        await appointmentService.getPriceBreakdown({
+          residentialDetails,
+          type: appointmentType.toLowerCase(),
+        });
+
+      if (error.message) {
+        if (error.code)
+          return jsonResponse(res, error.code, false, error.message);
+
+        return badReqResponse(res, error.message);
+      }
+
+      req.body.residentialDetails.priceBreakdown = priceBreakdownArray;
+      req.body.residentialDetails.price = price;
+      req.body.appointmentType = req.body.appointmentType.toLowerCase(); // Auto
+    }
 
     const takenTimeslotsDetails =
       await takenTimeslotsControllers.generateTakenTimeslots({
