@@ -6,6 +6,11 @@ const serviceServices = require("./service.services");
 const priceListServices = require("./priceList.services");
 const categoryService = require("./category.services");
 const convertToLowerCaseAndRemoveNonAlphanumeric = require("../utils/convertToLowerCaseAndRemoveNonAlphanumeric.utils");
+const calculateSquareFeetutils = require("../utils/calculateSquareFeetutils");
+const {
+  VideoV1RoomRoomParticipantRoomParticipantSubscribeRuleRules,
+} = require("twilio/lib/rest/video/v1/room/participant/subscribeRules");
+const { FilmQuality } = require("../model/filmQuality.model").filmQuality;
 
 class AppointmentService {
   //Create new appointment
@@ -161,108 +166,155 @@ class AppointmentService {
     return { filmQualityIds, serviceIds };
   }
 
-  async getPriceBreakdown({ serviceDetails, categoryName, commercial }) {
+  async getPriceBreakdown({
+    serviceDetails,
+    categoryName,
+    type,
+    residentialDetails,
+  }) {
     const results = {};
 
     results.error = {};
     results.priceBreakdownArray = [];
+    if (type === "auto") {
+      for (const serviceDetail of serviceDetails) {
+        const { filmQualityId, serviceId } = serviceDetail;
 
-    for (const serviceDetail of serviceDetails) {
-      const { filmQualityId, serviceId } = serviceDetail;
+        const service = await serviceServices.getServiceById(serviceId);
 
-      const service = await serviceServices.getServiceById(serviceId);
-
-      if (!service) {
-        results.error.message = "Can't find service with the given ID";
-        return results;
-      }
-
-      let category = undefined;
-
-      if (service.isFull) {
-        if (!categoryName) {
-          (results.error.message =
-            "Car category is required for full services"),
-            (results.error.code = 400);
-
+        if (!service) {
+          results.error.message = "Can't find service with the given ID";
           return results;
         }
 
-        const categoryNameWithoutSpecialCharacters =
-          convertToLowerCaseAndRemoveNonAlphanumeric(categoryName);
+        let category = undefined;
 
-        category = await categoryService.getCategoryByName(
-          categoryNameWithoutSpecialCharacters
-        );
+        if (service.isFull) {
+          if (!categoryName) {
+            (results.error.message =
+              "Car category is required for full services"),
+              (results.error.code = 400);
 
-        if (!category) {
-          results.error.message = "Can't find car category";
-          return results;
+            return results;
+          }
+
+          const categoryNameWithoutSpecialCharacters =
+            convertToLowerCaseAndRemoveNonAlphanumeric(categoryName);
+
+          category = await categoryService.getCategoryByName(
+            categoryNameWithoutSpecialCharacters
+          );
+
+          if (!category) {
+            results.error.message = "Can't find car category";
+            return results;
+          }
         }
-      }
 
-      const serviceType = service.type;
+        const serviceType = service.type;
 
-      if (serviceType === "installation" && !filmQualityId) {
-        results.error.message =
-          "Film quality is required for installation services";
-        return results;
-      }
-
-      if (serviceType === "installation") {
-        const priceBreakdown = {};
-
-        const priceList = service.isFull
-          ? await priceListServices.getPriceListByFilmQualityIdIdAndServiceId(
-              serviceId,
-              filmQualityId,
-              category._id
-            )
-          : await priceListServices.getPriceListByFilmQualityIdIdAndServiceId(
-              serviceId,
-              filmQualityId
-            );
-
-        if (!priceList) {
+        if (serviceType === "installation" && !filmQualityId) {
           results.error.message =
-            "Can't find price list for the service and film quality";
+            "Film quality is required for installation services";
           return results;
         }
 
-        priceBreakdown.serviceId = priceList.serviceId.id;
-        priceBreakdown.serviceName = priceList.serviceId.name;
-        priceBreakdown.price = priceList.price;
-        priceBreakdown.filmQuality = priceList.filmQualityId.name;
-        priceBreakdown.serviceType = priceList.serviceId.type;
+        if (serviceType === "installation") {
+          const priceBreakdown = {};
+
+          const priceList = service.isFull
+            ? await priceListServices.getPriceListByFilmQualityIdIdAndServiceId(
+                serviceId,
+                filmQualityId,
+                category._id
+              )
+            : await priceListServices.getPriceListByFilmQualityIdIdAndServiceId(
+                serviceId,
+                filmQualityId
+              );
+
+          if (!priceList) {
+            results.error.message =
+              "Can't find price list for the service and film quality";
+            return results;
+          }
+
+          priceBreakdown.serviceId = priceList.serviceId.id;
+          priceBreakdown.serviceName = priceList.serviceId.name;
+          priceBreakdown.price = priceList.price;
+          priceBreakdown.filmQuality = priceList.filmQualityId.name;
+          priceBreakdown.serviceType = priceList.serviceId.type;
+
+          results.priceBreakdownArray.push(priceBreakdown);
+        }
+        if (serviceType === "removal") {
+          const priceBreakdown = {};
+
+          const priceList = !service.isFull
+            ? await priceListServices.getPriceListByServiceId(serviceId)
+            : await priceListServices.getPriceListByFilmQualityIdIdAndServiceId(
+                serviceId,
+                undefined,
+                category._id
+              );
+
+          if (!priceList) {
+            results.error.message = "Can't find price list for the service";
+            return results;
+          }
+
+          priceBreakdown.serviceId = priceList.serviceId.id;
+          priceBreakdown.serviceName = priceList.serviceId.name;
+          priceBreakdown.price = priceList.price;
+          priceBreakdown.serviceType = priceList.serviceId.type;
+
+          results.priceBreakdownArray.push(priceBreakdown);
+        }
+        results.price = entryService.calculateServicePriceDoneforCar(
+          results.priceBreakdownArray
+        );
+      }
+    } else if (type === "commercial") {
+      const priceBreakdown = {};
+      const serviceNameWhenMesurementIsUnknown = "Site Consultation";
+      const serviceNameWhenMesurementIsknown = "Tint Installation";
+      const { customerMeasurementAwareness } = residentialDetails;
+
+      if (!customerMeasurementAwareness) {
+        const priceForSiteConsultation = 50;
+        priceBreakdown.serviceName = serviceNameWhenMesurementIsUnknown;
+        priceBreakdown.price = priceForSiteConsultation;
 
         results.priceBreakdownArray.push(priceBreakdown);
-      }
-      if (serviceType === "removal") {
-        const priceBreakdown = {};
+        results.price = priceForSiteConsultation;
+      } else if (customerMeasurementAwareness) {
+        const { unit, length, width, filmQualityId, quantity } =
+          residentialDetails.measurementDetails;
 
-        const priceList = !service.isFull
-          ? await priceListServices.getPriceListByServiceId(serviceId)
-          : await priceListServices.getPriceListByFilmQualityIdIdAndServiceId(
-              serviceId,
-              undefined,
-              category._id
-            );
-
-        if (!priceList) {
-          results.error.message = "Can't find price list for the service";
-          return results;
+        const filmQuality = await FilmQuality.findById(filmQualityId);
+        if (!filmQuality) {
+          results.error.message =
+            "Can't find the film quality with the given ID";
+          results.error.code = 404;
         }
 
-        priceBreakdown.serviceId = priceList.serviceId.id;
-        priceBreakdown.serviceName = priceList.serviceId.name;
-        priceBreakdown.price = priceList.price;
-        priceBreakdown.serviceType = priceList.serviceId.type;
+        if (filmQuality.type !== "residential") {
+          results.error.message = "Cannot use auto film quality for commercial";
+        }
+
+        const pricePerSqFt = filmQuality.pricePerSqFt;
+
+        const sqFt = calculateSquareFeetutils(length, unit, width, unit);
+
+        const price = pricePerSqFt * sqFt * quantity;
+
+        priceBreakdown.serviceName = serviceNameWhenMesurementIsknown;
+        priceBreakdown.price = price;
+        priceBreakdown.filmQuality = filmQuality.name;
 
         results.priceBreakdownArray.push(priceBreakdown);
+        results.price = price;
       }
-      results.price = entryService.calculateServicePriceDoneforCar(
-        results.priceBreakdownArray
-      );
     }
     return results;
   }
