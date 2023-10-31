@@ -82,7 +82,18 @@ const residentialDetailsSchema = new mongoose.Schema({
     filmQualityId: {
       type: mongoose.Schema.Types.ObjectId,
     },
+    quantity: {
+      type: Number,
+    },
   },
+  priceBreakdown: [
+    {
+      filmQuality: String,
+      price: Number,
+      serviceName: String,
+    },
+  ],
+  price: Number,
 });
 
 const carDetailsSchema = new mongoose.Schema({
@@ -248,6 +259,7 @@ function validate(appointment) {
           .required(),
         length: Joi.number().greater(0).required(),
         width: Joi.number().greater(0).required(),
+        quantity: Joi.number().greater(0).required(),
         filmQualityId: Joi.objectId().required(),
       }).when("customerMeasurementAwareness", {
         is: true,
