@@ -418,15 +418,18 @@ class EntryController {
     }
 
     if (Array.isArray(staffEntries) && staffEntries.length < 1)
-      staffEntries = [
-        {
-          customerId,
-          numberOfCarsAdded: 0,
-          entryDate: null,
-          invoice: {},
-          customerName: customer ? `${customer.DisplayName}` : null,
-        },
-      ];
+      staffEntries =
+        req.params.waitingList !== false
+          ? [
+              {
+                customerId,
+                numberOfCarsAdded: 0,
+                entryDate: null,
+                invoice: {},
+                customerName: customer ? `${customer.DisplayName}` : null,
+              },
+            ]
+          : [];
 
     res.send(successMessage(MESSAGES.FETCHED, staffEntries));
   }
