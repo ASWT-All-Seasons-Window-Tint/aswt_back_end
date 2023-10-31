@@ -417,16 +417,20 @@ class EntryController {
         staffEntries.map((entry) => (entry.id = entry._id));
     }
 
-    if (Array.isArray(staffEntries) && staffEntries.length < 1)
-      staffEntries = [
-        {
-          customerId,
-          numberOfCarsAdded: 0,
-          entryDate: null,
-          invoice: {},
-          customerName: customer ? `${customer.DisplayName}` : null,
-        },
-      ];
+    if (Array.isArray(staffEntries) && staffEntries.length < 1) {
+      staffEntries =
+        req.params.waitingList === undefined
+          ? [
+              {
+                customerId,
+                numberOfCarsAdded: 0,
+                entryDate: null,
+                invoice: {},
+                customerName: customer ? `${customer.DisplayName}` : null,
+              },
+            ]
+          : [];
+    }
 
     res.send(successMessage(MESSAGES.FETCHED, staffEntries));
   }
