@@ -445,7 +445,7 @@ class EntryUtils {
     const completedTripFilter = {
       $and: [
         {
-          $eq: ["$$car.waitingList", waitingList.value],
+          $eq: ["$$car.waitingList", false],
         },
         {
           $eq: ["$$car.porterId", new mongoose.Types.ObjectId(porterId)],
