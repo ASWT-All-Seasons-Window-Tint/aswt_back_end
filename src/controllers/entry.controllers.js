@@ -174,6 +174,9 @@ class EntryController {
 
   async addCarGeoLocation(req, res) {
     const { vin, locationType } = req.params;
+
+    req.body.geoLocation.locationType = locationType;
+
     const { geoLocation } = req.body;
 
     const pickupLocationType = ["PickupFromDealership", "TakenToShop"].includes(
@@ -340,6 +343,18 @@ class EntryController {
     res.send(successMessage(MESSAGES.FETCHED, entries));
   }
 
+  async getCurrentLocation(req, res) {
+    const { porterId, locationType } = req.params;
+
+    const [carWithCurrentLocation] = await entryService.getCurrentLoction(
+      porterId,
+      locationType
+    );
+    const { carDetails } = carWithCurrentLocation;
+
+    res.send(successMessage(MESSAGES.FETCHED, carDetails));
+  }
+
   async getCarsDoneByStaffPerId(req, res) {
     const { entryId, staffId, customerId, porterId } = req.params;
 
@@ -356,8 +371,6 @@ class EntryController {
 
     if (entryId && !entry) return res.status(404).send(errorMessage("entry"));
     if (!staff) return res.status(404).send(errorMessage("staff"));
-
-    if (porterId) req.params.waitingList = true;
 
     const filterArguments = getFilterArguments(req);
 
@@ -399,7 +412,7 @@ class EntryController {
           numberOfCarsAdded: 0,
           entryDate: null,
           invoice: {},
-          customerName: `${customer.DisplayName}`,
+          customerName: customer ? `${customer.DisplayName}` : null,
         },
       ];
 

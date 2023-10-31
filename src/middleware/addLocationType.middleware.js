@@ -16,8 +16,6 @@ module.exports = () => {
     if (!validActions.includes(locationType))
       return badReqResponse(res, `Cannot PUT ${req.originalUrl}`);
 
-    req.body.geoLocation.locationType = locationType;
-
     next();
   };
 };

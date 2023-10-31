@@ -17,6 +17,7 @@ const validateMonthYearParamsMiddleware = require("../middleware/validateMonthYe
 const validateDateParams = require("../middleware/validDateParams.middleware");
 const roleBaseAuth = require("../middleware/roleBaseAuth.middleware.");
 const addLocationTypeMiddleware = require("../middleware/addLocationType.middleware");
+const addWaitingListMiddleware = require("../middleware/addWaitingList.middleware");
 
 const {
   validate,
@@ -51,6 +52,14 @@ router.get(
   qboAsyncMiddleware(entryController.getCarByVin)
 );
 router.get(
+  "/current/:locationType/location/:porterId",
+  // auth,
+  addLocationTypeMiddleware(),
+  validateObjectIdWithXArgMiddleware(["porterId"]),
+  qboAsyncMiddleware(entryController.getCurrentLocation)
+);
+
+router.get(
   "/customer/vin/:customerId/:vin",
   // auth,
   //validateObjectIdWithXArgMiddleware(["customerId"]),
@@ -81,6 +90,7 @@ router.get(
   "/entry/:entryId/customer/:customerId/porterId/:porterId",
   auth,
   validateObjectIdWithXArgMiddleware(["porterId", "entryId"]),
+  addWaitingListMiddleware(true),
   qboAsyncMiddleware(entryController.getCarsDoneByStaffPerId)
 );
 
@@ -95,6 +105,15 @@ router.get(
   "/customer/:customerId/porter/:porterId",
   auth,
   validateObjectIdWithXArgMiddleware(["porterId"]),
+  addWaitingListMiddleware(true),
+  qboAsyncMiddleware(entryController.getCarsDoneByStaffPerId)
+);
+
+router.get(
+  "/pending-drop-off/:porterId",
+  auth,
+  validateObjectIdWithXArgMiddleware(["porterId"]),
+  addWaitingListMiddleware(false),
   qboAsyncMiddleware(entryController.getCarsDoneByStaffPerId)
 );
 
@@ -134,6 +153,21 @@ router.get(
   auth,
   validateObjectIdWithXArgMiddleware(["staffId"]),
   asyncMiddleware(entryController.getCarsDoneByStaff)
+);
+
+router.get(
+  "/porter/:porterId",
+  auth,
+  validateObjectIdWithXArgMiddleware(["porterId"]),
+  asyncMiddleware(entryController.getCarsDoneByStaffPerId)
+);
+
+router.get(
+  "/completed-trips/:porterId",
+  auth,
+  validateObjectIdWithXArgMiddleware(["porterId"]),
+  addWaitingListMiddleware({ value: false }),
+  asyncMiddleware(entryController.getCarsDoneByStaffPerId)
 );
 
 router.put(

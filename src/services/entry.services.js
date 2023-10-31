@@ -11,6 +11,8 @@ const {
 } = require("../utils/entry.utils");
 const { validMonthNames } = require("../common/constants.common");
 const newDateUtils = require("../utils/newDate.utils");
+const { carDetailsProperties, entryProperties } =
+  require("../model/entry.model").joiValidator;
 
 class EntryService {
   getCarsThatHasNotBeenPickedUp(carDetails) {
@@ -416,6 +418,147 @@ class EntryService {
     return haversineDistanceArgs;
   }
 
+  getCurrentLoction = (porterId, locationType) => {
+    return Entry.aggregate([
+      {
+        $match: {
+          "invoice.carDetails.porterId": new mongoose.Types.ObjectId(porterId),
+        },
+      },
+      { $unwind: "$invoice.carDetails" },
+      {
+        $lookup: {
+          from: "services",
+          localField: "invoice.carDetails.serviceIds",
+          foreignField: "_id",
+          as: "services",
+        },
+      },
+      {
+        $addFields: {
+          "invoice.carDetails.serviceIds": {
+            $map: {
+              input: "$services",
+              as: "service",
+              in: {
+                name: "$$service.name",
+                id: "$$service._id",
+              },
+            },
+          },
+        },
+      },
+      {
+        $addFields: {
+          "invoice.carDetails.serviceDone.serviceName": "services",
+        },
+      },
+      {
+        $match: {
+          "invoice.carDetails.porterId": new mongoose.Types.ObjectId(porterId),
+        },
+      },
+      { $unwind: "$invoice.carDetails.geoLocations" },
+
+      {
+        $match: {
+          "invoice.carDetails.geoLocations.locationType": locationType,
+        },
+      },
+      { $sort: { "invoice.carDetails.geoLocations.timestamp": -1 } },
+      {
+        $group: {
+          _id: null,
+          mostRecentCar: { $first: "$invoice.carDetails" },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          carDetails: {
+            ...this.getCarDetailsField("$mostRecentCar"),
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: "services",
+          localField: "carDetails.servicesDone.serviceId",
+          foreignField: "_id",
+          as: "service",
+        },
+      },
+      {
+        $project: {
+          carDetails: {
+            ...this.getCarDetailsField("$carDetails"),
+            servicesDone: {
+              $map: {
+                input: "$carDetails.servicesDone",
+                as: "serviceDone",
+                in: {
+                  $mergeObjects: [
+                    "$$serviceDone",
+                    {
+                      serviceName: {
+                        $let: {
+                          vars: {
+                            serviceId: "$$serviceDone.serviceId",
+                          },
+                          in: {
+                            $first: {
+                              $filter: {
+                                input: {
+                                  $map: {
+                                    input: "$service",
+                                    as: "service",
+                                    in: {
+                                      $cond: [
+                                        {
+                                          $eq: [
+                                            "$$service._id",
+                                            {
+                                              $toObjectId: "$$serviceId",
+                                            },
+                                          ],
+                                        },
+                                        "$$service.name",
+                                        null,
+                                      ],
+                                    },
+                                  },
+                                },
+                                as: "item",
+                                cond: {
+                                  $ne: ["$$item", null],
+                                },
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        },
+      },
+    ]);
+  };
+
+  getCarDetailsField(field) {
+    const carDetailsField = carDetailsProperties.reduce((result, property) => {
+      if (property !== "price" && property !== "priceBreakdown")
+        result[property] = `${field}.${property}`;
+
+      return result;
+    }, {});
+
+    return carDetailsField;
+  }
+
   getCarLocationByType(car, locationType) {
     const locationByType = car.geoLocations.find(
       (location) => location.locationType === locationType
@@ -662,7 +805,7 @@ class EntryService {
     if (carDetails.geoLocation) {
       carDetails.geoLocations = [
         {
-          timeStamp: newDate,
+          timeStamp: new Date(),
           locationType: "Scanned",
           ...carDetails.geoLocation,
         },
