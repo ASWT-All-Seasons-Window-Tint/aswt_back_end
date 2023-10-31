@@ -280,6 +280,13 @@ class AppointmentService {
       const serviceNameWhenMesurementIsknown = "Tint Installation";
       const { customerMeasurementAwareness } = residentialDetails;
 
+      if (typeof customerMeasurementAwareness !== "boolean") {
+        results.error.message =
+          "CustomerMeasurementAwareness must be a Boolean";
+
+        return results;
+      }
+
       if (!customerMeasurementAwareness) {
         const priceForSiteConsultation = 50;
         priceBreakdown.serviceName = serviceNameWhenMesurementIsUnknown;
