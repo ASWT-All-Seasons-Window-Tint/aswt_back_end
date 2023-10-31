@@ -183,21 +183,8 @@ class EntryUtils {
           input: "$filteredDetails",
           as: "car",
           in: {
-            _id: "$$car._id",
-            vin: "$$car.vin",
-            year: "$$car.year",
-            make: "$$car.make",
-            entryDate: "$$car.entryDate",
-            model: "$$car.model",
-            note: "$$car.note",
-            colour: "$$car.colour",
-            staffId: "$$car.staffId",
-            porterId: "$$car.porterId",
-            serviceIds: "$$car.serviceIds",
-            category: "$$car.category",
+            ...this.getCarDetailsField("$$car"),
             serviceNames: this.serviceNames,
-            waitingList: "$$car.waitingList",
-            geoLocations: "$$car.geoLocations",
           },
         },
       },
@@ -488,7 +475,7 @@ class EntryUtils {
       results.$and.push(vinFilter("staffId"));
     } else if (porterId && vin) {
       results.$and.push(vinFilter("porterId"));
-    } else if (porterId && waitingList.value === false) {
+    } else if (porterId && waitingList === "completed") {
       results.$and.push(completedTripFilter);
     } else if (porterId && waitingList) {
       results.$and.push(waitingListFilter);

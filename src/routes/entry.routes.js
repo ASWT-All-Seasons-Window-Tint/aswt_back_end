@@ -166,7 +166,7 @@ router.get(
   "/completed-trips/:porterId",
   auth,
   validateObjectIdWithXArgMiddleware(["porterId"]),
-  addWaitingListMiddleware({ value: false }),
+  addWaitingListMiddleware("completed"),
   asyncMiddleware(entryController.getCarsDoneByStaffPerId)
 );
 
