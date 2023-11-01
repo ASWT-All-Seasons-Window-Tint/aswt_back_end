@@ -643,13 +643,13 @@ class EntryService {
     return await this.updateEntryById(entry._id, entry);
   };
 
-  async updateEntryById(id, entry, session) {
+  async updateEntryById(id, entry, session, isNew) {
     return await Entry.findByIdAndUpdate(
       id,
       {
         $set: entry,
       },
-      { session }
+      isNew ? { new: true } : { session }
     );
   }
 
