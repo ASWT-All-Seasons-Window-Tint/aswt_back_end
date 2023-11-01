@@ -268,7 +268,7 @@ router.put(
   [
     validateObjectId,
     auth,
-    adminOrManagerMiddleware,
+    roleBaseAuth(["admin", "gm"]),
     validateMiddleware(validateModifyPrice),
   ],
   asyncMiddleware(entryController.modifyPrice)
