@@ -90,6 +90,12 @@ const customerDetailsSchema = new mongoose.Schema({
   qbId: {
     type: String,
   },
+  alterNativeEmails: {
+    type: [String],
+  },
+  accountNumber: {
+    type: String,
+  },
 });
 
 const managerDetailsSchema = new mongoose.Schema({
@@ -140,7 +146,7 @@ const userSchema = new mongoose.Schema(
     role: {
       type: String,
       required: true,
-      enum: validUserRoles,
+      enum: [...validUserRoles, "customer"],
     },
     departments: {
       type: [mongoose.Schema.Types.ObjectId],
@@ -201,6 +207,31 @@ userSchema.methods.generateAuthToken = function () {
   );
   return token;
 };
+
+userSchema.statics.getNextAccountNumber = async function () {
+  // Get the last entry
+  const lastCustomer = await this.findOne({ role: "customer" }).sort({
+    _id: -1,
+  });
+
+  // Start with AWST00001 if no entries
+  let nextNum = "00001";
+
+  if (lastCustomer) {
+    const lastNum = lastCustomer.customerDetails.accountNumber
+      ? lastCustomer.customerDetails.accountNumber.substring(5)
+      : "00000";
+    nextNum = leadingZero(parseInt(lastNum) + 1, 5);
+  }
+
+  return "ACC" + nextNum;
+};
+
+function leadingZero(num, size) {
+  let s = num + "";
+  while (s.length < size) s = "0" + s;
+  return s;
+}
 
 const User = mongoose.model("User", userSchema);
 
