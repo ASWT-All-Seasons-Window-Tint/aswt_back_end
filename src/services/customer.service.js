@@ -1,4 +1,5 @@
 require("dotenv").config();
+const Joi = require("joi");
 const axios = require("axios");
 const { getNewAccessToken } = require("../utils/getNewAccessToken.utils");
 const { getOrSetCache, updateCache } = require("../utils/getOrSetCache.utils");
@@ -138,6 +139,41 @@ class CustomerService {
         }
       );
     });
+  }
+
+  extractJSONObject(inputString) {
+    const validInputStringJson = inputString.replace(/'/g, '"');
+
+    const openBraceIndex = validInputStringJson.indexOf("{");
+    const closeBraceIndex = validInputStringJson.lastIndexOf("}");
+
+    if (
+      openBraceIndex !== -1 &&
+      closeBraceIndex !== -1 &&
+      closeBraceIndex > openBraceIndex
+    ) {
+      const jsonObjectString = validInputStringJson.substring(
+        openBraceIndex,
+        closeBraceIndex + 1
+      );
+      try {
+        const jsonObject = JSON.parse(jsonObjectString);
+        return jsonObject;
+      } catch (error) {
+        console.error("Error parsing JSON:", error);
+        return null;
+      }
+    } else {
+      return null;
+    }
+  }
+
+  validateAlternativeEmails(entry) {
+    const schema = Joi.object({
+      AlternativeEmails: Joi.array().items(Joi.string().email().required()),
+    });
+
+    return schema.validate(entry);
   }
 
   async deleteCustomer(id) {

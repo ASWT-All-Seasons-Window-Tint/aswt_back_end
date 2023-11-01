@@ -1,4 +1,5 @@
 require("dotenv").config();
+const { User } = require("../model/user.model").user;
 const _ = require("lodash");
 const jwt = require("jsonwebtoken");
 const userService = require("../services/user.services");

@@ -1,5 +1,6 @@
 require("dotenv").config();
 const _ = require("lodash");
+const { User } = require("../model/user.model").user;
 const { MESSAGES } = require("../common/constants.common");
 const { getOrSetCache, updateCache } = require("../utils/getOrSetCache.utils");
 const customerService = require("../services/customer.service");
@@ -14,6 +15,7 @@ const {
   successMessage,
   jsonResponse,
   errorMessage,
+  badReqResponse,
 } = require("../common/messages.common");
 
 const expires = 1800;
@@ -83,6 +85,8 @@ class Customer {
     if (error)
       return jsonResponse(res, 404, false, error.Fault.Error[0].Detail);
 
+    console.log(JSON.parse(customer.Notes));
+
     // 'customers' now contains an array of customer records from QuickBooksc
     return res.send(successMessage(MESSAGES.FETCHED, customer));
   }
@@ -141,13 +145,45 @@ class Customer {
     const qbo = await initializeQbUtils();
     const { DisplayName, PrimaryEmailAddr, PrimaryPhone, BillAddr, Notes } =
       req.body;
+
+    let alterNativeEmails;
+    let completeNotes;
+
+    const accountNumber = await User.getNextAccountNumber();
+
+    if (Notes) {
+      const validNote =
+        "{'AlternativeEmails': ['test@example.com', 'test2@example.com']}";
+
+      const alternativeEmailsObject = customerService.extractJSONObject(Notes);
+      if (!alternativeEmailsObject)
+        return badReqResponse(
+          res,
+          `Invalid alternative notes format, valid format: ${validNote}`
+        );
+
+      const { error } = customerService.validateAlternativeEmails(
+        alternativeEmailsObject
+      );
+
+      if (error)
+        return res
+          .status(400)
+          .send({ success: false, message: error.details[0].message });
+
+      alterNativeEmails = alternativeEmailsObject.AlternativeEmails;
+
+      alternativeEmailsObject.AccountNumber = accountNumber;
+
+      completeNotes = JSON.stringify(alternativeEmailsObject);
+    }
     // Create the customer in QuickBooks
     const customerData = {
       DisplayName: DisplayName,
       PrimaryEmailAddr: PrimaryEmailAddr,
       PrimaryPhone: PrimaryPhone,
       BillAddr: BillAddr,
-      Notes: Notes,
+      Notes: completeNotes,
       CompanyName: req.body.CompanyName,
     };
 
@@ -171,6 +207,8 @@ class Customer {
       customerDetails: {
         qbId: id,
         companyName: req.body.CompanyName,
+        accountNumber,
+        alterNativeEmails,
       },
     };
 
