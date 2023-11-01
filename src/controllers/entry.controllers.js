@@ -286,6 +286,12 @@ class EntryController {
     res.send(successMessage(MESSAGES.UPDATED, carWithoutPrice));
   }
 
+  async getSentInvoices(req, res) {
+    const sentInvoices = await entryService.getSentInvoices();
+
+    res.send(successMessage(MESSAGES.FETCHED, sentInvoices));
+  }
+
   //get all entries in the entry collection/table
   async fetchAllEntries(req, res) {
     const { getEntries } = entryService;

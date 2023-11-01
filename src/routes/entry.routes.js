@@ -46,6 +46,13 @@ router.get(
 );
 
 router.get(
+  "/invoice/sent-out-invoices",
+  auth,
+  admin,
+  asyncMiddleware(entryController.getSentInvoices)
+);
+
+router.get(
   "/vin/:vin",
   auth,
   //validateObjectIdWithXArgMiddleware(["customerId"]),
