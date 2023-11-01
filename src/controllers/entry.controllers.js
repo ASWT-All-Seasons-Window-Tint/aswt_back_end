@@ -721,7 +721,9 @@ class EntryController {
 
     const updatedEntry = await entryService.updateEntryById(
       req.params.id,
-      entry
+      entry,
+      undefined,
+      true
     );
 
     res.send(successMessage(MESSAGES.UPDATED, updatedEntry));
