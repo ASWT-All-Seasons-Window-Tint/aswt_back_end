@@ -156,6 +156,30 @@ router.get(
 );
 
 router.get(
+  "/porter/:porterId/date/:date",
+  auth,
+  validateDateParams,
+  validateMonthYearParamsMiddleware,
+  validateObjectIdWithXArgMiddleware(["porterId"]),
+  asyncMiddleware(entryController.getCarsDoneByStaff)
+);
+router.get(
+  "/porter/:porterId/year/:year",
+  auth,
+  validateMonthYearParamsMiddleware,
+  validateObjectIdWithXArgMiddleware(["porterId"]),
+  asyncMiddleware(entryController.getCarsDoneByStaff)
+);
+
+router.get(
+  "/porter/:porterId/month/:monthName/:year",
+  auth,
+  validateObjectIdWithXArgMiddleware(["porterId"]),
+  validateMonthYearParamsMiddleware,
+  asyncMiddleware(entryController.getCarsDoneByStaff)
+);
+
+router.get(
   "/staff/:staffId",
   auth,
   validateObjectIdWithXArgMiddleware(["staffId"]),
