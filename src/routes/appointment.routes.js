@@ -11,6 +11,7 @@ const takenTimeslotsControllers = require("../controllers/takenTimeslots.control
 const validateObjectId = require("../middleware/validateObjectId.middleware");
 const asyncMiddleware = require("../middleware/async.middleware");
 const roleBaseAuthMiddleware = require("../middleware/roleBaseAuth.middleware.");
+const validDateParamsMiddleware = require("../middleware/validDateParams.middleware");
 
 const { validate, validateGetTakenTimeslots } = joiValidators;
 
@@ -38,6 +39,7 @@ router.get(
   "/:date",
   auth,
   roleBaseAuthMiddleware(["receptionist", "admin"]),
+  validDateParamsMiddleware,
   asyncMiddleware(appointmentControllers.getAppointmentsByDate)
 );
 
