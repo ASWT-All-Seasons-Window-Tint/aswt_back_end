@@ -443,11 +443,14 @@ class EntryController {
   }
 
   async getCarsDoneByStaff(req, res) {
-    const { monthName, year, date, staffId } = req.params;
+    const { monthName, year, date, staffId, porterId } = req.params;
     const filterArguments = getFilterArguments(req);
 
-    const [staff] = await userService.getUserByRoleAndId(staffId, "staff");
-    if (!staff) return res.status(404).send(errorMessage("staff"));
+    const [user] = staffId
+      ? await userService.getUserByRoleAndId(staffId, "staff")
+      : await userService.getUserByRoleAndId(porterId, "porter");
+
+    if (!user) return res.status(404).send(errorMessage("user"));
 
     let results = await entryService.getStaffEntriesAndAllEntries(
       filterArguments
