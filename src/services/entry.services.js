@@ -359,6 +359,10 @@ class EntryService {
     return { carIndex, carWithVin };
   }
 
+  async getSentInvoices() {
+    return Entry.find({ "invoice.sent": true });
+  }
+
   getServicePrice(priceBreakdown, serviceId) {
     const servicePriceIndex = priceBreakdown.findIndex(
       (price) => price.serviceId.toString() === serviceId.toString()
