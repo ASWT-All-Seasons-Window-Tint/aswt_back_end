@@ -30,8 +30,15 @@ class UserController {
       if (typeof req.body.departments[0] !== "string")
         return jsonResponse(res, 400, false, "invalid ID");
 
-    if (req.user.role === "manager" && role === "manager")
-      return forbiddenResponse(res, "Only admins can create managers");
+    const reqRole = req.user.role;
+
+    const forbiddenRoles = {
+      gm: ["gm", "admin"],
+      manager: ["gm", "admin", "manager"],
+    };
+
+    if (reqRole !== "admin" && forbiddenRoles[reqRole].includes(role))
+      return forbiddenResponse(res, `Only admins can create ${role}`);
 
     req.body.email = req.body.email.toLowerCase();
     // Checks if a user already exist by using the email id
