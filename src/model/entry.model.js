@@ -164,6 +164,11 @@ const entry = {
       minlength: 5,
       maxlength: 255,
     },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "users",
+      default: undefined,
+    },
     carDetails,
     totalPrice: {
       type: Number,
