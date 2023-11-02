@@ -150,6 +150,8 @@ class EntryController {
       porterId
     );
 
+    if (staffId && !entry.invoice.createdBy) entry.invoice.createdBy = staffId;
+
     const mongoSession = await mongoose.startSession();
 
     const results = await mongoTransactionUtils(mongoSession, async () => {
@@ -584,6 +586,8 @@ class EntryController {
       serviceId,
       staffId
     );
+
+    if (!entry.invoice.createdBy) entry.invoice.createdBy = staffId;
 
     entry.invoice.carDetails[carIndex] = updatedCarWithVIn;
 
