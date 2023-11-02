@@ -51,7 +51,7 @@ const refundDetailsSchema = new mongoose.Schema({
   },
   refundAmount: {
     type: Number,
-    default: Boolean,
+    default: 0,
   },
   refunded: {
     type: Boolean,
