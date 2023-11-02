@@ -77,10 +77,15 @@ class StripeController {
     const results = {};
     try {
       const paymentIntentId = appointment.paymentDetails.paymentIntentId;
-      const refund = await stripe.refunds.create({
-        payment_intent: paymentIntentId,
-        reason: "requested_by_customer", // You can customize the reason as needed
-      });
+      const refund = await stripe.refunds.create(
+        {
+          payment_intent: paymentIntentId,
+          reason: "requested_by_customer", // You can customize the reason as needed
+        },
+        {
+          stripeAccount,
+        }
+      );
 
       if (refund.status === "succeeded") {
         appointmentServices.refundPaymentDetails({ appointment, refund });
