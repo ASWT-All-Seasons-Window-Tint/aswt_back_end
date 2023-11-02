@@ -373,6 +373,11 @@ class AppointmentController {
         "Can't refund client as payment has not been made"
       );
 
+    const isCustomerRefunded = appointment.refundDetails.refunded;
+
+    if (isCustomerRefunded)
+      return badReqResponse(res, "Customer has already been refunded.");
+
     const { error, refund } = await initiateRefund(appointment);
     if (error) {
       if (error.type === "StripeInvalidRequestError")
