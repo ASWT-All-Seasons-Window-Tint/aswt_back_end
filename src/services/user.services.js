@@ -101,6 +101,15 @@ class UserService {
     User.find({ role, isDeleted: undefined }).select(selectArg);
 
   getUsersByRole = async (role) => {
+    if (role === "manager") {
+      return User.find({ role, isDeleted: undefined })
+        .select("-customerDetails -password")
+        .populate("managerDetails.staffLocationsVisibleToManager", [
+          "firstName",
+          "lastName",
+        ]);
+    }
+
     return role === "customer"
       ? await this.query(role, "-departments -password")
       : await this.query(role, "-customerDetails -password");
