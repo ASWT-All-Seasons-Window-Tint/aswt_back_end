@@ -99,10 +99,9 @@ const customerDetailsSchema = new mongoose.Schema({
 });
 
 const managerDetailsSchema = new mongoose.Schema({
-  staffLocationsVisibleToManager: {
-    type: [mongoose.Schema.Types.ObjectId],
-    default: [],
-  },
+  staffLocationsVisibleToManager: [
+    { type: mongoose.Schema.Types.ObjectId, default: [], ref: "User" },
+  ],
 });
 
 const userSchema = new mongoose.Schema(

@@ -73,6 +73,14 @@ class EntryUtils {
         },
       },
       {
+        $lookup: {
+          from: "users",
+          localField: "invoice.createdBy",
+          foreignField: "_id",
+          as: "invoiceCreator",
+        },
+      },
+      {
         $project: {
           ...this.entryUnFilteredProps,
           carsDone: {
@@ -196,6 +204,20 @@ class EntryUtils {
         sent: 1,
         qbId: 1,
         paymentDetails: 1,
+        createdBy: {
+          $first: {
+            $map: {
+              input: "$invoiceCreator",
+              as: "creator",
+              in: {
+                id: "$$creator._id",
+                name: {
+                  $concat: ["$$creator.firstName", " ", "$$creator.lastName"],
+                },
+              },
+            },
+          },
+        },
         carDetails: {
           $map: {
             input: "$invoice.carDetails",
