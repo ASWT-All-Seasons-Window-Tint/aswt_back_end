@@ -43,7 +43,7 @@ class AppointmentService {
   }
 
   async fetchAllAppointments() {
-    return Appointment.find();
+    return Appointment.find({ "refundDetails.refunded": false });
   }
 
   calculateTotalTimeOfCompletion(services) {

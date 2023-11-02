@@ -88,7 +88,7 @@ class StripeController {
       );
 
       if (refund.status === "succeeded") {
-        appointmentServices.refundPaymentDetails({ appointment, refund });
+        await appointmentServices.refundPaymentDetails({ appointment, refund });
       }
 
       results.refund = refund;
