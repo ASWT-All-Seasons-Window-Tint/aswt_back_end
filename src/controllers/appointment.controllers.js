@@ -365,6 +365,14 @@ class AppointmentController {
     const staffTakenTimeSlot =
       await takenTimeslotServices.retriveTakenTimeslots(appointment);
 
+    const paymentIntentId = appointment.paymentDetails.paymentIntentId;
+
+    if (!paymentIntentId)
+      return badReqResponse(
+        res,
+        "Can't refund client as payment has not been made"
+      );
+
     const { error, refund } = await initiateRefund(appointment);
     if (error) {
       if (error.type === "StripeInvalidRequestError")
