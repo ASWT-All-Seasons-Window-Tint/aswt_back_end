@@ -114,7 +114,7 @@ const carDetailsSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    enum: validCarTypes,
+    enum: [...validCarTypes, "suv", "sedan", "truck"],
   },
   serviceDetails: [
     {
