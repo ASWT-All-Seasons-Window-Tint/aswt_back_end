@@ -167,7 +167,7 @@ const entry = {
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "user",
-      default: null,
+      default: undefined,
     },
     carDetails,
     totalPrice: {
