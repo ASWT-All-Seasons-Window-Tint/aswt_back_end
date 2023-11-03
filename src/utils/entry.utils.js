@@ -204,7 +204,8 @@ class EntryUtils {
         sent: 1,
         qbId: 1,
         paymentDetails: 1,
-        createdBy: {
+        createdBy: 1,
+        createdByDetails: {
           $first: {
             $map: {
               input: "$invoiceCreator",
