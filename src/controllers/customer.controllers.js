@@ -85,8 +85,6 @@ class Customer {
     if (error)
       return jsonResponse(res, 404, false, error.Fault.Error[0].Detail);
 
-    console.log(JSON.parse(customer.Notes));
-
     // 'customers' now contains an array of customer records from QuickBooksc
     return res.send(successMessage(MESSAGES.FETCHED, customer));
   }
