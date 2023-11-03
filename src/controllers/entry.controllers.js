@@ -97,7 +97,7 @@ class EntryController {
     let staffId;
     let porterId;
 
-    if (role === "porter") {
+    if (role !== "staff") {
       carDetails.waitingList = true;
       porterId = req.user._id;
     } else if (role === "staff") {
@@ -155,7 +155,8 @@ class EntryController {
     const mongoSession = await mongoose.startSession();
 
     const results = await mongoTransactionUtils(mongoSession, async () => {
-      await userService.updateStaffTotalEarnings(req.user, mongoSession);
+      if (staffId)
+        await userService.updateStaffTotalEarnings(req.user, mongoSession);
 
       const id = entry._id;
       const updatedEntry = await entryService.updateEntryById(
@@ -163,6 +164,13 @@ class EntryController {
         entry,
         mongoSession
       );
+      if (staffId) {
+        await userService.signInStaff(
+          req.user.email,
+          carDetails.geoLocation,
+          mongoSession
+        );
+      }
 
       updatedEntry.id = updatedEntry._id;
     });
@@ -269,11 +277,13 @@ class EntryController {
       const mongoSession = await mongoose.startSession();
 
       const results = await mongoTransactionUtils(mongoSession, async () => {
-        await userService.updatePorterCurrentLocation(
-          req.user,
-          mongoSession,
-          geoLocation
-        );
+        if (req.user.role === "porter") {
+          await userService.signInStaff(
+            req.user.email,
+            geoLocation,
+            mongoSession
+          );
+        }
 
         const id = entry._id;
         await entryService.updateEntryById(id, entry, mongoSession);
@@ -354,7 +364,7 @@ class EntryController {
   async getCurrentLocation(req, res) {
     const { porterId, locationType } = req.params;
 
-    const [porter] = await userService.getUserByRoleAndId(porterId, "porter");
+    const porter = await userService.getUserById(porterId);
     if (!porter) return res.status(404).send(errorMessage("porter"));
 
     const [carWithCurrentLocation] = await entryService.getCurrentLoction(
@@ -369,6 +379,25 @@ class EntryController {
         false,
         "Can't find current car for the porter"
       );
+
+    const vin = carWithCurrentLocation.carDetails.vin;
+    const entry = await entryService.getRecentEntryWithVin(vin);
+    const { carWithVin } = entryService.getCarByVin({ entry, vin });
+    const currentLocations = carWithVin.geoLocations;
+
+    const locationTypeToCheck =
+      locationType === "PickupFromDealership"
+        ? "TakenToShop"
+        : "DropOffCompleted";
+
+    const locationErrorMessage = entryService.checkLocationType(
+      locationType,
+      currentLocations,
+      locationTypeToCheck
+    );
+
+    if (locationErrorMessage)
+      return jsonResponse(res, 404, false, locationErrorMessage);
 
     const { carDetails } = carWithCurrentLocation;
 

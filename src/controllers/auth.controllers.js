@@ -11,10 +11,10 @@ class AuthController {
     const { email, password } = req.body;
     const { staffRoles } = userService;
 
-    if (!staffRoles.includes(req.user.role) && req.body.signInLocations)
-      return res
-        .status(400)
-        .send({ message: "Only a staff can sign in", success: false });
+    // if (!staffRoles.includes(req.user.role) && req.body.signInLocations)
+    //   return res
+    //     .status(400)
+    //     .send({ message: "Only a staff can sign in", success: false });
 
     let user = req.user;
     //checks if the password is valid
@@ -22,11 +22,11 @@ class AuthController {
     if (!validPassword) return res.status(400).send(loginError());
 
     // Check if the user is a staff member
-    if (user.role === "staff") {
+    if (staffRoles.includes(req.user.role)) {
       const { description, coordinates } = req.body.signInLocations;
       // Create a new signed-in location entry
       const newSignInLocation = {
-        timestamp: newDate(),
+        timestamp: new Date(),
         description,
         coordinates,
       };
