@@ -237,11 +237,7 @@ router.put(
 
 router.put(
   "/add-car/:id",
-  [
-    auth,
-    roleBaseAuth(["porter", "staff"]),
-    validateMiddleware(validateAddInvoicePatch),
-  ],
+  [auth, validateMiddleware(validateAddInvoicePatch)],
   qboAsyncMiddleware(entryController.addInvoice)
 );
 

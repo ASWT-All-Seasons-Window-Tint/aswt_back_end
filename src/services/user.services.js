@@ -92,9 +92,13 @@ class UserService {
     const isUserStaff = this.staffRoles.includes(role);
     const selectArgs = isUserStaff ? "-password" : "-password -staffDetails";
 
-    return await User.findOne({ _id: userId, isDeleted: undefined }).select(
-      selectArgs
-    );
+    return await User.findOne({ _id: userId, isDeleted: undefined })
+      .select(selectArgs)
+      .populate("managerDetails.staffLocationsVisibleToManager", [
+        "firstName",
+        "lastName",
+        "role",
+      ]);
   };
 
   query = (role, selectArg) =>
@@ -199,7 +203,7 @@ class UserService {
     return User.findOne({ "customerDetails.qbId": qbId, isDeleted: undefined });
   }
 
-  async signInStaff(email, currentSignInLocation) {
+  async signInStaff(email, currentSignInLocation, session) {
     return User.findOneAndUpdate(
       { email },
       {
@@ -207,7 +211,8 @@ class UserService {
           "staffDetails.currentSignInLocation": currentSignInLocation,
           "staffDetails.isLoggedIn": true,
         },
-      }
+      },
+      session ? { session } : undefined
     );
   }
 
