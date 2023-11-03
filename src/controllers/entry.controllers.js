@@ -691,6 +691,25 @@ class EntryController {
     if (!carWithVin || carIndex < 0)
       return notFoundResponse(res, "Car with VIN number not found in invoice.");
 
+    const porterServiceIds = carWithVin.serviceIds.map((id) =>
+      id ? id.toString() : id
+    );
+    const staffServiceIds = carWithVin.servicesDone.map((serviceDone) => {
+      if (serviceDone) {
+        const serviceId = serviceDone.serviceId.toString();
+        return serviceId;
+      }
+    });
+
+    const validServiceIds = [...porterServiceIds, ...staffServiceIds];
+
+    if (!validServiceIds.includes(serviceId)) {
+      return badReqResponse(
+        res,
+        `Service with serviceId: ${serviceId} was not done for the car`
+      );
+    }
+
     if (!entry.isActive)
       return jsonResponse(
         res,
