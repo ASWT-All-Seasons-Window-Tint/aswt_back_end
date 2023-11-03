@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const Joi = require("joi");
 const { User } = require("./user.model").user;
 const { Service } = require("./service.model");
+const { FilmQuality } = require("./filmQuality.model").filmQuality;
 const addVirtualIdUtils = require("../utils/addVirtualId.utils");
 const convertToInchesUtils = require("../utils/calculateSquareFeetutils");
 
@@ -120,10 +121,12 @@ const carDetailsSchema = new mongoose.Schema({
     {
       serviceId: {
         type: mongoose.Schema.Types.ObjectId,
+        ref: Service,
         required: true,
       },
       filmQualityId: {
         type: mongoose.Schema.Types.ObjectId,
+        ref: FilmQuality,
       },
     },
   ],

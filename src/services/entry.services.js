@@ -77,10 +77,36 @@ class EntryService {
           isDroppedOff: undefined,
         },
       },
-    }).sort({ createdAt: -1 });
+    }).sort({ _id: -1 });
 
     return query.populate("invoice.carDetails.serviceIds", "name").lean();
   };
+
+  getRecentEntryWithVin = async (vin) => {
+    const query = Entry.findOne({
+      "invoice.carDetails": {
+        $elemMatch: {
+          vin,
+        },
+      },
+    }).sort({ _id: -1 });
+
+    return query.populate("invoice.carDetails.serviceIds", "name").lean();
+  };
+
+  checkLocationType(
+    currentLocationType,
+    currentLocations,
+    locationTypeToCheck
+  ) {
+    for (const location of currentLocations) {
+      const locationType = location.locationType;
+      if (locationType === locationTypeToCheck)
+        return currentLocationType === "PickupFromDealership"
+          ? "Vehicle already taken to shop"
+          : "The trip has been completed for this vehicle";
+    }
+  }
 
   async validateEntryIds(entryIds) {
     const entrys = await Entry.find({
