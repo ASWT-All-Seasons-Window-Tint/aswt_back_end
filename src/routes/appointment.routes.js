@@ -24,7 +24,7 @@ router.post(
 router.delete(
   "/:id",
   auth,
-  receptionistMiddleware,
+  roleBaseAuthMiddleware(["receptionist", "admin"]),
   asyncMiddleware(appointmentControllers.cancelAppointment)
 );
 
@@ -66,7 +66,7 @@ router.put(
   "/:id",
   validateObjectId,
   auth,
-  receptionistMiddleware,
+  roleBaseAuthMiddleware(["receptionist", "admin"]),
   validateMiddleware(validate),
   asyncMiddleware(appointmentControllers.updateAppointment)
 );
