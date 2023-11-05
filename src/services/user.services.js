@@ -124,7 +124,8 @@ class UserService {
         .populate("managerDetails.staffLocationsVisibleToManager", [
           "firstName",
           "lastName",
-        ]);
+        ])
+        .populate("departments");
     }
 
     return role === "customer"

@@ -1,4 +1,8 @@
-const { jsonResponse, successMessage } = require("../common/messages.common");
+const {
+  jsonResponse,
+  successMessage,
+  badReqResponse,
+} = require("../common/messages.common");
 const takenTimeslotsServices = require("../services/takenTimeslot.services");
 const userService = require("../services/user.services");
 const { MESSAGES } = require("../common/constants.common");
@@ -38,23 +42,29 @@ class TakenTimeslotControllers {
   }
 
   getTakenTimeSlots = async (req, res) => {
-    const { date, serviceIds } = req.body;
+    const { date, serviceIds, appointmentType } = req.body;
+    let timeOfCompletion = 8;
 
-    const [services, missingIds] = await Promise.all([
-      serviceServices.getMultipleServices(serviceIds, true),
-      serviceServices.validateServiceIds(serviceIds),
-    ]);
+    if (appointmentType !== "commercial") {
+      console.log(!serviceIds);
+      if (!serviceIds) return badReqResponse(res, "serviceIds is required");
 
-    if (missingIds.length > 0)
-      return jsonResponse(
-        res,
-        404,
-        false,
-        `Services with IDs: [${missingIds}] could not be found`
-      );
+      const [services, missingIds] = await Promise.all([
+        serviceServices.getMultipleServices(serviceIds, true),
+        serviceServices.validateServiceIds(serviceIds),
+      ]);
 
-    const timeOfCompletion =
-      appointmentServices.calculateTotalTimeOfCompletion(services);
+      if (missingIds.length > 0)
+        return jsonResponse(
+          res,
+          404,
+          false,
+          `Services with IDs: [${missingIds}] could not be found`
+        );
+
+      timeOfCompletion =
+        appointmentServices.calculateTotalTimeOfCompletion(services);
+    }
 
     const takenTimeslotsForAllStaffs = await this.generateTakenTimeslots({
       res,

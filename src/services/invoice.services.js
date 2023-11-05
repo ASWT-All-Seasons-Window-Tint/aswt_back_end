@@ -15,7 +15,6 @@ class InvoiceService {
                 reject("Error sending invoice:", sendErr);
               } else {
                 results.sendResponse = sendResponse;
-                console.log(sendResponse);
               }
             }
           );
