@@ -95,6 +95,16 @@ const residentialDetailsSchema = new mongoose.Schema({
     },
   ],
   price: Number,
+  message: {
+    type: String,
+    minlength: 512,
+    minlength: 4,
+  },
+  address: {
+    type: String,
+    minlength: 512,
+    minlength: 4,
+  },
 });
 
 const carDetailsSchema = new mongoose.Schema({
@@ -269,6 +279,22 @@ function validate(appointment) {
         then: Joi.required(),
         otherwise: Joi.forbidden(),
       }),
+      message: Joi.string()
+        .min(4)
+        .max(512)
+        .when("customerMeasurementAwareness", {
+          is: false,
+          then: Joi.required(),
+          otherwise: Joi.optional(),
+        }),
+      address: Joi.string()
+        .min(4)
+        .max(512)
+        .when("customerMeasurementAwareness", {
+          is: false,
+          then: Joi.required(),
+          otherwise: Joi.optional(),
+        }),
     }).when("appointmentType", {
       is: "commercial",
       then: Joi.required(),
