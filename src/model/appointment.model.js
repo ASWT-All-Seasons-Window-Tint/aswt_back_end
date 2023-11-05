@@ -308,7 +308,12 @@ function validate(appointment) {
 function validateGetTakenTimeslots(appointment) {
   const schema = Joi.object({
     date: Joi.date().required(),
-    serviceIds: Joi.array().items(Joi.objectId()),
+    appointmentType: Joi.string().valid("auto", "commercial"),
+    serviceIds: Joi.array().items(Joi.objectId()).when("appointmentType", {
+      is: "commercial",
+      then: Joi.forbidden(),
+      otherwise: Joi.required(),
+    }),
   });
 
   return schema.validate(appointment);
