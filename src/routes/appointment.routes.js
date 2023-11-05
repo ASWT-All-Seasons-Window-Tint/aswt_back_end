@@ -36,6 +36,13 @@ router.get(
 );
 
 router.get(
+  "/cleared-out-dates",
+  auth,
+  roleBaseAuthMiddleware(["receptionist", "admin"]),
+  asyncMiddleware(takenTimeslotsControllers.getClearedOutDates)
+);
+
+router.get(
   "/:date",
   auth,
   roleBaseAuthMiddleware(["receptionist", "admin"]),

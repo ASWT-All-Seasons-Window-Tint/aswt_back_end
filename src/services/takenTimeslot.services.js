@@ -41,6 +41,10 @@ class TakenTimeslotService {
     return TakenTimeslot.updateMany({ date }, { $set: { clearedOut: true } });
   }
 
+  async getClearOutDates() {
+    return TakenTimeslot.find({ clearedOut: true });
+  }
+
   findUnavailableTimeSlots(staff, expectedTimeOfCompletion) {
     const staffTimeSlotsInDecimal =
       freeTimeSlotServices.convertTimeArrayToDecimal(staff.timeslots);
@@ -141,6 +145,19 @@ class TakenTimeslotService {
     return takenTimeSlotForStaff;
   }
 
+  getUnvailableTimeDueToCloseOfBusiness(timeOfCompletion) {
+    const closeOfBusinessHour = Math.max(...timeSlotsInDecimal);
+    const latestestTimeForTheJob = closeOfBusinessHour - timeOfCompletion;
+
+    const unavailableDueToCloseOfBusiness = timeSlotsInDecimal.filter(
+      (decimalTime) => decimalTime > latestestTimeForTheJob
+    );
+
+    return freeTimeSlotServices.convertDecimalArrayToTime(
+      unavailableDueToCloseOfBusiness
+    );
+  }
+
   getFreeStaffPerTime(takenTimeslotsDetails, timeString) {
     const { updatedStaffTimeSlots } = takenTimeslotsDetails;
 
@@ -157,7 +174,19 @@ class TakenTimeslotService {
       this.findUnavailableTimeSlots(staff, expectedTimeOfCompletion)
     );
 
-    const takenTimeslots = this.findCommonTimeSlots(updatedStaffTimeSlots);
+    const takenTimeslotsBeforeCloseOfBus = this.findCommonTimeSlots(
+      updatedStaffTimeSlots
+    );
+    const takenTimeslotsDueCloseOfBus =
+      this.getUnvailableTimeDueToCloseOfBusiness(expectedTimeOfCompletion);
+
+    const takenTimeslots = [
+      ...new Set([
+        ...takenTimeslotsBeforeCloseOfBus,
+        ...takenTimeslotsDueCloseOfBus,
+      ]),
+    ].sort();
+
     const uniqueTimeSlots = {
       updatedStaffTimeSlots,
       takenTimeslots,
@@ -166,14 +195,17 @@ class TakenTimeslotService {
     return uniqueTimeSlots;
   };
 
-  noTakenTimslot(staffIds) {
+  noTakenTimslot = (staffIds, timeOfCompletion) => {
+    const takenTimeslots =
+      this.getUnvailableTimeDueToCloseOfBusiness(timeOfCompletion);
+
     return {
       updatedStaffTimeSlots: staffIds.map((staffId) => {
         return { staffId, timeslots: [] };
       }),
-      takenTimeslots: [],
+      takenTimeslots,
     };
-  }
+  };
 
   retriveTakenTimeslots = async (appointment, timeOfCompletion) => {
     const staffId = appointment.staffId;

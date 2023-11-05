@@ -88,7 +88,10 @@ class TakenTimeslotControllers {
     }
 
     if (takenTimeslots.length < 1) {
-      const freeTimeSlots = takenTimeslotsServices.noTakenTimslot(staffIds);
+      const freeTimeSlots = takenTimeslotsServices.noTakenTimslot(
+        staffIds,
+        timeOfCompletion
+      );
       return freeTimeSlots;
     }
 
@@ -98,8 +101,10 @@ class TakenTimeslotControllers {
     );
 
     if (availableStaffIds.length > 0) {
-      const freeTimeSlots =
-        takenTimeslotsServices.noTakenTimslot(availableStaffIds);
+      const freeTimeSlots = takenTimeslotsServices.noTakenTimslot(
+        availableStaffIds,
+        timeOfCompletion
+      );
       return freeTimeSlots;
     }
 
@@ -133,6 +138,12 @@ class TakenTimeslotControllers {
   }
 
   async updateTakenTimeslots() {}
+
+  async getClearedOutDates(req, res) {
+    const clearedOutDates = await takenTimeslotsServices.getClearOutDates();
+
+    return res.send(successMessage(MESSAGES.FETCHED, clearedOutDates));
+  }
 }
 
 module.exports = new TakenTimeslotControllers();

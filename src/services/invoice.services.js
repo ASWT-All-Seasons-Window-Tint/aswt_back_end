@@ -6,14 +6,19 @@ class InvoiceService {
         if (err) {
           reject(err);
         } else {
-          qbo.sendInvoicePdf(invoice.Id, emailAddr, (sendErr, sendResponse) => {
-            if (sendErr) {
-              console.log(sendErr.Fault.Error[0]);
-              reject("Error sending invoice:", sendErr);
-            } else {
-              results.sendResponse = sendResponse;
+          qbo.sendInvoicePdf(
+            invoice.Id,
+            [emailAddr, "odirahchukwumma28gmail.com"],
+            (sendErr, sendResponse) => {
+              if (sendErr) {
+                console.log(sendErr.Fault.Error[0]);
+                reject("Error sending invoice:", sendErr);
+              } else {
+                results.sendResponse = sendResponse;
+                console.log(sendResponse);
+              }
             }
-          });
+          );
           results.invoice = invoice;
           resolve(results);
         }

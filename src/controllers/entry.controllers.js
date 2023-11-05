@@ -622,8 +622,8 @@ class EntryController {
 
     await entry.save();
 
-    delete carWithVin.price;
-    delete carWithVin.priceBreakdown;
+    carWithVin.price = undefined;
+    carWithVin.priceBreakdown = undefined;
 
     return res.send(successMessage(MESSAGES.UPDATED, carWithVin));
   }
