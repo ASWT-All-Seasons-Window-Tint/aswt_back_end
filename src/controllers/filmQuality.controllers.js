@@ -1,6 +1,11 @@
 const { FilmQuality } = require("../model/filmQuality.model").filmQuality;
 const filmQualityService = require("../services/filmQuality.services");
-const { errorMessage, successMessage } = require("../common/messages.common");
+const {
+  errorMessage,
+  successMessage,
+  badReqResponse,
+} = require("../common/messages.common");
+const { filmQualityType } = require("../model/filmQuality.model").filmQuality;
 const { MESSAGES } = require("../common/constants.common");
 
 class FilmQualityController {
@@ -31,6 +36,19 @@ class FilmQualityController {
     if (!filmQuality) return res.status(404).send(errorMessage("filmQuality"));
 
     res.send(successMessage(MESSAGES.FETCHED, filmQuality));
+  }
+
+  async getFilmQualitiesByType(req, res) {
+    const { filmType } = req.params;
+
+    if (!filmQualityType.includes(filmType))
+      return badReqResponse(res, "Invalid film type");
+
+    const filmQualities = await filmQualityService.getAllFilmQualitiesByType(
+      filmType
+    );
+
+    res.send(successMessage(MESSAGES.FETCHED, filmQualities));
   }
 
   async getFilmQualityByEntryIdAndStaffId(req, res) {
