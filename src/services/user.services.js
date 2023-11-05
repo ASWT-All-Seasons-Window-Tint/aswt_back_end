@@ -36,6 +36,7 @@ class UserService {
     return User.find({
       _id: { $nin: userIds },
       role: { $in: this.staffRoles },
+      isDeleted: undefined,
     });
   };
 
