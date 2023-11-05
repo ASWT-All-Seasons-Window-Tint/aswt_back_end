@@ -1,5 +1,5 @@
 require("dotenv").config();
-const { User } = require("../model/user.model").user;
+const { validUserRoles } = require("../model/user.model").user;
 const _ = require("lodash");
 const jwt = require("jsonwebtoken");
 const userService = require("../services/user.services");
@@ -32,9 +32,19 @@ class UserController {
 
     const reqRole = req.user.role;
 
+    if (reqRole === "customer") {
+      req.body.role = "customer";
+
+      req.body.isCustomer = true;
+      req.body.customerDetails = req.user.customerDetails;
+
+      delete req.body.customerDetails.canCreate;
+    }
+
     const forbiddenRoles = {
       gm: ["gm", "admin"],
       manager: ["gm", "admin", "manager"],
+      customer: validUserRoles,
     };
 
     if (reqRole !== "admin" && forbiddenRoles[reqRole].includes(role))
@@ -205,6 +215,24 @@ class UserController {
     const users = await userService.getEmployees();
 
     res.send(successMessage(MESSAGES.FETCHED, users));
+  }
+
+  async getDocumentsExcludingIDs(req, res) {
+    const { managerId } = req.params;
+
+    const [manager] = await userService.getUserByRoleAndId(
+      managerId,
+      "manager"
+    );
+
+    if (!manager) return res.status(404).send(errorMessage("manager"));
+
+    const staffIds = userService.getStaffIdsAddedForManager(manager);
+
+    const staffsNotAddedForManager =
+      await userService.findDocumentsExcludingIDs(staffIds);
+
+    return res.send(successMessage(MESSAGES.FETCHED, staffsNotAddedForManager));
   }
 
   //get all users in the user collection/table

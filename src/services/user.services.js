@@ -32,6 +32,19 @@ class UserService {
     return [];
   }
 
+  findDocumentsExcludingIDs = (userIds) => {
+    return User.find({
+      _id: { $nin: userIds },
+      role: { $in: this.staffRoles },
+    });
+  };
+
+  getStaffIdsAddedForManager(manager) {
+    const staffIds = manager.managerDetails.staffLocationsVisibleToManager;
+
+    return staffIds;
+  }
+
   async getUsersByIdArray(userIds) {
     const users = await User.find({
       _id: { $in: userIds },

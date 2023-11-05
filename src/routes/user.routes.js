@@ -15,6 +15,7 @@ const validateroleMiddleware = require("../middleware/validaterole.middleware");
 const { user } = require("../model/user.model");
 const validateObjectIdWithXArgMiddleware = require("../middleware/validateObjectIdWithXArg.middleware");
 const roleBaseAuthMiddleware = require("../middleware/roleBaseAuth.middleware.");
+const addRoleMiddleware = require("../middleware/addRole.middleware");
 
 const {
   validate,
@@ -28,7 +29,8 @@ const {
 router.post(
   "/",
   auth,
-  adminOrManagerMiddleware,
+  roleBaseAuth(["admin", "customer", "gm", "manager"]),
+  addRoleMiddleware,
   validateMiddleware(validate),
   asyncMiddleware(userController.register)
 );
@@ -48,6 +50,13 @@ router.get(
   auth,
   adminOrManagerMiddleware,
   asyncMiddleware(userController.fetchAllUsers)
+);
+
+router.get(
+  "/staffs-not-added-for-manager/:managerId",
+  auth,
+  adminOrManagerMiddleware,
+  asyncMiddleware(userController.getDocumentsExcludingIDs)
 );
 
 router.get(

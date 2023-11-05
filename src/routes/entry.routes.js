@@ -81,7 +81,6 @@ router.get(
 router.get(
   "/highest-to-lowest-roi/:customerId",
   auth,
-  roleBaseAuth(["porter"]),
   //validateObjectIdWithXArgMiddleware(["customerId"]),
   asyncMiddleware(entryController.sortCarDetailsByPrice)
 );
@@ -206,7 +205,6 @@ router.put(
   [
     validateObjectId,
     auth,
-    roleBaseAuth(["staff", "porter"]),
     validateMiddleware(validateModifyCarDetails),
     validateServiceIdsMiddleware,
   ],
@@ -217,7 +215,6 @@ router.put(
   "/add/:locationType/location/:vin",
   [
     auth,
-    roleBaseAuth(["porter"]),
     validateMiddleware(validateAddCarGeolocation),
     addLocationTypeMiddleware(),
   ],
