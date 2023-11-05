@@ -19,6 +19,10 @@ router.post(
 );
 
 router.get("/", asyncMiddleware(filmQualityController.fetchAllFilmQualities));
+router.get(
+  "/type/:filmType",
+  asyncMiddleware(filmQualityController.getFilmQualitiesByType)
+);
 
 router.get(
   "/:id",

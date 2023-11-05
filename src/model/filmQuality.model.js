@@ -62,4 +62,4 @@ function validatePatch(filmQuality) {
   return schema.validate(filmQuality);
 }
 
-exports.filmQuality = { validate, validatePatch, FilmQuality };
+exports.filmQuality = { validate, validatePatch, FilmQuality, filmQualityType };
