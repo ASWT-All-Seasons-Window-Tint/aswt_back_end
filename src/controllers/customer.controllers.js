@@ -103,8 +103,6 @@ class Customer {
 
     const { Id, SyncToken } = customer;
 
-    console.log(req.body);
-
     const updatedCustomer = await customerService.updateCustomerById(
       qbo,
       Id,

@@ -15,8 +15,6 @@ async function sendReminder(appointment) {
   try {
     sendTextMessage("+234", customerNumber, body);
 
-    console.log(`Reminder sent to customer: ${message.sid}`);
-
     // Update the appointment record to mark the reminder as sent
     await Appointment.updateOne(
       { _id: appointment._id },
@@ -32,8 +30,6 @@ function startReminderScheduler() {
   cron.schedule("* * * * *", async () => {
     // Get the current time
     const currentTime = newDate();
-
-    console.log(currentTime);
 
     // Find appointments within the next hour that haven't had a reminder sent
     const upcomingAppointments = await Appointment.find({

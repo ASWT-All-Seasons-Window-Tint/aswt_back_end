@@ -36,6 +36,7 @@ class UserService {
     return User.find({
       _id: { $nin: userIds },
       role: { $in: this.staffRoles },
+      isDeleted: undefined,
     });
   };
 
@@ -124,7 +125,8 @@ class UserService {
         .populate("managerDetails.staffLocationsVisibleToManager", [
           "firstName",
           "lastName",
-        ]);
+        ])
+        .populate("departments");
     }
 
     return role === "customer"
