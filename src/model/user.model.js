@@ -96,6 +96,9 @@ const customerDetailsSchema = new mongoose.Schema({
   accountNumber: {
     type: String,
   },
+  canCreate: {
+    type: Boolean,
+  },
 });
 
 const managerDetailsSchema = new mongoose.Schema({
@@ -199,6 +202,7 @@ userSchema.methods.generateAuthToken = function () {
       role: this.role,
       departments: this.departments,
       staffDetails: this.staffDetails,
+      customerDetails: this.customerDetails,
       managerDetails: this.managerDetails,
       avatarUrl: this.avatarUrl,
     },
@@ -240,12 +244,17 @@ function validate(user) {
     lastName: Joi.string().min(2).max(255).required(),
     password: Joi.string().min(5).max(1024).required(),
     email: Joi.string().email().min(5).max(255).required(),
+    isCustomer: Joi.boolean(),
     role: Joi.string()
       .min(4)
       .max(255)
-      .required()
       .valid(...validUserRoles)
-      .insensitive(),
+      .insensitive()
+      .when("isCustomer", {
+        is: true,
+        then: Joi.forbidden(),
+        otherwise: Joi.required(),
+      }),
     departments: Joi.array()
       .items(Joi.objectId().required())
       .when("role", {
@@ -259,11 +268,17 @@ function validate(user) {
       }),
     staffDetails: Joi.object({
       earningRate: Joi.number().min(1).required(),
-    }).when("role", {
-      is: Joi.valid("staff", "porter"),
-      then: Joi.required(),
-      otherwise: Joi.forbidden(),
-    }),
+    })
+      .when("role", {
+        is: "staff",
+        then: Joi.required(),
+        otherwise: Joi.forbidden(),
+      })
+      .when("role", {
+        is: "porter",
+        then: Joi.required(),
+        otherwise: Joi.forbidden(),
+      }),
     managerDetails: Joi.object({
       staffLocationsVisibleToManager: Joi.array().items(
         Joi.objectId().required()
@@ -342,4 +357,5 @@ exports.user = {
   validateRequestResetPassword,
   updateManagerPermission,
   User,
+  validUserRoles,
 };

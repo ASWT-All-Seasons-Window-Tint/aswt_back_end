@@ -52,16 +52,12 @@ class EntryService {
     const { today, tomorrow } = this.getTodayAndTomorrow();
 
     const query = Entry.findOne({
-      entryDate: {
-        $gte: today,
-        $lt: tomorrow,
-      },
       "invoice.carDetails": {
         $elemMatch: {
           vin,
         },
       },
-    });
+    }).sort({ _id: -1 });
 
     return lean
       ? query.populate("invoice.carDetails.serviceIds", "name").lean()

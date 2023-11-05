@@ -207,6 +207,7 @@ class Customer {
         companyName: req.body.CompanyName,
         accountNumber,
         alterNativeEmails,
+        canCreate: true,
       },
     };
 
