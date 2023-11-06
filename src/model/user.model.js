@@ -201,7 +201,6 @@ userSchema.methods.generateAuthToken = function () {
       email: this.email,
       role: this.role,
       departments: this.departments,
-      staffDetails: this.staffDetails,
       customerDetails: this.customerDetails,
       managerDetails: this.managerDetails,
       avatarUrl: this.avatarUrl,
