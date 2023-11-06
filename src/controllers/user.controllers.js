@@ -333,6 +333,10 @@ class UserController {
           );
         }
       }
+      if (role === "manager") {
+        req.body.managerDetails = {};
+        req.body.managerDetails.staffLocationsVisibleToManager = [];
+      }
     }
 
     let updatedUser = req.body;
