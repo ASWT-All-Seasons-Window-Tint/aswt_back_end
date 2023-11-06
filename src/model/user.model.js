@@ -271,12 +271,10 @@ function validate(user) {
       .when("role", {
         is: "staff",
         then: Joi.required(),
-        otherwise: Joi.forbidden(),
       })
       .when("role", {
         is: "porter",
         then: Joi.required(),
-        otherwise: Joi.forbidden(),
       }),
     managerDetails: Joi.object({
       staffLocationsVisibleToManager: Joi.array().items(
@@ -308,6 +306,13 @@ function validatePatch(user) {
         then: Joi.forbidden(),
       })
       .when("role", { is: "editor", then: Joi.forbidden() }),
+    staffDetails: Joi.object({
+      earningRate: Joi.number().min(1).required(),
+    }).when("role", {
+      is: "staff",
+      then: Joi.required(),
+      otherwise: Joi.forbidden(),
+    }),
   });
 
   return schema.validate(user);
