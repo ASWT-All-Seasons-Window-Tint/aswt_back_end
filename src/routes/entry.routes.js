@@ -39,6 +39,13 @@ router.post(
 router.get("/", auth, asyncMiddleware(entryController.fetchAllEntries));
 
 router.get(
+  "/vehicles-in-the-shop",
+  auth,
+  admin,
+  asyncMiddleware(entryController.getAllVehiclesInTheShop)
+);
+
+router.get(
   "/:id",
   auth,
   validateObjectId,
@@ -50,6 +57,13 @@ router.get(
   auth,
   admin,
   asyncMiddleware(entryController.getSentInvoices)
+);
+
+router.get(
+  "/car-work-in-progress-duration/:vin",
+  auth,
+  admin,
+  asyncMiddleware(entryController.getCarThatIsStillInShopByVin)
 );
 
 router.get(

@@ -64,6 +64,148 @@ class EntryService {
       : query;
   };
 
+  getCarThatIsStillInShopByVin(vin) {
+    return Entry.aggregate([
+      {
+        $match: {
+          $and: [
+            {
+              "invoice.carDetails.vin": vin,
+              "invoice.carDetails.geoLocations": {
+                $elemMatch: {
+                  locationType: "TakenToShop",
+                },
+              },
+            },
+            {
+              "invoice.carDetails.geoLocations": {
+                $not: {
+                  $elemMatch: {
+                    locationType: "TakenFromShop",
+                  },
+                },
+              },
+            },
+          ],
+        },
+      },
+      {
+        $project: {
+          vehicle: {
+            $filter: {
+              input: "$invoice.carDetails",
+              as: "carDetail",
+              cond: {
+                $and: [
+                  {
+                    $in: [
+                      "TakenToShop",
+                      "$$carDetail.geoLocations.locationType",
+                    ],
+                  },
+                  {
+                    $not: {
+                      $in: [
+                        "TakenFromShop",
+                        "$$carDetail.geoLocations.locationType",
+                      ],
+                    },
+                  },
+                  {
+                    $eq: ["$$carDetail.vin", vin],
+                  },
+                ],
+              },
+            },
+          },
+        },
+      },
+      {
+        $match: {
+          $expr: { $ne: [{ $size: "$vehicle" }, 0] },
+        },
+      },
+    ]);
+  }
+
+  getAllVehiclesInTheShop() {
+    return Entry.aggregate([
+      {
+        $match: {
+          $and: [
+            {
+              "invoice.carDetails.geoLocations": {
+                $elemMatch: {
+                  locationType: "TakenToShop",
+                },
+              },
+            },
+            {
+              "invoice.carDetails.geoLocations": {
+                $not: {
+                  $elemMatch: {
+                    locationType: "TakenFromShop",
+                  },
+                },
+              },
+            },
+          ],
+        },
+      },
+      {
+        $project: {
+          carDetails: {
+            $filter: {
+              input: "$invoice.carDetails",
+              as: "carDetail",
+              cond: {
+                $and: [
+                  {
+                    $in: [
+                      "TakenToShop",
+                      "$$carDetail.geoLocations.locationType",
+                    ],
+                  },
+                  {
+                    $not: {
+                      $in: [
+                        "TakenFromShop",
+                        "$$carDetail.geoLocations.locationType",
+                      ],
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        },
+      },
+    ]);
+  }
+
+  getDateDifference(targetDate) {
+    const now = new Date();
+    const definedDate = new Date(targetDate);
+
+    // Calculating the difference in milliseconds
+    const difference = now - definedDate;
+
+    // Calculating days, hours, minutes, and seconds
+    const daysDifference = Math.floor(difference / (1000 * 60 * 60 * 24));
+    const hoursDifference = Math.floor(
+      (difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+    );
+    const minutesDifference = Math.floor(
+      (difference % (1000 * 60 * 60)) / (1000 * 60)
+    );
+    const secondsDifference = Math.floor((difference % (1000 * 60)) / 1000);
+
+    // Constructing the formatted difference string
+    const formattedDifference = `${daysDifference} days, ${hoursDifference} hours, ${minutesDifference} minutes, ${secondsDifference} seconds`;
+
+    return formattedDifference;
+  }
+
   getEntryWithCompletedCarVin = async (vin) => {
     const query = Entry.findOne({
       "invoice.carDetails": {

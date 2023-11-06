@@ -404,6 +404,51 @@ class EntryController {
     res.send(successMessage(MESSAGES.FETCHED, carDetails));
   }
 
+  async getCarThatIsStillInShopByVin(req, res) {
+    const { vin } = req.params;
+
+    const [entryWithVin, [carThatIsStillInShop]] = await Promise.all([
+      entryService.getEntryByVin(vin),
+      entryServices.getCarThatIsStillInShopByVin(vin),
+    ]);
+
+    if (!entryWithVin)
+      return jsonResponse(res, 404, false, "We can't find vehicle with vin");
+
+    if (!carThatIsStillInShop)
+      return jsonResponse(
+        res,
+        404,
+        false,
+        "The car is has been taken to the delership slot or has not been marked as has not been brought to shop "
+      );
+
+    const geoLocations = carThatIsStillInShop.vehicle[0].geoLocations;
+
+    const takenToShopLocation = geoLocations.find(
+      (location) => location.locationType === "TakenToShop"
+    );
+
+    const timeVehicleWasTakenToShop = takenToShopLocation.timestamp;
+
+    const carWorkInProgressDuration = entryService.getDateDifference(
+      timeVehicleWasTakenToShop
+    );
+
+    res.send(
+      successMessage(MESSAGES.FETCHED, {
+        vehicleDetails: carThatIsStillInShop,
+        carWorkInProgressDuration,
+      })
+    );
+  }
+
+  async getAllVehiclesInTheShop(req, res) {
+    const vehiclesIntheShop = await entryService.getAllVehiclesInTheShop();
+
+    res.send(successMessage(MESSAGES.FETCHED, vehiclesIntheShop));
+  }
+
   async getCarsDoneByStaffPerId(req, res) {
     const { entryId, staffId, customerId, porterId } = req.params;
 
