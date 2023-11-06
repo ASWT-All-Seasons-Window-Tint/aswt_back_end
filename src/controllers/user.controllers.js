@@ -144,9 +144,9 @@ class UserController {
         "You are not allowed to add and remove the same staff"
       );
 
-    if (idToAdd) {
-      if (!manager.managerDetails) manager.managerDetails = {};
+    if (!manager.managerDetails) manager.managerDetails = {};
 
+    if (idToAdd) {
       const staffIds = manager.managerDetails.staffLocationsVisibleToManager;
 
       if (staffIds) {
