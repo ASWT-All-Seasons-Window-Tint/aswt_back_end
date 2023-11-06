@@ -37,13 +37,17 @@ class UserService {
       _id: { $nin: userIds },
       role: { $in: this.staffRoles },
       isDeleted: undefined,
-    });
+    }).select("-password");
   };
 
   getStaffIdsAddedForManager(manager) {
+    if (!manager.managerDetails) {
+      manager.managerDetails = {};
+    }
+
     const staffIds = manager.managerDetails.staffLocationsVisibleToManager;
 
-    return staffIds;
+    return staffIds ? staffIds : [];
   }
 
   async getUsersByIdArray(userIds) {

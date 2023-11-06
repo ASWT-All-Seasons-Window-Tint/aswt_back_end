@@ -144,9 +144,9 @@ class UserController {
         "You are not allowed to add and remove the same staff"
       );
 
-    if (idToAdd) {
-      if (!manager.managerDetails) manager.managerDetails = {};
+    if (!manager.managerDetails) manager.managerDetails = {};
 
+    if (idToAdd) {
       const staffIds = manager.managerDetails.staffLocationsVisibleToManager;
 
       if (staffIds) {
@@ -332,6 +332,10 @@ class UserController {
             `Managers can not modify the details of ${user.role.toUpperCase()}S.`
           );
         }
+      }
+      if (role === "manager") {
+        req.body.managerDetails = {};
+        req.body.managerDetails.staffLocationsVisibleToManager = [];
       }
     }
 
