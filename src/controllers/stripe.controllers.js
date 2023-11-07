@@ -1,6 +1,7 @@
 require("dotenv").config();
 const { jsonResponse, errorMessage } = require("../common/messages.common");
 const appointmentServices = require("../services/appointment.services");
+const stripeServices = require("../services/stripe.services");
 const stripe = require("stripe")(process.env.stripeSecretKey);
 const stripeAccount = process.env.stripeAccount;
 const Joi = require("joi");
@@ -13,11 +14,11 @@ class StripeController {
       const appointment = await appointmentServices.getAppointmentById(
         appointmentId
       );
-      const appointmentType = appointment.appointmentType;
-      const autoAppointmentType = appointmentType === "auto";
-
       if (!appointment)
         return res.status(404).send(errorMessage("appointment"));
+
+      const appointmentType = appointment.appointmentType;
+      const autoAppointmentType = appointmentType === "auto";
 
       if (appointment.paymentDetails.hasPaid)
         return jsonResponse(res, 400, false, "Payment has already been made");
@@ -32,8 +33,17 @@ class StripeController {
           mode: "payment",
           line_items: priceBreakdown.map((item) => {
             let customerMeasurementAwareness = true;
-            const thirtyPercentOfPriceInCents = Math.round(item.price * 10) * 3;
-            const priceInCents = item.price * 100;
+            const price = item.price;
+            const thirtyPercentOfPriceInCents = (price * 30) / 100;
+            const pricePlusStripeFee = stripeServices.calculateStripeFee(
+              item.price
+            );
+            const thirtyPercentOfPriceInCentsPlusStripeFee = Math.round(
+              stripeServices.calculateStripeFee(thirtyPercentOfPriceInCents) *
+                100
+            );
+
+            const priceInCents = pricePlusStripeFee * 100;
 
             if (!autoAppointmentType) {
               customerMeasurementAwareness =
@@ -47,29 +57,32 @@ class StripeController {
                   name: item.serviceName,
                 },
                 unit_amount: customerMeasurementAwareness
-                  ? thirtyPercentOfPriceInCents
+                  ? thirtyPercentOfPriceInCentsPlusStripeFee
                   : priceInCents,
               },
               quantity: 1,
             };
           }),
+          automatic_tax: {
+            enabled: true,
+          },
           payment_intent_data: {
             metadata: {
               appointmentId,
               stripeConnectedAccountId: process.env.stripeConnectedAccountId,
             },
           },
-
           success_url: process.env.stripeSuccessUrl,
           cancel_url: `${process.env.apiUrl}/client/cancel.html`,
-        },
-        {
-          stripeAccount,
         }
+        // {
+        //   stripeAccount,
+        // }
       );
       res.json({ url: session.url });
     } catch (e) {
       res.status(500).json({ error: e.message });
+      console.log(e);
     }
   }
 
@@ -81,10 +94,10 @@ class StripeController {
         {
           payment_intent: paymentIntentId,
           reason: "requested_by_customer", // You can customize the reason as needed
-        },
-        {
-          stripeAccount,
         }
+        // {
+        //   stripeAccount,
+        // }
       );
 
       if (refund.status === "succeeded") {

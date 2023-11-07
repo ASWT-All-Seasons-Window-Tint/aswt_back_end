@@ -10,6 +10,7 @@ const calculateSquareFeetutils = require("../utils/calculateSquareFeetutils");
 const {
   VideoV1RoomRoomParticipantRoomParticipantSubscribeRuleRules,
 } = require("twilio/lib/rest/video/v1/room/participant/subscribeRules");
+const filmQualityServices = require("./filmQuality.services");
 const { FilmQuality } = require("../model/filmQuality.model").filmQuality;
 
 class AppointmentService {
@@ -222,6 +223,15 @@ class AppointmentService {
         if (serviceType === "installation") {
           const priceBreakdown = {};
 
+          const filmQuality = await filmQualityServices.getFilmQualityById(
+            filmQualityId
+          );
+
+          if (!filmQuality) {
+            results.error.message = "Can't find film quality with the given ID";
+            return results;
+          }
+
           const priceList = service.isFull
             ? await priceListServices.getPriceListByFilmQualityIdIdAndServiceId(
                 serviceId,
@@ -303,10 +313,13 @@ class AppointmentService {
           results.error.message =
             "Can't find the film quality with the given ID";
           results.error.code = 404;
+
+          return results;
         }
 
         if (filmQuality.type !== "residential") {
           results.error.message = "Cannot use auto film quality for commercial";
+          return results;
         }
 
         const pricePerSqFt = filmQuality.pricePerSqFt;
@@ -374,7 +387,10 @@ class AppointmentService {
     const totalAmountPaid = appointment.paymentDetails.amountPaid + amount;
     appointment.paymentDetails.amountPaid = totalAmountPaid;
 
-    const amountDue = appointment.carDetails.price - totalAmountPaid;
+    const { carDetails, residentialDetails } = appointment;
+    const price = carDetails ? carDetails.price : residentialDetails.price;
+
+    const amountDue = price - totalAmountPaid;
     appointment.paymentDetails.amountDue = amountDue;
     appointment.paymentDetails.paymentIntentId = paymentIntentId;
     appointment.paymentDetails.chargeId = chargeId;

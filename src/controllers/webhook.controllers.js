@@ -6,6 +6,7 @@ const customerService = require("../services/customer.service");
 const entryServices = require("../services/entry.services");
 const newDateUtils = require("../utils/newDate.utils");
 const appointmentServices = require("../services/appointment.services");
+const appointmentControllers = require("./appointment.controllers");
 
 class WebhookControllers {
   async webhook(req, res) {
@@ -107,6 +108,17 @@ class WebhookControllers {
             });
           }
         }
+      } else if (event.type === "payment_intent.payment_failed") {
+        const intent = event.data.object;
+
+        const appointmentId = intent.metadata.appointmentId;
+        const appointment = await appointmentServices.getAppointmentById(
+          appointmentId
+        );
+
+        await appointmentControllers.retrieveTimeSlot(appointment);
+
+        // console.log(`Charge: ${charge.payment_intent}`);
       } else if (event.type === "charge.succeeded") {
         const charge = event.data.object;
         // console.log(`Charge: ${charge.payment_intent}`);
