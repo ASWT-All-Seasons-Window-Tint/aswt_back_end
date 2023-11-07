@@ -387,7 +387,10 @@ class AppointmentService {
     const totalAmountPaid = appointment.paymentDetails.amountPaid + amount;
     appointment.paymentDetails.amountPaid = totalAmountPaid;
 
-    const amountDue = appointment.carDetails.price - totalAmountPaid;
+    const { carDetails, residentialDetails } = appointment;
+    const price = carDetails ? carDetails.price : residentialDetails.price;
+
+    const amountDue = price - totalAmountPaid;
     appointment.paymentDetails.amountDue = amountDue;
     appointment.paymentDetails.paymentIntentId = paymentIntentId;
     appointment.paymentDetails.chargeId = chargeId;

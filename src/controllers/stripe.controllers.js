@@ -74,10 +74,10 @@ class StripeController {
           },
           success_url: process.env.stripeSuccessUrl,
           cancel_url: `${process.env.apiUrl}/client/cancel.html`,
-        },
-        {
-          stripeAccount,
         }
+        // {
+        //   stripeAccount,
+        // }
       );
       res.json({ url: session.url });
     } catch (e) {
@@ -94,10 +94,10 @@ class StripeController {
         {
           payment_intent: paymentIntentId,
           reason: "requested_by_customer", // You can customize the reason as needed
-        },
-        {
-          stripeAccount,
         }
+        // {
+        //   stripeAccount,
+        // }
       );
 
       if (refund.status === "succeeded") {
