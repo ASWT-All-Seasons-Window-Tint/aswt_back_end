@@ -362,9 +362,6 @@ class AppointmentController {
       return res.status(404).send(errorMessage("appointment"));
     }
 
-    const staffTakenTimeSlot =
-      await takenTimeslotServices.retriveTakenTimeslots(appointment);
-
     const paymentIntentId = appointment.paymentDetails.paymentIntentId;
 
     if (!paymentIntentId)
@@ -382,12 +379,46 @@ class AppointmentController {
     if (error) {
       if (error.type === "StripeInvalidRequestError")
         return jsonResponse(res, error.raw.statusCode, false, error.raw.code);
+
+      console.log(error);
+
+      return jsonResponse(res, 500, false, "Something failed");
     }
 
-    await staffTakenTimeSlot.save();
+    await this.retrieveTimeSlot(appointment);
 
     res.send(successMessage(MESSAGES.UPDATED, refund));
   };
+
+  async retrieveTimeSlot(appointment) {
+    const { appointmentType } = appointment;
+
+    let timeOfCompletion = 8;
+
+    if (appointmentType === "auto") {
+      const { serviceIds } = appointmentService.getServiceIdsAndfilmQualityIds(
+        appointment.carDetails.serviceDetails
+      );
+
+      const services = await serviceServices.getMultipleServices(
+        serviceIds,
+        true
+      );
+
+      timeOfCompletion =
+        appointmentService.calculateTotalTimeOfCompletion(services);
+    }
+
+    const staffTakenTimeSlot =
+      await takenTimeslotServices.retriveTakenTimeslots(
+        appointment,
+        timeOfCompletion
+      );
+
+    staffTakenTimeSlot.save();
+
+    return staffTakenTimeSlot;
+  }
 
   async getFreeTimeSlotsByDateAndStaffId(appointment) {
     const { staffId, startTime } = appointment;
