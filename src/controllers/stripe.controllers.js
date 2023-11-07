@@ -63,13 +63,15 @@ class StripeController {
               quantity: 1,
             };
           }),
+          automatic_tax: {
+            enabled: true,
+          },
           payment_intent_data: {
             metadata: {
               appointmentId,
               stripeConnectedAccountId: process.env.stripeConnectedAccountId,
             },
           },
-
           success_url: process.env.stripeSuccessUrl,
           cancel_url: `${process.env.apiUrl}/client/cancel.html`,
         },
