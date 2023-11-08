@@ -34,7 +34,14 @@ module.exports = function (app) {
   app.use(express.urlencoded({ extended: true }));
   app.set("views", path.join(__dirname, "../views"));
   app.use((req, res, next) => {
-    if (req.originalUrl === "/api/v1/webhook/stripe-acoounts") {
+    if (req.originalUrl === "/api/v1/webhook/stripe-acounts") {
+      next();
+    } else {
+      express.json()(req, res, next);
+    }
+  });
+  app.use((req, res, next) => {
+    if (req.originalUrl === "/api/v1/webhook/stripe") {
       next();
     } else {
       express.json()(req, res, next);
