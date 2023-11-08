@@ -5,7 +5,12 @@ const asyncMiddleware = require("../middleware/async.middleware");
 
 router.post("/", asyncMiddleware(webhookControllers.webhook));
 router.post(
-  "/stripe-acoounts",
+  "/stripe-acounts",
+  express.raw({ type: "application/json" }),
+  asyncMiddleware(webhookControllers.stripeWebHook)
+);
+router.post(
+  "/stripe",
   express.raw({ type: "application/json" }),
   asyncMiddleware(webhookControllers.stripeWebHook)
 );

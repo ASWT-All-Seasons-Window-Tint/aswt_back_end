@@ -94,10 +94,7 @@ class WebhookControllers {
           const paymentDate = newDateUtils();
           const paymentIntentId = intent.id;
 
-          if (
-            appointmentId &&
-            stripeConnectedAccountId === process.env.stripeConnectedAccountId
-          ) {
+          if (appointmentId) {
             await appointmentServices.updateAppointmentPaymentDetails({
               appointmentId,
               amount,
