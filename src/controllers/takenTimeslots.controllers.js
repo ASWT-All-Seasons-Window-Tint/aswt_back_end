@@ -46,7 +46,6 @@ class TakenTimeslotControllers {
     let timeOfCompletion = 8;
 
     if (appointmentType !== "commercial") {
-      console.log(!serviceIds);
       if (!serviceIds) return badReqResponse(res, "serviceIds is required");
 
       const [services, missingIds] = await Promise.all([
