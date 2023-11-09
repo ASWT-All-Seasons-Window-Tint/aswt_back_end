@@ -1,4 +1,4 @@
-module.exports = function (mongoDBInvoice) {
+module.exports = function (mongoDBInvoice, type) {
   const qboInvoice = {
     Line: [],
     CustomerRef: {
@@ -15,11 +15,32 @@ module.exports = function (mongoDBInvoice) {
   };
 
   // Transform carDetails into invoice line items
-  mongoDBInvoice.invoice.carDetails.forEach((carDetail) => {
-    // Loop through priceBreakdown for this carDetail
-    carDetail.priceBreakdown.forEach((priceDetail) => {
+  let { carDetails } = mongoDBInvoice.invoice
+    ? mongoDBInvoice.invoice
+    : mongoDBInvoice;
+
+  if (carDetails) {
+    if (!Array.isArray(carDetails)) {
+      carDetails = [carDetails];
+    }
+    carDetails.forEach((carDetail) => {
+      const { priceBreakdown } = carDetail;
+
+      convertPriceBreakDown(priceBreakdown, type, carDetail);
+      // Loop through priceBreakdown for this carDetail
+    });
+  } else {
+    const { priceBreakdown } = mongoDBInvoice.residentialDetails;
+
+    convertPriceBreakDown(priceBreakdown, type);
+  }
+
+  function convertPriceBreakDown(priceBreakdown, type, carDetail) {
+    priceBreakdown.forEach((priceDetail) => {
       qboInvoice.Line.push({
-        Description: `${priceDetail.serviceName} service done on ${carDetail.make}, identified by VIN number: ${carDetail.vin}`,
+        Description: !type
+          ? `${priceDetail.serviceName} service done on ${carDetail.make}, identified by VIN number: ${carDetail.vin}`
+          : "Appointment Booking",
         Amount: priceDetail.price,
         DetailType: "SalesItemLineDetail",
         SalesItemLineDetail: {
@@ -32,7 +53,7 @@ module.exports = function (mongoDBInvoice) {
         },
       });
     });
-  });
+  }
 
   return { invoice: qboInvoice };
 };

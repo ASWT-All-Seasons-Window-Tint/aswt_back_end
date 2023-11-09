@@ -762,14 +762,20 @@ class EntryService {
     return entry;
   };
 
-  updateEntryInvoicePaymentDetails = async (apiEndpoint) => {
-    const { customerId, currency, invoiceId, paymentDate, amount } =
-      await this.getEntryPayMentDetails(apiEndpoint);
+  updateEntryInvoicePaymentDetails = async ({
+    entry,
+    currency,
+    paymentDate,
+    amount,
+  }) => {
+    // const { currency, paymentDate, amount } = await this.getEntryPayMentDetails(
+    //   apiEndpoint
+    // );
 
-    const entry = await this.getEntryForCustomerWithQboId(
-      customerId,
-      invoiceId
-    );
+    // const entry = await this.getEntryForCustomerWithQboId(
+    //   customerId,
+    //   invoiceId
+    // );
 
     if (!entry) return;
 

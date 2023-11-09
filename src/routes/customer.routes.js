@@ -54,6 +54,11 @@ router.delete(
 router.get("/", auth, qboAsyncMiddleware(customerController.getCustomers));
 
 router.get(
+  "/email/:customerEmail",
+  [auth, adminOrManager],
+  qboAsyncMiddleware(customerController.fetchCustomersByPage)
+);
+router.get(
   "/name/:customerName",
   [auth, adminOrManager],
   qboAsyncMiddleware(customerController.fetchCustomersByPage)

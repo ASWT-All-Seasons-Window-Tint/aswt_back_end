@@ -21,6 +21,11 @@ router.post(
   validateTimeslotsMiddleware,
   asyncMiddleware(appointmentControllers.createAppointment)
 );
+
+router.post(
+  "/:appointmentId",
+  asyncMiddleware(appointmentControllers.createCustomerFromAppointmentDetails)
+);
 router.delete(
   "/:id",
   auth,

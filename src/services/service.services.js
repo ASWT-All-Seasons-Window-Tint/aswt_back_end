@@ -43,8 +43,10 @@ class ServiceService {
 
   async getAllServices(lean = { lean: false }) {
     return lean.lean
-      ? await Service.find().lean().sort({ _id: -1 })
-      : await Service.find().sort({ _id: -1 });
+      ? await Service.find({ isResidential: undefined })
+          .lean()
+          .sort({ _id: -1 })
+      : await Service.find({ isResidential: undefined }).sort({ _id: -1 });
   }
 
   async getCustomerDealershipPrice(serviceId, customerId) {
