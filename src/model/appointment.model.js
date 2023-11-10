@@ -31,6 +31,15 @@ const paymentDetailsSchema = new mongoose.Schema({
     default: 0,
     type: Number,
   },
+  invoiceId: {
+    type: String,
+  },
+  invoiceNumber: {
+    type: String,
+  },
+  qbFirstPaymentId: {
+    type: String,
+  },
   amountDue: {
     type: Number,
   },
@@ -92,6 +101,7 @@ const residentialDetailsSchema = new mongoose.Schema({
       filmQuality: String,
       price: Number,
       serviceName: String,
+      qbId: String,
     },
   ],
   price: Number,
@@ -145,6 +155,7 @@ const carDetailsSchema = new mongoose.Schema({
       filmQuality: String,
       serviceName: String,
       serviceType: String,
+      qbId: String,
       price: Number,
       serviceId: {
         type: mongoose.Schema.Types.ObjectId,

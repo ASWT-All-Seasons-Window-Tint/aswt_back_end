@@ -19,6 +19,8 @@ const takenTimeslotsControllers = require("./takenTimeslots.controllers");
 const takenTimeslotServices = require("../services/takenTimeslot.services");
 const serviceServices = require("../services/service.services");
 const { initiateRefund } = require("./stripe.controllers");
+const initializeQbUtils = require("../utils/initializeQb.utils");
+const customerService = require("../services/customer.service");
 
 const redisConnection = { url: process.env.redisUrl };
 const appointmentQueue = new Queue("reminders", redisConnection);
@@ -164,6 +166,23 @@ class AppointmentController {
 
     res.send(successMessage(MESSAGES.CREATED, appointment));
   };
+
+  async createCustomerFromAppointmentDetails(req, res) {
+    const { appointmentId } = req.params;
+    const appointment = await appointmentService.getAppointmentById(
+      appointmentId
+    );
+
+    const customerReqBody = customerService.convertToDesiredFormat(appointment);
+    const qbo = await initializeQbUtils();
+
+    const customer = await customerService.createQuickBooksCustomer(
+      qbo,
+      customerReqBody
+    );
+
+    res.send(successMessage(MESSAGES.FETCHED, customer));
+  }
 
   async updateFreeTimeSlots(timeString, startTimeInDecimal, date) {
     const freeTimeSlots =
