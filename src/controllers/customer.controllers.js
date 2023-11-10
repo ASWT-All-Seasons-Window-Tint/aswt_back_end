@@ -34,19 +34,18 @@ class Customer {
     return res.send(successMessage(MESSAGES.FETCHED, customers));
   }
 
-  async fetchCustomersByPage(req, res) {
+  fetchCustomersByPage = async (req, res) => {
     const qbo = await initializeQbUtils();
-    const { pageNumber, customerName } = req.params;
+    const { pageNumber, customerName, customerEmail } = req.params;
     const expiryTimeInSecs = 1800;
     const pageSize = 10;
 
-    if (customerName) {
-      const { data: customer, error } = await getOrSetCache(
-        `customers?name${customerName.toLowerCase()}`,
-        expiryTimeInSecs,
-        customerService.fetchCustomerByName,
-        [qbo, customerName]
-      );
+    if (customerEmail || customerName) {
+      const { error, customer } = await this.getCustomerByNameOrEmail({
+        name: customerName,
+        email: customerEmail,
+        qbo,
+      });
       if (error) return jsonResponse(res, 404, false, error);
 
       return res.send(successMessage(MESSAGES.FETCHED, customer));
@@ -74,6 +73,23 @@ class Customer {
     if (customersError) return jsonResponse(res, 404, false, customersError);
 
     return res.send(successMessage(MESSAGES.FETCHED, customers));
+  };
+
+  async getCustomerByNameOrEmail({ email, name, qbo }) {
+    const expiryTimeInSecs = 1800;
+
+    const { data: customer, error } = await getOrSetCache(
+      email
+        ? `customers?email${email.toLowerCase()}`
+        : `customers?name${name.toLowerCase()}`,
+      expiryTimeInSecs,
+      email
+        ? customerService.fetchCustomerByEmail
+        : customerService.fetchCustomerByName,
+      [qbo, email ? email.toLowerCase() : name.toLowerCase()]
+    );
+
+    return { customer, error };
   }
 
   async getCustomerById(req, res) {

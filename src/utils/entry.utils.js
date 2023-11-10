@@ -205,6 +205,7 @@ class EntryUtils {
         qbId: 1,
         paymentDetails: 1,
         createdBy: 1,
+        invoiceNumber: 1,
         createdByDetails: {
           $first: {
             $map: {

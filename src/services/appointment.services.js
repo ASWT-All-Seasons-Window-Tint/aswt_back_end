@@ -97,6 +97,13 @@ class AppointmentService {
     return allAppointments.sort((a, b) => a.time - b.time);
   }
 
+  getAppointmentByQbIdAndInvoiceNumber({ invoiceId, invoiceNumber }) {
+    return Appointment.findOne({
+      "paymentDetails.invoiceId": invoiceId,
+      "paymentDetails.invoiceNumber": invoiceNumber,
+    });
+  }
+
   getAvailableTimeSlots({ allAppointments, startTime, endTime }) {
     const availableTimeSlots = [];
     let isInsideAppointment = false;
@@ -254,6 +261,7 @@ class AppointmentService {
           priceBreakdown.price = priceList.price;
           priceBreakdown.filmQuality = priceList.filmQualityId.name;
           priceBreakdown.serviceType = priceList.serviceId.type;
+          priceBreakdown.qbId = priceList.serviceId.qbId;
 
           results.priceBreakdownArray.push(priceBreakdown);
         }
@@ -277,6 +285,7 @@ class AppointmentService {
           priceBreakdown.serviceName = priceList.serviceId.name;
           priceBreakdown.price = priceList.price;
           priceBreakdown.serviceType = priceList.serviceId.type;
+          priceBreakdown.qbId = priceList.serviceId.qbId;
 
           results.priceBreakdownArray.push(priceBreakdown);
         }
@@ -287,7 +296,7 @@ class AppointmentService {
     } else if (type === "commercial") {
       const priceBreakdown = {};
       const serviceNameWhenMesurementIsUnknown = "Site Consultation";
-      const serviceNameWhenMesurementIsknown = "Tint Installation";
+      const serviceNameWhenMesurementIsknown = "Residential Tint Installation";
       const { customerMeasurementAwareness } = residentialDetails;
 
       if (typeof customerMeasurementAwareness !== "boolean") {
@@ -299,6 +308,11 @@ class AppointmentService {
 
       if (!customerMeasurementAwareness) {
         const priceForSiteConsultation = 50;
+        const service = await serviceServices.getServiceByName(
+          serviceNameWhenMesurementIsUnknown
+        );
+
+        priceBreakdown.qbId = service.qbId;
         priceBreakdown.serviceName = serviceNameWhenMesurementIsUnknown;
         priceBreakdown.price = priceForSiteConsultation;
 
@@ -307,6 +321,9 @@ class AppointmentService {
       } else if (customerMeasurementAwareness) {
         const { unit, length, width, filmQualityId, quantity } =
           residentialDetails.measurementDetails;
+        const service = await serviceServices.getServiceByName(
+          serviceNameWhenMesurementIsUnknown
+        );
 
         const filmQuality = await FilmQuality.findById(filmQualityId);
         if (!filmQuality) {
@@ -328,6 +345,7 @@ class AppointmentService {
 
         const price = pricePerSqFt * sqFt * quantity;
 
+        priceBreakdown.qbId = service.qbId;
         priceBreakdown.serviceName = serviceNameWhenMesurementIsknown;
         priceBreakdown.price = price;
         priceBreakdown.filmQuality = filmQuality.name;
@@ -375,28 +393,62 @@ class AppointmentService {
     amount,
     paymentIntentId,
     chargeId,
+    invoiceId,
+    invoiceNumber,
+    qbPaymentId,
   }) => {
-    const appointment = await this.getAppointmentById(appointmentId);
+    const appointment = appointmentId
+      ? await this.getAppointmentById(appointmentId)
+      : await this.getAppointmentByQbIdAndInvoiceNumber({
+          invoiceId,
+          invoiceNumber,
+        });
 
     if (!appointment) return;
     if (!appointment.paymentDetails) appointment.paymentDetails = {};
 
-    appointment.paymentDetails.paymentDate = paymentDate;
-    appointment.paymentDetails.currency = currency;
+    const { paymentDetails } = appointment;
 
-    const totalAmountPaid = appointment.paymentDetails.amountPaid + amount;
-    appointment.paymentDetails.amountPaid = totalAmountPaid;
+    if (
+      paymentDetails.hasPaid &&
+      paymentDetails.qbFirstPaymentId === qbPaymentId
+    ) {
+      return;
+    }
+
+    paymentDetails.paymentDate = paymentDate;
+    paymentDetails.currency = currency;
+
+    const totalAmountPaid = paymentDetails.amountPaid + amount;
+    paymentDetails.amountPaid = totalAmountPaid;
 
     const { carDetails, residentialDetails } = appointment;
     const price = carDetails ? carDetails.price : residentialDetails.price;
 
     const amountDue = price - totalAmountPaid;
-    appointment.paymentDetails.amountDue = amountDue;
-    appointment.paymentDetails.paymentIntentId = paymentIntentId;
-    appointment.paymentDetails.chargeId = chargeId;
-    appointment.paymentDetails.hasPaid = true;
+    paymentDetails.amountDue = amountDue;
 
-    return await this.updateAppointmentById(appointmentId, appointment);
+    if (paymentIntentId && chargeId) {
+      paymentDetails.paymentIntentId = paymentIntentId;
+      paymentDetails.chargeId = chargeId;
+    }
+
+    paymentDetails.hasPaid = true;
+
+    return await appointment.save();
+  };
+
+  updateAppointmentInvoiceDetails = async ({
+    invoiceId,
+    invoiceNumber,
+    qbPaymentId,
+    appointment,
+  }) => {
+    appointment.paymentDetails.invoiceId = invoiceId;
+    appointment.paymentDetails.invoiceNumber = invoiceNumber;
+    appointment.paymentDetails.qbFirstPaymentId = qbPaymentId;
+
+    return await appointment.save();
   };
 
   refundPaymentDetails = async ({ appointment, refund }) => {

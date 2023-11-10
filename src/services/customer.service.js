@@ -97,6 +97,73 @@ class CustomerService {
     });
   }
 
+  async fetchCustomerByEmail(qbo, customerEmail) {
+    return new Promise((resolve, reject) => {
+      qbo.findCustomers(
+        [
+          {
+            field: "PrimaryEmailAddr",
+            value: customerEmail,
+            operator: "LIKE",
+          },
+        ],
+        (err, service) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(service.QueryResponse.Customer);
+          }
+        }
+      );
+    });
+  }
+
+  createCustomerFromAppointmentDetails = async (qbo, appointment) => {
+    const customerReqBody = this.convertToDesiredFormat(appointment);
+
+    const createCustomer = async (reqBody) => {
+      return new Promise((resolve, reject) => {
+        qbo.createCustomer(reqBody, (err, customer) => {
+          if (err) {
+            const errorResponseLowercase = JSON.parse(
+              JSON.stringify(err).toLowerCase()
+            );
+            if (errorResponseLowercase.fault) {
+              const type = errorResponseLowercase.fault.type;
+
+              if (type === "validationfault") {
+                const message = errorResponseLowercase.fault.error[0].message;
+                const duplicateDisplayNameError = "duplicate name exists error";
+
+                if (message === duplicateDisplayNameError) {
+                  // Append a unique ID to the DisplayName
+                  const uniqueID = generateUniqueID(); // Function to generate a unique ID
+                  const updatedDisplayName = `${customerReqBody.DisplayName}-${uniqueID}`;
+                  customerReqBody.DisplayName = updatedDisplayName;
+
+                  // Retry creating the customer with the updated DisplayName
+                  resolve(createCustomer(customerReqBody));
+                }
+              }
+            }
+
+            reject(err);
+          } else {
+            resolve(customer);
+          }
+        });
+      });
+    };
+
+    function generateUniqueID() {
+      // Implement your logic to generate a unique ID here
+      // Example: Generate a random string or a timestamp
+      return Math.random().toString(36).substring(7); // Generating a random string
+    }
+
+    return createCustomer(customerReqBody);
+  };
+
   async fetchCustomersCount(qbo) {
     return new Promise((resolve, reject) => {
       qbo.findCustomers({ count: true }, (err, service) => {
@@ -178,6 +245,22 @@ class CustomerService {
 
   async deleteCustomer(id) {
     return await Customer.findByIdAndRemove(id);
+  }
+
+  convertToDesiredFormat(data) {
+    const { customerEmail, customerName, customerNumber } = data;
+
+    const convertedData = {
+      DisplayName: customerName,
+      PrimaryEmailAddr: {
+        Address: customerEmail,
+      },
+      PrimaryPhone: {
+        FreeFormNumber: customerNumber,
+      },
+    };
+
+    return convertedData;
   }
 }
 

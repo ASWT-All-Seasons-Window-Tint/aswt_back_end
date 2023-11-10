@@ -6,7 +6,14 @@ const customerService = require("../services/customer.service");
 const entryServices = require("../services/entry.services");
 const newDateUtils = require("../utils/newDate.utils");
 const appointmentServices = require("../services/appointment.services");
+const paymentServices = require("../services/payment.services");
 const appointmentControllers = require("./appointment.controllers");
+const initializeQbUtils = require("../utils/initializeQb.utils");
+const { getCustomerByNameOrEmail } = require("./customer.controllers");
+const convertDbInvoiceToQbInvoiceReqBodyUtils = require("../utils/convertDbInvoiceToQbInvoiceReqBody.utils");
+const { createInvoiceOnQuickBooks } = require("../services/invoice.services");
+const getWbHksPayMentDetailsUtils = require("../utils/getWbHksPayMentDetails.utils");
+const { User } = require("../model/user.model").user;
 
 class WebhookControllers {
   async webhook(req, res) {
@@ -51,9 +58,47 @@ class WebhookControllers {
         }
 
         if (entityNameToLowerCase === "payment") {
-          return await entryServices.updateEntryInvoicePaymentDetails(
-            apiEndpoint
+          const {
+            amount,
+            currency,
+            customerId,
+            invoiceId,
+            invoiceNumber,
+            paymentDate,
+            qbPaymentId,
+          } = await getWbHksPayMentDetailsUtils(apiEndpoint);
+
+          const entry = await entryServices.getEntryForCustomerWithQboId(
+            customerId,
+            invoiceId
           );
+          if (entry) {
+            return await entryServices.updateEntryInvoicePaymentDetails({
+              entry,
+              currency,
+              paymentDate,
+              amount,
+            });
+          }
+
+          const appointment =
+            await appointmentServices.getAppointmentByQbIdAndInvoiceNumber({
+              invoiceId,
+              invoiceNumber,
+            });
+
+          if (appointment) {
+            return await appointmentServices.updateAppointmentPaymentDetails({
+              invoiceId,
+              invoiceNumber,
+              currency,
+              paymentDate,
+              amount,
+              qbPaymentId,
+            });
+          }
+
+          return;
         }
       });
 
@@ -95,6 +140,20 @@ class WebhookControllers {
           const paymentIntentId = intent.id;
 
           if (appointmentId) {
+            console.log("Hit");
+            const qbo = await initializeQbUtils();
+            const appointment = await appointmentServices.getAppointmentById(
+              appointmentId
+            );
+
+            if (!appointment) {
+              console.log("Apointment not found");
+              return;
+            }
+
+            const { customerEmail, carDetails, residentialDetails } =
+              appointment;
+
             await appointmentServices.updateAppointmentPaymentDetails({
               appointmentId,
               amount,
@@ -103,6 +162,75 @@ class WebhookControllers {
               paymentIntentId,
               chargeId: intent.latest_charge,
             });
+
+            if (!appointment.paymentDetails.invoiceId) {
+              let { error, customer } = await getCustomerByNameOrEmail({
+                qbo,
+                email: customerEmail,
+              });
+
+              if (error) {
+                if (error.toLowerCase() === "data not found") {
+                  customer =
+                    await customerService.createCustomerFromAppointmentDetails(
+                      qbo,
+                      appointment
+                    );
+                } else {
+                  console.log(error);
+                  return;
+                }
+              }
+              if (Array.isArray(customer)) customer = customer[0];
+
+              console.log(customer);
+
+              const qbId = customer.Id;
+              const { invoice: invoiceReqBody } =
+                convertDbInvoiceToQbInvoiceReqBodyUtils(
+                  appointment,
+                  "resdential"
+                );
+
+              invoiceReqBody.CustomerRef.value = qbId;
+
+              const { invoice } = await createInvoiceOnQuickBooks(
+                qbo,
+                invoiceReqBody,
+                customerEmail
+              );
+
+              const invoiceId = invoice.Id;
+              const invoiceNumber = invoice.DocNumber;
+
+              let netAmount;
+              if (carDetails) netAmount = (carDetails.price * 30) / 100;
+              else if (residentialDetails) {
+                netAmount = residentialDetails.customerMeasurementAwareness
+                  ? (residentialDetails.price * 30) / 100
+                  : residentialDetails.price;
+              }
+
+              const paymentData = paymentServices.getPaymentReqBody(
+                customer,
+                netAmount,
+                invoiceId
+              );
+
+              const payment = await paymentServices.createPayment(
+                qbo,
+                paymentData
+              );
+
+              const qbPaymentId = payment.Id;
+
+              await appointmentServices.updateAppointmentInvoiceDetails({
+                invoiceId,
+                invoiceNumber,
+                appointment,
+                qbPaymentId,
+              });
+            }
           }
         }
       } else if (event.type === "payment_intent.payment_failed") {
