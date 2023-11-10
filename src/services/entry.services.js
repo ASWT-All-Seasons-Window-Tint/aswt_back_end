@@ -180,54 +180,8 @@ class EntryService {
           },
         },
       },
-      {
-        $addFields: {
-          carDetails: {
-            $map: {
-              input: "$carDetails",
-              as: "carDetail",
-              in: {
-                $mergeObjects: [
-                  "$$carDetail",
-                  {
-                    carWorkInProgressDuration: {
-                      $function: {
-                        body: `
-                          function (carDetail) {
-                            const geoLocations = carDetail.geoLocations;
-                            const takenToShopLocation = geoLocations.find(
-                              (location) => location.locationType === "TakenToShop"
-                            );
-                            
-                            if (takenToShopLocation) {
-                              const timeVehicleWasTakenToShop = takenToShopLocation.timestamp;
-                              const now = new Date();
-                              const takenToShopDate = new Date(timeVehicleWasTakenToShop);
-                              const difference = now - takenToShopDate;
-                              
-                              const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-                              const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                              const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-                              const seconds = Math.floor((difference % (1000 * 60)) / 1000);
-                              
-                              return \`\${days} days, \${hours} hours, \${minutes} minutes, \${seconds} seconds\`;
-                            } else {
-                              return null; // Handle the case where "TakenToShop" location is not found
-                            }
-                          }
-                        `,
-                        args: ["$$carDetail"],
-                        lang: "js",
-                      },
-                    },
-                  },
-                ],
-              },
-            },
-          },
-        },
-      },
-    ]);
+    ]
+    );
   }
 
   getDateDifference(targetDate) {
