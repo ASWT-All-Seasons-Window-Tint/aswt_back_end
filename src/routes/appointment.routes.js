@@ -22,10 +22,11 @@ router.post(
   asyncMiddleware(appointmentControllers.createAppointment)
 );
 
-router.post(
-  "/:appointmentId",
-  asyncMiddleware(appointmentControllers.createCustomerFromAppointmentDetails)
-);
+// router.post(
+//   "/:appointmentId",
+//   asyncMiddleware(appointmentControllers.createCustomerFromAppointmentDetails)
+// );
+
 router.delete(
   "/:id",
   auth,
