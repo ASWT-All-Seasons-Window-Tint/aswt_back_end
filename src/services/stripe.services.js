@@ -1,3 +1,6 @@
+require("dotenv").config();
+const stripe = require("stripe")(process.env.stripeSecretKey);
+
 class StripeService {
   calculateStripeFee(desiredNetAmount) {
     const stripeFeePercentage = 0.029; // 2.9%
@@ -11,6 +14,32 @@ class StripeService {
     const roundedTotalAmount = Math.round(totalAmountToCharge * 100) / 100;
 
     return roundedTotalAmount;
+  }
+
+  createPromoCode = async (percentOff, expirationDate, promoCode) => {
+    const coupon = await stripe.coupons.create({
+      percent_off: percentOff,
+      redeem_by: this.convertDateStringToTimeStamp(expirationDate),
+    });
+
+    const promotionCode = await stripe.promotionCodes.create({
+      coupon: coupon.id,
+      code: promoCode,
+    });
+
+    return promotionCode;
+  };
+
+  async getAllPromoCodes() {
+    const promotionCodes = await stripe.promotionCodes.list();
+
+    return promotionCodes;
+  }
+
+  convertDateStringToTimeStamp(dateString) {
+    const unixTimestamp = Date.parse(dateString) / 1000;
+
+    return unixTimestamp;
   }
 }
 

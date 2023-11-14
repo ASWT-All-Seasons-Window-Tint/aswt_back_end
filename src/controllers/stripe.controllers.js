@@ -1,6 +1,11 @@
 require("dotenv").config();
 const stripe = require("stripe")(process.env.stripeSecretKey);
-const { jsonResponse, errorMessage } = require("../common/messages.common");
+const { MESSAGES } = require("../common/constants.common");
+const {
+  jsonResponse,
+  errorMessage,
+  successMessage,
+} = require("../common/messages.common");
 const appointmentServices = require("../services/appointment.services");
 const stripeServices = require("../services/stripe.services");
 const stripeAccount = process.env.stripeAccount;
@@ -85,6 +90,7 @@ class StripeController {
           invoice_creation: {
             enabled: true,
           },
+          allow_promotion_codes: true,
           payment_intent_data: {
             receipt_email: "odirahchukwumma28@gmail.com",
             metadata: {
@@ -133,12 +139,40 @@ class StripeController {
     return results;
   }
 
+  async createPromoCode(req, res) {
+    const { percentageOff, expirationDate, promoCode } = req.body;
+
+    const promotionCode = await stripeServices.createPromoCode(
+      percentageOff,
+      expirationDate,
+      promoCode
+    );
+
+    return res.send(successMessage(MESSAGES.CREATED, promotionCode));
+  }
+
+  async getAllPromoCodes(req, res) {
+    const promotionCodes = await stripeServices.getAllPromoCodes();
+
+    return res.send(successMessage(MESSAGES.FETCHED, promotionCodes));
+  }
+
   validate(entry) {
     const schema = Joi.object({
       appointmentId: Joi.objectId().required(),
     });
 
     return schema.validate(entry);
+  }
+
+  validatePromoCode(stripeData) {
+    const schema = Joi.object({
+      percentageOff: Joi.number().greater(0).max(100).required(),
+      expirationDate: Joi.date().required(),
+      promoCode: Joi.string().required(),
+    });
+
+    return schema.validate(stripeData);
   }
 }
 
