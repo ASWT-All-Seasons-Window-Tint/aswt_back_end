@@ -40,6 +40,10 @@ module.exports = function (mongoDBInvoice, type) {
       qboInvoice.Line.push({
         Description: !type
           ? `${priceDetail.serviceName} service done on ${carDetail.make}, identified by VIN number: ${carDetail.vin}`
+          : type === "auto"
+          ? `${carDetail.year} ${carDetail.model} ${carDetail.make} ${
+              priceDetail.serviceName
+            } ${priceDetail.filmQuality ? priceDetail.filmQuality : ""}`
           : "Appointment Booking",
         Amount: priceDetail.price,
         DetailType: "SalesItemLineDetail",

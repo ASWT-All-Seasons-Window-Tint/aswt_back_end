@@ -436,7 +436,6 @@ class AppointmentService {
     }
 
     appointment.paymentDetails.hasPaid = true;
-    console.log(appointment);
 
     return await appointment.save();
   };

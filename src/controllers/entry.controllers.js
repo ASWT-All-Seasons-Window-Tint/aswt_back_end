@@ -404,6 +404,16 @@ class EntryController {
     res.send(successMessage(MESSAGES.FETCHED, carDetails));
   }
 
+  async getAllAppointmentEntriesPerCustomerId(req, res) {
+    req.params.isFromAppointment = true;
+
+    const filterArguments = getFilterArguments(req);
+
+    const entries = await entryService.getCarsDoneByStaff(...filterArguments);
+
+    res.send(successMessage(MESSAGES.FETCHED, entries));
+  }
+
   async getCarThatIsStillInShopByVin(req, res) {
     const { vin } = req.params;
 
@@ -622,19 +632,27 @@ class EntryController {
   }
 
   async updateCarDoneByStaff(req, res) {
-    const { vin } = req.params;
-    const { serviceId } = req.body;
+    const { vin, carId } = req.params;
+    const { serviceId, vin: reqBodyVin } = req.body;
     const staffId = req.user._id;
 
     const [entry, service] = await Promise.all([
-      entryService.getEntryByVin(vin),
+      vin
+        ? entryService.getEntryByVin(vin)
+        : entryService.getEntryByCarId(carId),
       serviceService.getServiceById(serviceId),
     ]);
 
     if (!entry) return res.status(404).send(errorMessage("entry"));
     if (!service) return res.status(404).send(errorMessage("service"));
 
-    const { carIndex, carWithVin } = entryService.getCarByVin({ entry, vin });
+    const { carIndex, carWithVin } = entryService.getCarByVin({
+      entry,
+      vin,
+      carId,
+    });
+
+    carWithVin.vin = reqBodyVin;
 
     if (Array.isArray(carWithVin) && carWithVin.length < 1)
       return jsonResponse(res, 404, false, "We can't find car with vin");
@@ -651,8 +669,17 @@ class EntryController {
     const waitingList = carWithVin.waitingList;
     const isServiceIdsEmpty = carWithVin.serviceIds.length < 1;
 
-    if (isCompleted || isServiceIdsEmpty || !waitingList)
+    if (isCompleted || isServiceIdsEmpty) {
+      if (req.params.vin && !waitingList)
+        return jsonResponse(
+          res,
+          403,
+          false,
+          "This car has been marked as done"
+        );
+
       return jsonResponse(res, 403, false, "This car has been marked as done");
+    }
 
     const updatedCarWithVIn = await entryService.updateServicesDoneOnCar(
       carWithVin,

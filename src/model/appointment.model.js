@@ -50,6 +50,9 @@ const paymentDetailsSchema = new mongoose.Schema({
   chargeId: {
     type: String,
   },
+  customerDisplayName: {
+    type: String,
+  },
 });
 
 const refundDetailsSchema = new mongoose.Schema({
@@ -181,8 +184,12 @@ const appointmentSchema = new mongoose.Schema({
     type: String,
     minlength: 2,
     maxlength: 255,
-    ref: User,
     required: true,
+  },
+  customerId: {
+    type: String,
+    minlength: 2,
+    maxlength: 10,
   },
   customerNumber: {
     type: String,
@@ -256,9 +263,9 @@ function validate(appointment) {
     startTime: Joi.date().required(),
     description: Joi.string().max(255).min(3),
     carDetails: Joi.object({
-      year: Joi.string().min(4).max(4),
-      make: Joi.string().min(1).max(255),
-      model: Joi.string().min(1).max(255),
+      year: Joi.string().min(4).max(4).required(),
+      make: Joi.string().min(1).max(255).required(),
+      model: Joi.string().min(1).max(255).required(),
       category: Joi.string()
         .min(1)
         .valid(...validCarTypes),

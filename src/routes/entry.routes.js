@@ -60,6 +60,12 @@ router.get(
 );
 
 router.get(
+  "/appointments/:customerId",
+  auth,
+  asyncMiddleware(entryController.getAllAppointmentEntriesPerCustomerId)
+);
+
+router.get(
   "/car-work-in-progress-duration/:vin",
   auth,
   admin,
@@ -257,6 +263,17 @@ router.put(
   [
     auth,
     roleBaseAuth(["staff"]),
+    validateMiddleware(validateModifyServiceDone),
+  ],
+  qboAsyncMiddleware(entryController.updateCarDoneByStaff)
+);
+
+router.put(
+  "/update-car-service-by-car-id/:carId",
+  [
+    auth,
+    roleBaseAuth(["staff"]),
+    validateObjectIdWithXArgMiddleware(["carId"]),
     validateMiddleware(validateModifyServiceDone),
   ],
   qboAsyncMiddleware(entryController.updateCarDoneByStaff)

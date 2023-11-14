@@ -354,6 +354,7 @@ function validateModifyServiceDone(entry) {
   const schema = Joi.object({
     note: Joi.string(),
     serviceId: Joi.objectId().required(),
+    vin: Joi.string(),
   });
 
   return schema.validate(entry);

@@ -193,7 +193,7 @@ class WebhookControllers {
               const { invoice: invoiceReqBody } =
                 convertDbInvoiceToQbInvoiceReqBodyUtils(
                   appointment,
-                  "resdential"
+                  appointmentType
                 );
 
               invoiceReqBody.CustomerRef.value = qbId;
@@ -264,6 +264,10 @@ class WebhookControllers {
                   amount: netAmount,
                 });
               }
+
+              appointment.paymentDetails.customerDisplayName =
+                customer.DisplayName;
+              appointment.customerId = customer.Id;
 
               await appointmentServices.updateAppointmentInvoiceDetails({
                 invoiceId,

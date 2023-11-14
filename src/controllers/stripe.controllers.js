@@ -41,7 +41,7 @@ class StripeController {
           (thirtyPercentOfPricePlusStripeFee - thirtyPercentOfPrice) * 100
         ) / 100;
 
-      const stripeServiceName = "Stripe Proccessing Fee";
+      const stripeServiceName = "Stripe processing fee";
 
       const stripeFeeeService = {
         price: stripeFee,
