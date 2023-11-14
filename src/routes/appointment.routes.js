@@ -42,6 +42,13 @@ router.get(
 );
 
 router.get(
+  "/appointmentId/:id",
+  auth,
+  roleBaseAuthMiddleware(["receptionist", "admin"]),
+  asyncMiddleware(appointmentControllers.getAppointmentById)
+);
+
+router.get(
   "/cleared-out-dates",
   auth,
   roleBaseAuthMiddleware(["receptionist", "admin"]),

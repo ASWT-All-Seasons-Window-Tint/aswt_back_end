@@ -15,10 +15,15 @@ class EntryUtils {
     vin,
     porterId,
     waitingList,
+    isFromAppointment,
   }) => {
     const match = {};
     if (entryId) {
       match._id = new mongoose.Types.ObjectId(entryId);
+    }
+    if (customerId && isFromAppointment) {
+      (match.customerId = customerId),
+        (match.isFromAppointment = isFromAppointment);
     }
     if (customerId) match.customerId = customerId;
 
@@ -91,7 +96,7 @@ class EntryUtils {
             ],
           },
 
-          invoice: this.projectedInvoince(staffId, porterId),
+          invoice: this.projectedInvoince(staffId, porterId, isFromAppointment),
         },
       },
       {
@@ -144,13 +149,25 @@ class EntryUtils {
     return pipeline;
   };
 
+  entryAggProps() {
+    const entryAggProps = {};
+    for (const property of entryProperties) entryAggProps[property] = 1;
+
+    delete entryAggProps.invoice;
+
+    return entryAggProps;
+  }
+
   entryUnFilteredProps = {
-    customerId: 1,
-    customerName: 1,
-    customerEmail: 1,
-    isActive: 1,
-    numberOfCarsAdded: 1,
-    entryDate: 1,
+    // customerId: 1,
+    // customerName: 1,
+    // customerEmail: 1,
+    // isActive: 1,
+    // numberOfCarsAdded: 1,
+    // entryDate: 1,
+    // isFromAppointment: 1,
+
+    ...this.entryAggProps(),
   };
 
   serviceNames = {
@@ -183,7 +200,7 @@ class EntryUtils {
     },
   };
 
-  projectedInvoince(staffId, porterId) {
+  projectedInvoince(staffId, porterId, isFromAppointment) {
     let invoice = {
       name: 1,
       carDetails: {
@@ -198,7 +215,7 @@ class EntryUtils {
       },
     };
 
-    if (!staffId && !porterId) {
+    if (!staffId && !porterId && !isFromAppointment) {
       invoice = {
         name: "$invoice.name",
         sent: 1,
@@ -552,6 +569,7 @@ class EntryUtils {
       vin,
       porterId,
       waitingList,
+      isFromAppointment,
     } = req.params;
     const filterArguments = [entryId, staffId, customerId, date];
 
@@ -572,7 +590,7 @@ class EntryUtils {
       filterArguments.push(undefined, undefined, vin);
     }
 
-    return [...filterArguments, porterId, waitingList];
+    return [...filterArguments, porterId, waitingList, isFromAppointment];
   };
   getDateRange({ type, year, month, date }) {
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -824,6 +842,7 @@ class EntryUtils {
       if (property !== "price" && property !== "priceBreakdown")
         result[property] = `${field}.${property}`;
 
+      result.id = `${field}._id`;
       return result;
     }, {});
 
