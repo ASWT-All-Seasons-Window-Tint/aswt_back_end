@@ -63,6 +63,15 @@ class EntryService {
       ? query.populate("invoice.carDetails.serviceIds", "name").lean()
       : query;
   };
+  getEntryByCarId = async (carId) => {
+    return Entry.findOne({
+      "invoice.carDetails": {
+        $elemMatch: {
+          _id: carId,
+        },
+      },
+    });
+  };
 
   getCarThatIsStillInShopByVin(vin) {
     return Entry.aggregate([
@@ -180,8 +189,7 @@ class EntryService {
           },
         },
       },
-    ]
-    );
+    ]);
   }
 
   getDateDifference(targetDate) {
@@ -274,7 +282,8 @@ class EntryService {
     endDate,
     vin,
     porterId,
-    waitingList
+    waitingList,
+    isFromAppointment
   ) => {
     return Entry.aggregate(
       pipeline({
@@ -287,6 +296,7 @@ class EntryService {
         vin,
         porterId,
         waitingList,
+        isFromAppointment,
       })
     );
   };
@@ -512,11 +522,13 @@ class EntryService {
     return { carIndex, carAddedByCustomer };
   }
 
-  getCarByVin({ entry, vin }) {
+  getCarByVin({ entry, vin, carId }) {
     const { carDetails } = entry.invoice;
 
     const carIndex = carDetails.findIndex((car) => {
-      return car.vin.toString() === vin.toString();
+      return vin
+        ? car.vin.toString() === vin.toString()
+        : car._id.toString() === carId.toString();
     });
 
     const carWithVin = carDetails[carIndex];
@@ -743,7 +755,7 @@ class EntryService {
 
   createNewEntry = async (customer, numberOfVehicles) => {
     const customerId = customer.Id;
-    const customerName = customer.FullyQualifiedName;
+    const customerName = customer.DisplayName;
     const customerEmail = customer.PrimaryEmailAddr.Address;
 
     let entry = new Entry({

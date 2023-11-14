@@ -3,6 +3,7 @@ const Joi = require("joi");
 const addVirtualIdUtils = require("../utils/addVirtualId.utils");
 const newDate = require("../utils/newDate.utils");
 const { Service } = require("./service.model");
+const { FilmQuality } = require("./filmQuality.model").filmQuality;
 
 const validLocationType = [
   "Scanned",
@@ -60,6 +61,19 @@ const carDetails = [
         },
       },
     ],
+    serviceDetails: [
+      {
+        serviceId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: Service,
+          required: true,
+        },
+        filmQualityId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: FilmQuality,
+        },
+      },
+    ],
     geoLocations: [
       {
         timestamp: {
@@ -112,6 +126,7 @@ const carDetails = [
     },
     priceBreakdown: [
       {
+        filmQuality: String,
         serviceName: String,
         serviceType: String,
         price: Number,
@@ -145,6 +160,10 @@ const entry = {
   entryDate: {
     type: Date,
     default: newDate(),
+  },
+  isFromAppointment: {
+    type: Boolean,
+    default: undefined,
   },
   isActive: {
     type: Boolean,
@@ -335,6 +354,7 @@ function validateModifyServiceDone(entry) {
   const schema = Joi.object({
     note: Joi.string(),
     serviceId: Joi.objectId().required(),
+    vin: Joi.string(),
   });
 
   return schema.validate(entry);
@@ -351,6 +371,7 @@ exports.joiValidator = {
   validateAddCarGeolocation,
   carDetailsProperties: Object.keys(carDetails[0]),
   entryProperties: Object.keys(entry),
+  paymentDetailsProperties: Object.keys(entry.invoice.paymentDetails),
   validLocationType,
 };
 exports.Entry = Entry;

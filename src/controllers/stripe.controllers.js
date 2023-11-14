@@ -1,8 +1,13 @@
 require("dotenv").config();
-const { jsonResponse, errorMessage } = require("../common/messages.common");
+const stripe = require("stripe")(process.env.stripeSecretKey);
+const { MESSAGES } = require("../common/constants.common");
+const {
+  jsonResponse,
+  errorMessage,
+  successMessage,
+} = require("../common/messages.common");
 const appointmentServices = require("../services/appointment.services");
 const stripeServices = require("../services/stripe.services");
-const stripe = require("stripe")(process.env.stripeSecretKey);
 const stripeAccount = process.env.stripeAccount;
 const Joi = require("joi");
 
@@ -27,6 +32,29 @@ class StripeController {
         ? appointment.carDetails.priceBreakdown
         : appointment.residentialDetails.priceBreakdown;
 
+      const totalPrice = autoAppointmentType
+        ? appointment.carDetails.price
+        : appointment.residentialDetails.price;
+
+      const thirtyPercentOfPrice = (totalPrice * 30) / 100;
+
+      const thirtyPercentOfPricePlusStripeFee =
+        stripeServices.calculateStripeFee(thirtyPercentOfPrice);
+
+      const stripeFee =
+        Math.round(
+          (thirtyPercentOfPricePlusStripeFee - thirtyPercentOfPrice) * 100
+        ) / 100;
+
+      const stripeServiceName = "Stripe processing fee";
+
+      const stripeFeeeService = {
+        price: stripeFee,
+        serviceName: stripeServiceName,
+      };
+
+      priceBreakdown.push(stripeFeeeService);
+
       const session = await stripe.checkout.sessions.create(
         {
           payment_method_types: ["card"],
@@ -34,16 +62,7 @@ class StripeController {
           line_items: priceBreakdown.map((item) => {
             let customerMeasurementAwareness = true;
             const price = item.price;
-            const thirtyPercentOfPriceInCents = (price * 30) / 100;
-            const pricePlusStripeFee = stripeServices.calculateStripeFee(
-              item.price
-            );
-            const thirtyPercentOfPriceInCentsPlusStripeFee = Math.round(
-              stripeServices.calculateStripeFee(thirtyPercentOfPriceInCents) *
-                100
-            );
-
-            const priceInCents = pricePlusStripeFee * 100;
+            const thirtyPercentOfPriceInCents = Math.round(price * 30);
 
             if (!autoAppointmentType) {
               customerMeasurementAwareness =
@@ -57,8 +76,10 @@ class StripeController {
                   name: item.serviceName,
                 },
                 unit_amount: customerMeasurementAwareness
-                  ? thirtyPercentOfPriceInCentsPlusStripeFee
-                  : priceInCents,
+                  ? item.serviceName === stripeServiceName
+                    ? price * 100
+                    : thirtyPercentOfPriceInCents
+                  : price * 100,
               },
               quantity: 1,
             };
@@ -66,7 +87,12 @@ class StripeController {
           automatic_tax: {
             enabled: true,
           },
+          invoice_creation: {
+            enabled: true,
+          },
+          allow_promotion_codes: true,
           payment_intent_data: {
+            receipt_email: "odirahchukwumma28@gmail.com",
             metadata: {
               appointmentId,
               stripeConnectedAccountId: process.env.stripeConnectedAccountId,
@@ -113,12 +139,40 @@ class StripeController {
     return results;
   }
 
+  async createPromoCode(req, res) {
+    const { percentageOff, expirationDate, promoCode } = req.body;
+
+    const promotionCode = await stripeServices.createPromoCode(
+      percentageOff,
+      expirationDate,
+      promoCode
+    );
+
+    return res.send(successMessage(MESSAGES.CREATED, promotionCode));
+  }
+
+  async getAllPromoCodes(req, res) {
+    const promotionCodes = await stripeServices.getAllPromoCodes();
+
+    return res.send(successMessage(MESSAGES.FETCHED, promotionCodes));
+  }
+
   validate(entry) {
     const schema = Joi.object({
       appointmentId: Joi.objectId().required(),
     });
 
     return schema.validate(entry);
+  }
+
+  validatePromoCode(stripeData) {
+    const schema = Joi.object({
+      percentageOff: Joi.number().greater(0).max(100).required(),
+      expirationDate: Joi.date().required(),
+      promoCode: Joi.string().required(),
+    });
+
+    return schema.validate(stripeData);
   }
 }
 
