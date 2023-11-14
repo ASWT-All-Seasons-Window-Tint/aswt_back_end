@@ -25,10 +25,8 @@ const paymentDetailsSchema = new mongoose.Schema({
   },
   hasPaid: {
     type: Boolean,
-    default: false,
   },
   amountPaid: {
-    default: 0,
     type: Number,
   },
   invoiceId: {

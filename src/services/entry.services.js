@@ -180,8 +180,7 @@ class EntryService {
           },
         },
       },
-    ]
-    );
+    ]);
   }
 
   getDateDifference(targetDate) {
@@ -743,7 +742,7 @@ class EntryService {
 
   createNewEntry = async (customer, numberOfVehicles) => {
     const customerId = customer.Id;
-    const customerName = customer.FullyQualifiedName;
+    const customerName = customer.DisplayName;
     const customerEmail = customer.PrimaryEmailAddr.Address;
 
     let entry = new Entry({

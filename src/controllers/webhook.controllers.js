@@ -11,9 +11,12 @@ const appointmentControllers = require("./appointment.controllers");
 const initializeQbUtils = require("../utils/initializeQb.utils");
 const { getCustomerByNameOrEmail } = require("./customer.controllers");
 const convertDbInvoiceToQbInvoiceReqBodyUtils = require("../utils/convertDbInvoiceToQbInvoiceReqBody.utils");
-const { createInvoiceOnQuickBooks } = require("../services/invoice.services");
+const {
+  createInvoiceOnQuickBooks,
+  sendInvoicePdf,
+} = require("../services/invoice.services");
 const getWbHksPayMentDetailsUtils = require("../utils/getWbHksPayMentDetails.utils");
-const { User } = require("../model/user.model").user;
+const { carDetailsProperties } = require("../model/entry.model").joiValidator;
 
 class WebhookControllers {
   async webhook(req, res) {
@@ -140,7 +143,6 @@ class WebhookControllers {
           const paymentIntentId = intent.id;
 
           if (appointmentId) {
-            console.log("Hit");
             const qbo = await initializeQbUtils();
             const appointment = await appointmentServices.getAppointmentById(
               appointmentId
@@ -151,8 +153,12 @@ class WebhookControllers {
               return;
             }
 
-            const { customerEmail, carDetails, residentialDetails } =
-              appointment;
+            const {
+              customerEmail,
+              carDetails,
+              residentialDetails,
+              appointmentType,
+            } = appointment;
 
             await appointmentServices.updateAppointmentPaymentDetails({
               appointmentId,
@@ -183,8 +189,6 @@ class WebhookControllers {
               }
               if (Array.isArray(customer)) customer = customer[0];
 
-              console.log(customer);
-
               const qbId = customer.Id;
               const { invoice: invoiceReqBody } =
                 convertDbInvoiceToQbInvoiceReqBodyUtils(
@@ -197,7 +201,8 @@ class WebhookControllers {
               const { invoice } = await createInvoiceOnQuickBooks(
                 qbo,
                 invoiceReqBody,
-                customerEmail
+                customerEmail,
+                false
               );
 
               const invoiceId = invoice.Id;
@@ -222,7 +227,43 @@ class WebhookControllers {
                 paymentData
               );
 
+              await sendInvoicePdf(qbo, invoiceId, customerEmail);
+
               const qbPaymentId = payment.Id;
+
+              if (appointmentType === "auto") {
+                const entry = await entryServices.createNewEntry(customer);
+
+                const { serviceIds } =
+                  appointmentServices.getServiceIdsAndfilmQualityIds(
+                    appointment.carDetails.serviceDetails
+                  );
+
+                const carDetails = {};
+                for (const property of carDetailsProperties) {
+                  if (property === "serviceIds") {
+                    carDetails[property] = serviceIds;
+                  } else {
+                    carDetails[property] = appointment.carDetails[property];
+                  }
+                }
+
+                entry.invoice.carDetails = [carDetails];
+
+                entry.invoice.qbId = invoiceId;
+                entry.numberOfCarsAdded = 1;
+                entry.invoice.invoiceNumber = invoiceNumber;
+                entry.invoice.sent = true;
+                entry.isFromAppointment = true;
+                entry.invoice.totalPrice = carDetails.price;
+
+                await entryServices.updateEntryInvoicePaymentDetails({
+                  entry,
+                  currency,
+                  paymentDate,
+                  amount: netAmount,
+                });
+              }
 
               await appointmentServices.updateAppointmentInvoiceDetails({
                 invoiceId,

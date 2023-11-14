@@ -343,7 +343,7 @@ class AppointmentService {
 
         const sqFt = calculateSquareFeetutils(length, unit, width, unit);
 
-        const price = pricePerSqFt * sqFt * quantity;
+        const price = Math.round(pricePerSqFt * sqFt * quantity * 100) / 100;
 
         priceBreakdown.qbId = service.qbId;
         priceBreakdown.serviceName = serviceNameWhenMesurementIsknown;
@@ -416,24 +416,27 @@ class AppointmentService {
       return;
     }
 
-    paymentDetails.paymentDate = paymentDate;
-    paymentDetails.currency = currency;
+    appointment.paymentDetails.paymentDate = paymentDate;
+    appointment.paymentDetails.currency = currency;
 
-    const totalAmountPaid = paymentDetails.amountPaid + amount;
-    paymentDetails.amountPaid = totalAmountPaid;
+    const totalAmountPaid = appointment.paymentDetails.amountPaid
+      ? appointment.paymentDetails.amountPaid + amount
+      : amount;
+    appointment.paymentDetails.amountPaid = totalAmountPaid;
 
     const { carDetails, residentialDetails } = appointment;
     const price = carDetails ? carDetails.price : residentialDetails.price;
 
     const amountDue = price - totalAmountPaid;
-    paymentDetails.amountDue = amountDue;
+    appointment.paymentDetails.amountDue = amountDue;
 
     if (paymentIntentId && chargeId) {
-      paymentDetails.paymentIntentId = paymentIntentId;
-      paymentDetails.chargeId = chargeId;
+      appointment.paymentDetails.paymentIntentId = paymentIntentId;
+      appointment.paymentDetails.chargeId = chargeId;
     }
 
-    paymentDetails.hasPaid = true;
+    appointment.paymentDetails.hasPaid = true;
+    console.log(appointment);
 
     return await appointment.save();
   };
