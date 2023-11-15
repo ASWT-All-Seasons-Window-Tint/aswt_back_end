@@ -209,7 +209,7 @@ class TakenTimeslotService {
 
   retriveTakenTimeslots = async (appointment, timeOfCompletion) => {
     const staffId = appointment.staffId;
-    const startTime = appointment.startTime;
+    const startTime = appointment.startT
     const { formattedDate, formattedTime } =
       freeTimeSlotServices.getFormattedDate(startTime);
 
@@ -220,8 +220,7 @@ class TakenTimeslotService {
 
     if (!staffTakenTimeSlot) return null;
 
-    const timeTaken = this.getTakenTimes(formattedTime, timeOfCompletion);
-
+    const timeTaken = this.getTakenTimes(formattedTime, timeOfCompleti
     const updatedRetrievedTime = staffTakenTimeSlot.timeslots.filter(
       (timeslot) => !timeTaken.includes(timeslot)
     );

@@ -92,7 +92,6 @@ class StripeController {
           },
           allow_promotion_codes: true,
           payment_intent_data: {
-            receipt_email: "odirahchukwumma28@gmail.com",
             metadata: {
               appointmentId,
               stripeConnectedAccountId: process.env.stripeConnectedAccountId,
