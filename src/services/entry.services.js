@@ -48,13 +48,14 @@ class EntryService {
     return { today, tomorrow };
   }
 
-  getEntryByVin = async (vin, lean) => {
+  getEntryByVin = async (vin, lean, porter) => {
     const { today, tomorrow } = this.getTodayAndTomorrow();
 
     const query = Entry.findOne({
       "invoice.carDetails": {
         $elemMatch: {
           vin,
+          ...(porter ? { porterId: { $ne: null } } : {}),
         },
       },
     }).sort({ _id: -1 });
@@ -860,6 +861,27 @@ class EntryService {
     return carWithVin;
   };
 
+  createServicesDone(serviceIds, staffId) {
+    const servicesDone = serviceIds.map((serviceId) => {
+      return { serviceId, staffId };
+    });
+
+    return servicesDone;
+  }
+
+  getSerViceIdsDone(carDetail, serviceId) {
+    const servicesDone = carDetail.servicesDone;
+    const intialServicIdsDone = servicesDone
+      ? []
+      : servicesDone.length < 1
+      ? []
+      : servicesDone.map((serviceDone) => serviceDone.serviceId.toString());
+
+    const serviceIdsDone = [...intialServicIdsDone, serviceId];
+
+    return serviceIdsDone;
+  }
+
   updateCarProperties(req, carDoneByStaff) {
     if (req.body.category) {
       req.body.category = req.body.category.toLowerCase();
@@ -986,7 +1008,7 @@ class EntryService {
     carDetails.price = price;
     carDetails.category = carDetails.category.toLowerCase();
     staffId ? (carDetails.staffId = staffId) : (carDetails.porterId = porterId);
-    carDetails.priceBreakdown = priceBreakdown;
+    carDetails.priceBreakdown = staffId ? priceBreakdown : [];
     carDetails.entryDate = newDate;
 
     if (carDetails.geoLocation) {
@@ -997,6 +1019,12 @@ class EntryService {
           ...carDetails.geoLocation,
         },
       ];
+    }
+
+    if (staffId) {
+      const serviceIds = carDetails.serviceIds;
+      const servicesDone = this.createServicesDone(serviceIds, staffId);
+      carDetails.servicesDone = servicesDone;
     }
 
     if (carExist) {

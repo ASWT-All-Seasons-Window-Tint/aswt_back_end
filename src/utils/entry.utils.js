@@ -31,6 +31,7 @@ class EntryUtils {
       {
         $match: match,
       },
+      ...(staffId ? this.test({ staffId }) : []),
       {
         $project: {
           ...this.entryUnFilteredProps,
@@ -522,8 +523,6 @@ class EntryUtils {
       results.$and.push(waitingListFilter);
     } else if (porterId && waitingList === false) {
       results.$and.push(pendingDropOffFilter);
-    } else if (staffId) {
-      results.$and.push(staffFilter);
     } else if (porterId) {
       results.$and.push(porterFilter);
     }
@@ -659,17 +658,8 @@ class EntryUtils {
     });
   }
 
-  test = ({ staffId, entryId, customerId }) => {
-    const match = {};
-    if (entryId) {
-      match._id = new mongoose.Types.ObjectId(entryId);
-    }
-    if (customerId) match.customerId = customerId;
-
+  test = ({ staffId }) => {
     return [
-      {
-        $match: match,
-      },
       {
         $unwind: "$invoice.carDetails",
       },
@@ -715,7 +705,7 @@ class EntryUtils {
               $map: {
                 input: "$carDetails",
                 as: "carDetail",
-                in: this.getCarDetailsField("$$carDetail"),
+                in: this.getFullCarDetailsField("$$carDetail"),
               },
             },
           },
@@ -841,6 +831,17 @@ class EntryUtils {
     const carDetailsField = carDetailsProperties.reduce((result, property) => {
       if (property !== "price" && property !== "priceBreakdown")
         result[property] = `${field}.${property}`;
+
+      result.id = `${field}._id`;
+      return result;
+    }, {});
+
+    return carDetailsField;
+  }
+
+  getFullCarDetailsField(field) {
+    const carDetailsField = carDetailsProperties.reduce((result, property) => {
+      result[property] = `${field}.${property}`;
 
       result.id = `${field}._id`;
       return result;

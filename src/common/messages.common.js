@@ -50,8 +50,25 @@ const logoutSuccess = () => {
 };
 
 const SMS = {
-  nowBody: (date) => `Hello, your appointment is scheduled for: ${date}.`,
-  reminderBody: (date) => `Appointment reminder at: ${date}.`,
+  nowBody: (date, time, customerName, serviceName) => `Dear ${customerName},
+
+  Congratulations! Your appointment booking was successful. We are pleased to confirm your reservation for ${serviceName} on ${date} at ${time} CST. Thank you for choosing us, and we look forward to serving you.
+  
+  Best regards,
+  All Seasons Tint & Graphic Designs`,
+  reminderBody: (
+    date,
+    time,
+    customerName,
+    contactNumber
+  ) => `Dear ${customerName}, 
+
+  This is a friendly reminder of your upcoming appointment with All Seasons Tint & Graphic Designs scheduled for ${date} at ${time}. We look forward to assisting you. If you have any questions or need to reschedule, please contact us at ${contactNumber}. 
+  
+  Thank you for choosing All Seasons Tint & Graphic Designs. 
+  
+  Best regards,
+  All Seasons Tint & Graphic Designs`,
 };
 
 exports.errorMessage = errorMessage;

@@ -15,7 +15,7 @@ class DepartmentController {
   }
 
   //Create a new department
-  async sendInvoice(req, res) {
+  sendInvoice = async (req, res) => {
     const [entry] = await getEntries({ entryId: req.params.id });
     if (!entry) return res.status(404).send(errorMessage("entry"));
 
@@ -27,7 +27,14 @@ class DepartmentController {
         false,
         "This invoice has been sent already"
       );
+    const invoice = await this.createAndSendInvoice(entry);
 
+    return res.send(
+      successMessage("Invoice successfully created and sent", invoice)
+    );
+  };
+
+  async createAndSendInvoice(entry) {
     const { invoice: invoiceData } = convertEntryQbInvoiceReqBody(entry);
     const qbo = await initializeQbUtils();
     const { customerEmail } = entry;
@@ -43,11 +50,17 @@ class DepartmentController {
     entry.invoice.invoiceNumber = invoice.DocNumber;
     entry.invoice.sent = true;
 
-    await updateEntryById(req.params.id, entry);
+    await updateEntryById(entry._id, entry);
 
-    return res.send(
-      successMessage("Invoice successfully created and sent", invoice)
-    );
+    return invoice;
+  }
+
+  async sendInvoiceWithoutCreating(entry) {
+    const qbo = await initializeQbUtils();
+    const { customerEmail } = entry;
+    const invoiceId = entry.invoice.qbId;
+
+    invoiceService.sendInvoicePdf(qbo, invoiceId, customerEmail);
   }
 }
 

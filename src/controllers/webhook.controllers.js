@@ -1,4 +1,5 @@
 require("dotenv").config();
+const Queue = require("bull");
 const stripe = require("stripe")(process.env.stripeSecretKey);
 var express = require("express");
 var crypto = require("crypto");
@@ -11,12 +12,18 @@ const appointmentControllers = require("./appointment.controllers");
 const initializeQbUtils = require("../utils/initializeQb.utils");
 const { getCustomerByNameOrEmail } = require("./customer.controllers");
 const convertDbInvoiceToQbInvoiceReqBodyUtils = require("../utils/convertDbInvoiceToQbInvoiceReqBody.utils");
+const getWbHksPayMentDetailsUtils = require("../utils/getWbHksPayMentDetails.utils");
+const sendTextMessageUtils = require("../utils/sendTextMessage.utils");
+const { carDetailsProperties } = require("../model/entry.model").joiValidator;
+const { SMS } = require("../common/messages.common");
 const {
   createInvoiceOnQuickBooks,
   sendInvoicePdf,
 } = require("../services/invoice.services");
-const getWbHksPayMentDetailsUtils = require("../utils/getWbHksPayMentDetails.utils");
-const { carDetailsProperties } = require("../model/entry.model").joiValidator;
+const getDateAndTimeUtils = require("../utils/getDateAndTime.utils");
+
+const redisConnection = { url: process.env.redisUrl };
+const appointmentQueue = new Queue("reminders", redisConnection);
 
 class WebhookControllers {
   async webhook(req, res) {
@@ -158,7 +165,42 @@ class WebhookControllers {
               carDetails,
               residentialDetails,
               appointmentType,
+              startTime,
+              customerName,
+              customerNumber,
             } = appointment;
+
+            const smsService =
+              appointmentType === "auto"
+                ? `${carDetails.priceBreakdown[0].serviceName} ${appointment.carDetails.priceBreakdown[0].serviceType} and more`
+                : appointment.residentialDetails.customerMeasurementAwareness
+                ? "Window Tinting"
+                : "Measurement Enquiry";
+
+            const delay = this.getDelay(startTime);
+            const { nowBody, reminderBody } = SMS;
+
+            const { date, time } = getDateAndTimeUtils(startTime);
+
+            sendTextMessageUtils(
+              customerNumber,
+              nowBody(date, time, customerName, smsService)
+            );
+
+            appointmentQueue.add(
+              {
+                customerNumber,
+                body: reminderBody(
+                  date,
+                  time,
+                  customerName,
+                  process.env.customerContactNumber
+                ),
+              },
+              {
+                delay,
+              }
+            );
 
             await appointmentServices.updateAppointmentPaymentDetails({
               appointmentId,
@@ -313,6 +355,24 @@ class WebhookControllers {
       res.status(400).send(`Webhook error: ${err.message}`);
     }
   };
+
+  getDelay(startTime) {
+    const currentDate = newDateUtils();
+    const appointmentTime = new Date(startTime);
+
+    //   date.setMinutes(date.getMinutes() + 1);
+
+    const TwentyFourHours = 24 * 60 * 60 * 1000;
+
+    const delay =
+      appointmentTime.getTime() - currentDate.getTime() - TwentyFourHours;
+
+    return delay > 0 ? delay : delay + oneHour;
+  }
+
+  exportQueue() {
+    return appointmentQueue;
+  }
 }
 
 module.exports = new WebhookControllers();
