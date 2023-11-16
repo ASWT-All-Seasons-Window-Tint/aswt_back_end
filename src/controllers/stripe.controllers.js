@@ -77,9 +77,9 @@ class StripeController {
                 },
                 unit_amount: customerMeasurementAwareness
                   ? item.serviceName === stripeServiceName
-                    ? price * 100
+                    ? Math.round(price * 100)
                     : thirtyPercentOfPriceInCents
-                  : price * 100,
+                  : Math.round(price * 100),
               },
               quantity: 1,
             };
