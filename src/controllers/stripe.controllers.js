@@ -24,6 +24,12 @@ class StripeController {
 
       const appointmentType = appointment.appointmentType;
       const autoAppointmentType = appointmentType === "auto";
+      let customerMeasurementAwareness = true;
+
+      if (!autoAppointmentType) {
+        customerMeasurementAwareness =
+          appointment.residentialDetails.customerMeasurementAwareness;
+      }
 
       if (appointment.paymentDetails.hasPaid)
         return jsonResponse(res, 400, false, "Payment has already been made");
@@ -38,13 +44,16 @@ class StripeController {
 
       const thirtyPercentOfPrice = (totalPrice * 30) / 100;
 
+      const pricePlusStripeFee = stripeServices.calculateStripeFee(totalPrice);
+
       const thirtyPercentOfPricePlusStripeFee =
         stripeServices.calculateStripeFee(thirtyPercentOfPrice);
 
-      const stripeFee =
-        Math.round(
-          (thirtyPercentOfPricePlusStripeFee - thirtyPercentOfPrice) * 100
-        ) / 100;
+      const stripeFee = customerMeasurementAwareness
+        ? Math.round(
+            (thirtyPercentOfPricePlusStripeFee - thirtyPercentOfPrice) * 100
+          ) / 100
+        : Math.round((pricePlusStripeFee - totalPrice) * 100) / 100;
 
       const stripeServiceName = "Stripe processing fee";
 
@@ -60,14 +69,8 @@ class StripeController {
           payment_method_types: ["card"],
           mode: "payment",
           line_items: priceBreakdown.map((item) => {
-            let customerMeasurementAwareness = true;
             const price = item.price;
             const thirtyPercentOfPriceInCents = Math.round(price * 30);
-
-            if (!autoAppointmentType) {
-              customerMeasurementAwareness =
-                appointment.residentialDetails.customerMeasurementAwareness;
-            }
 
             return {
               price_data: {
