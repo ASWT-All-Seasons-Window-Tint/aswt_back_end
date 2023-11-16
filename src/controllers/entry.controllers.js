@@ -1,4 +1,5 @@
 const _ = require("lodash");
+const Queue = require("bull");
 const { DistanceThreshold } = require("../model/distanceThreshold.model");
 const entryService = require("../services/entry.services");
 const userService = require("../services/user.services");
@@ -18,6 +19,9 @@ const {
 const { default: mongoose } = require("mongoose");
 const mongoTransactionUtils = require("../utils/mongoTransaction.utils");
 const entryServices = require("../services/entry.services");
+
+const redisConnection = { url: process.env.redisUrl };
+const entryQueue = new Queue("reminders", redisConnection);
 
 class EntryController {
   async getStatus(req, res) {
@@ -159,6 +163,22 @@ class EntryController {
         await userService.updateStaffTotalEarnings(req.user, mongoSession);
 
       const id = entry._id;
+
+      if (!entry.invoice.isAutoSentScheduled) {
+        const delay = this.getDelay();
+
+        entryQueue.add(
+          {
+            entryId: entry._id,
+          },
+          {
+            delay,
+          }
+        );
+
+        entry.invoice.isAutoSentScheduled = true;
+      }
+
       const updatedEntry = await entryService.updateEntryById(
         id,
         entry,
@@ -182,6 +202,15 @@ class EntryController {
     res.send(successMessage(MESSAGES.UPDATED, carDetails));
   };
 
+  getDelay() {
+    const currentDate = new Date();
+    const next24Hours = new Date(currentDate.getTime() + 24 * 60 * 60 * 1000);
+
+    const delay = next24Hours.getTime() - currentDate.getTime();
+
+    return delay;
+  }
+
   async addCarGeoLocation(req, res) {
     const { vin, locationType } = req.params;
 
@@ -196,7 +225,7 @@ class EntryController {
     geoLocation.timestamp = new Date();
 
     const entry = pickupLocationType
-      ? await entryService.getEntryByVin(vin, true)
+      ? await entryService.getEntryByVin(vin, true, true)
       : await entryService.getEntryWithCompletedCarVin(vin);
 
     if (!pickupLocationType && !entry)
@@ -418,7 +447,7 @@ class EntryController {
     const { vin } = req.params;
 
     const [entryWithVin, [carThatIsStillInShop]] = await Promise.all([
-      entryService.getEntryByVin(vin),
+      entryService.getEntryByVin(vin, undefined, true),
       entryServices.getCarThatIsStillInShopByVin(vin),
     ]);
 
@@ -638,7 +667,7 @@ class EntryController {
 
     const [entry, service] = await Promise.all([
       vin
-        ? entryService.getEntryByVin(vin)
+        ? entryService.getEntryByVin(vin, undefined, true)
         : entryService.getEntryByCarId(carId),
       serviceService.getServiceById(serviceId),
     ]);
@@ -652,7 +681,7 @@ class EntryController {
       carId,
     });
 
-    carWithVin.vin = reqBodyVin;
+    if (reqBodyVin) carWithVin.vin = reqBodyVin;
 
     if (Array.isArray(carWithVin) && carWithVin.length < 1)
       return jsonResponse(res, 404, false, "We can't find car with vin");
@@ -668,6 +697,16 @@ class EntryController {
     const isCompleted = carWithVin.isCompleted;
     const waitingList = carWithVin.waitingList;
     const isServiceIdsEmpty = carWithVin.serviceIds.length < 1;
+
+    const { priceBreakdown: newPriceBreakdown } =
+      entryService.getPriceForService(
+        [service],
+        entry.customerId,
+        carWithVin.category
+      );
+
+    const priceBreakdown = carWithVin.priceBreakdown;
+    carWithVin.priceBreakdown = [...priceBreakdown, ...newPriceBreakdown];
 
     if (isCompleted || isServiceIdsEmpty) {
       if (req.params.vin && !waitingList)
@@ -690,6 +729,21 @@ class EntryController {
     if (!entry.invoice.createdBy) entry.invoice.createdBy = staffId;
 
     entry.invoice.carDetails[carIndex] = updatedCarWithVIn;
+
+    if (!entry.invoice.isAutoSentScheduled) {
+      const delay = this.getDelay();
+
+      entryQueue.add(
+        {
+          entry,
+        },
+        {
+          delay,
+        }
+      );
+
+      entry.invoice.isAutoSentScheduled = true;
+    }
 
     await entry.save();
 
@@ -864,6 +918,10 @@ class EntryController {
     await entryService.deleteEntry(req.params.id);
 
     res.send(successMessage(MESSAGES.DELETED, entry));
+  }
+
+  exportEntryQueue() {
+    return entryQueue;
   }
 }
 

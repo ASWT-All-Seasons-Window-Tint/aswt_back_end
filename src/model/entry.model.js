@@ -159,7 +159,7 @@ const entry = {
   },
   entryDate: {
     type: Date,
-    default: newDate(),
+    default: new Date(),
   },
   isFromAppointment: {
     type: Boolean,
@@ -187,6 +187,9 @@ const entry = {
       type: mongoose.Schema.Types.ObjectId,
       ref: "user",
       default: undefined,
+    },
+    isAutoSentScheduled: {
+      type: Boolean,
     },
     carDetails,
     totalPrice: {
