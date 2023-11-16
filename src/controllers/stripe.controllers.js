@@ -77,9 +77,9 @@ class StripeController {
                 },
                 unit_amount: customerMeasurementAwareness
                   ? item.serviceName === stripeServiceName
-                    ? price * 100
+                    ? Math.round(price * 100)
                     : thirtyPercentOfPriceInCents
-                  : price * 100,
+                  : Math.round(price * 100),
               },
               quantity: 1,
             };
@@ -92,7 +92,6 @@ class StripeController {
           },
           allow_promotion_codes: true,
           payment_intent_data: {
-            receipt_email: "odirahchukwumma28@gmail.com",
             metadata: {
               appointmentId,
               stripeConnectedAccountId: process.env.stripeConnectedAccountId,
