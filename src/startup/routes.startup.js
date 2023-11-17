@@ -11,6 +11,7 @@ const appointments = require("../routes/appointment.routes");
 const articles = require("../routes/article.routes");
 const departments = require("../routes/department.routes");
 const invoices = require("../routes/invoice.routes");
+const incentives = require("../routes/incentive.routes");
 const categories = require("../routes/category.routes");
 const customers = require("../routes/customer.routes");
 const entries = require("../routes/entry.routes");
@@ -55,6 +56,7 @@ module.exports = function (app) {
   app.use(`${localEndpoint}/articles`, articles);
   app.use(`${localEndpoint}/appointments`, appointments);
   app.use(`${localEndpoint}/auth`, auth);
+  app.use(`${localEndpoint}/incentives`, incentives);
   app.use(`${localEndpoint}/invoices`, invoices);
   app.use(`${localEndpoint}/departments`, departments);
   app.use(`${localEndpoint}/entries`, entries);
