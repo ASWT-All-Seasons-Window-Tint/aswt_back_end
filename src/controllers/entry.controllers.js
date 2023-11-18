@@ -159,8 +159,16 @@ class EntryController {
     const mongoSession = await mongoose.startSession();
 
     const results = await mongoTransactionUtils(mongoSession, async () => {
-      if (staffId)
-        await userService.updateStaffTotalEarnings(req.user, mongoSession);
+      if (staffId) {
+        const updatedStaffEarningByIncentives =
+          await userService.updateStaffTotalEarningsBasedOnInCentives(
+            mongoSession,
+            staffId,
+            req.user
+          );
+        if (!updatedStaffEarningByIncentives)
+          await userService.updateStaffTotalEarnings(req.user, mongoSession);
+      }
 
       const id = entry._id;
 
@@ -660,7 +668,7 @@ class EntryController {
     res.send(successMessage(MESSAGES.UPDATED, updatedEntry));
   }
 
-  async updateCarDoneByStaff(req, res) {
+  updateCarDoneByStaff = async (req, res) => {
     const { vin, carId } = req.params;
     const { serviceId, vin: reqBodyVin } = req.body;
     const staffId = req.user._id;
@@ -730,28 +738,44 @@ class EntryController {
 
     entry.invoice.carDetails[carIndex] = updatedCarWithVIn;
 
-    if (!entry.invoice.isAutoSentScheduled) {
-      const delay = this.getDelay();
+    const mongoSession = await mongoose.startSession();
 
-      entryQueue.add(
-        {
-          entry,
-        },
-        {
-          delay,
-        }
-      );
+    const results = await mongoTransactionUtils(mongoSession, async () => {
+      const updatedStaffEarningByIncentives =
+        await userService.updateStaffTotalEarningsBasedOnInCentives(
+          mongoSession,
+          staffId,
+          req.user
+        );
+      if (!updatedStaffEarningByIncentives)
+        await userService.updateStaffTotalEarnings(req.user, mongoSession);
 
-      entry.invoice.isAutoSentScheduled = true;
-    }
+      const entryId = entry._id;
 
-    await entry.save();
+      if (!entry.invoice.isAutoSentScheduled) {
+        const delay = this.getDelay();
+
+        entryQueue.add(
+          {
+            entryId,
+          },
+          {
+            delay,
+          }
+        );
+
+        entry.invoice.isAutoSentScheduled = true;
+      }
+
+      await entryService.updateEntryById(entryId, entry, mongoSession);
+    });
+    if (results) return jsonResponse(res, 500, false, "Something failed");
 
     carWithVin.price = undefined;
     carWithVin.priceBreakdown = undefined;
 
     return res.send(successMessage(MESSAGES.UPDATED, carWithVin));
-  }
+  };
 
   async getCarByVin(req, res) {
     const { vin } = req.params;

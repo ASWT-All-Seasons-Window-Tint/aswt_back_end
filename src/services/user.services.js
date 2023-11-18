@@ -4,6 +4,14 @@ const bcrypt = require("bcrypt");
 const { User } = require("../model/user.model").user;
 const propertiesToPick = require("../common/propertiesToPick.common");
 const generateRandomAvatar = require("../utils/generateRandomAvatar.utils");
+const {
+  getFilterArguments,
+  getJobCount,
+  getJobCounts,
+} = require("../utils/entry.utils");
+const entryServices = require("./entry.services");
+const { isIncentiveActive } = require("./incentive.services");
+const { default: mongoose } = require("mongoose");
 
 const { customerDefaultPassword } = process.env;
 
@@ -279,7 +287,7 @@ class UserService {
     ).select("-password");
   }
 
-  updateStaffTotalEarnings = async (staff, session) => {
+  updateStaffTotalEarnings = async (staff, session, amountToBeAdded) => {
     const staffFromDb = await User.findById(staff._id).session(session);
     staff = staffFromDb;
 
@@ -287,9 +295,54 @@ class UserService {
 
     return await User.updateOne(
       { _id: staff._id },
-      { $inc: { "staffDetails.totalEarning": staffEarningRate } },
+      {
+        $inc: {
+          "staffDetails.totalEarning": amountToBeAdded
+            ? amountToBeAdded + staffEarningRate
+            : staffEarningRate,
+        },
+      },
       { session }
     );
+  };
+
+  updateStaffTotalEarningsBasedOnInCentives = async (
+    mongoSession,
+    staffId,
+    user
+  ) => {
+    const activeIncentive = await isIncentiveActive();
+
+    if (!activeIncentive) return undefined;
+
+    const {
+      startTime,
+      endTime,
+      amountToBePaid,
+      numberOfVehiclesThreshold,
+      eligibleStaffs,
+    } = activeIncentive;
+
+    const reqParam = {};
+    reqParam.params = {};
+
+    reqParam.params.startDate = startTime;
+    reqParam.params.endDate = endTime;
+    reqParam.params.staffId = staffId;
+
+    const filterArguments = getFilterArguments(reqParam);
+
+    const entries = await entryServices.getCarsDoneByStaff(...filterArguments);
+    const { totalJobCount } = getJobCounts(entries);
+
+    if (totalJobCount >= numberOfVehiclesThreshold) {
+      if (!eligibleStaffs.includes(new mongoose.Types.ObjectId(staffId))) {
+        await this.updateStaffTotalEarnings(user, mongoSession, amountToBePaid);
+        activeIncentive.eligibleStaffs.push(staffId);
+
+        return await activeIncentive.save({ session: mongoSession });
+      }
+    }
   };
 
   updatePorterCurrentLocation = async (porter, session, geoLocation) => {

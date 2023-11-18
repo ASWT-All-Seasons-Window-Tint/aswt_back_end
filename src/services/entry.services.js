@@ -4,15 +4,9 @@ const serviceServices = require("./service.services");
 const { DATE, errorMessage } = require("../common/constants.common");
 const { getNewAccessToken } = require("../utils/getNewAccessToken.utils");
 const getWebhookDataUtils = require("../utils/getWebhookData.utils");
-const {
-  pipeline,
-  pipelineForCustomerIdAndVin,
-  test,
-} = require("../utils/entry.utils");
-const { validMonthNames } = require("../common/constants.common");
-const newDateUtils = require("../utils/newDate.utils");
-const { carDetailsProperties, entryProperties } =
-  require("../model/entry.model").joiValidator;
+const { pipeline } = require("../utils/entry.utils");
+const { carDetailsProperties } = require("../model/entry.model").joiValidator;
+const { isIncentiveActive } = require("./incentive.services");
 
 class EntryService {
   getCarsThatHasNotBeenPickedUp(carDetails) {
