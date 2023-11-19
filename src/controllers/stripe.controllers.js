@@ -5,6 +5,7 @@ const {
   jsonResponse,
   errorMessage,
   successMessage,
+  badReqResponse,
 } = require("../common/messages.common");
 const appointmentServices = require("../services/appointment.services");
 const stripeServices = require("../services/stripe.services");
@@ -21,6 +22,8 @@ class StripeController {
       );
       if (!appointment)
         return res.status(404).send(errorMessage("appointment"));
+      if (!appointment.startTime)
+        return badReqResponse(res, "Start time is required to make payment");
 
       const appointmentType = appointment.appointmentType;
       const autoAppointmentType = appointmentType === "auto";

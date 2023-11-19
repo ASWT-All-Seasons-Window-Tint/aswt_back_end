@@ -49,6 +49,13 @@ const logoutSuccess = () => {
   return { message: MESSAGES.SUCCESFUL_LOGOUT, success: true };
 };
 
+const EMAIL = {
+  appointmentIntro: (service) =>
+    `I trust this email finds you well. We appreciate the opportunity to provide you with a quotation for ${service}.`,
+  buttonInstructions: `Please find the quotation button below, where you can view the detailed quotation:`,
+  buttonText: `Click to view quotation`,
+};
+
 const SMS = {
   nowBody: (date, time, customerName, serviceName) => `Dear ${customerName},
 
@@ -72,6 +79,7 @@ const SMS = {
 };
 
 exports.errorMessage = errorMessage;
+exports.EMAIL = EMAIL;
 exports.SMS = SMS;
 exports.errorMessageUserName = errorMessageUserName;
 exports.successMessage = successMessage;

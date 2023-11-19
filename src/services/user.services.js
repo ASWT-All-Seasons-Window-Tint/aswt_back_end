@@ -263,6 +263,43 @@ class UserService {
     );
   }
 
+  getStaffQueues = () => {
+    const leastActiveDay = this.subtractDaysThresholdFromActiveDays();
+
+    return User.find({
+      $and: [
+        { role: "staff" },
+        {
+          $or: [
+            {
+              "staffDetails.mostRecentScannedTime": {
+                $gte: leastActiveDay,
+              },
+            },
+            {
+              "staffDetails.mostRecentScannedTime": undefined,
+            },
+          ],
+        },
+      ],
+    })
+      .sort({
+        "staffDetails.mostRecentScannedTime": 1,
+      })
+      .select("_id");
+  };
+
+  subtractDaysThresholdFromActiveDays() {
+    const noOfActiveDaysThreshold = process.env.noOfActiveDaysThreshold;
+    // Get the current date
+    const currentDate = new Date();
+
+    currentDate.setDate(currentDate.getDate() - noOfActiveDaysThreshold);
+
+    // Return the new date
+    return currentDate;
+  }
+
   async updateStaffLocationsVisibleToManager({
     managerId,
     idToAdd,
@@ -300,6 +337,9 @@ class UserService {
           "staffDetails.totalEarning": amountToBeAdded
             ? amountToBeAdded + staffEarningRate
             : staffEarningRate,
+        },
+        $set: {
+          "staffDetails.mostRecentScannedTime": new Date(),
         },
       },
       { session }

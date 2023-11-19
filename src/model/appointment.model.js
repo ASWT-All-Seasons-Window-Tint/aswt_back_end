@@ -198,15 +198,12 @@ const appointmentSchema = new mongoose.Schema({
   staffId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: User,
-    required: true,
   },
   startTime: {
     type: Date,
-    required: true,
   },
   endTime: {
     type: Date,
-    required: true,
   },
   description: {
     type: String,
@@ -260,7 +257,7 @@ function validate(appointment) {
     customerEmail: Joi.string().email().required(),
     customerName: Joi.string().min(2).max(255).required(),
     customerNumber: Joi.string().required(),
-    startTime: Joi.date().required(),
+    startTime: Joi.date(),
     description: Joi.string().max(255).min(3),
     carDetails: Joi.object({
       year: Joi.string().min(4).max(4).required(),
@@ -355,10 +352,19 @@ function validatePatch(appointment) {
   return schema.validate(appointment);
 }
 
+function validateUpdateQuote(appointment) {
+  const schema = Joi.object({
+    startTime: Joi.date().required(),
+  });
+
+  return schema.validate(appointment);
+}
+
 exports.joiValidators = {
   validate,
   validatePatch,
   validateGetTakenTimeslots,
+  validateUpdateQuote,
 };
 exports.validate = validate;
 exports.validatePatch = validatePatch;
