@@ -48,24 +48,36 @@ class AppointmentService {
     return Appointment.find({ "refundDetails.refunded": false });
   }
 
-  sendEmailQuotaion(receiversEmail, firstName, appointmentId, service) {
-    const subject = `Quotation for ${firstName}`;
-    const emailIntro = EMAIL.appointmentIntro(service);
-    const buttonInstructions = EMAIL.buttonInstructions;
-    const buttonText = EMAIL.buttonText;
-    const url = process.env.clientUrl;
+  sendEmailQuotaion(
+    receiversEmail,
+    firstName,
+    appointmentId,
+    service,
+    appointmentType,
+    totalAmount
+  ) {
+    // const subject = `Quotation and Appointment Booking Details for Selected Services`;
+    // const emailIntro = EMAIL.appointmentIntro(service);
+    // const buttonInstructions = EMAIL.buttonInstructions;
+    // const buttonText = EMAIL.buttonText;
+    const appointmentUrl = JSON.parse(process.env.appointmentUrl);
+    const autoAppointmentType = appointmentType === "auto";
+    const url = autoAppointmentType
+      ? appointmentUrl.auto
+      : appointmentUrl.commercial;
+
     const link = `${url}/?appointmentId=${appointmentId}`;
+    const customerNeeds = autoAppointmentType ? "vehicle" : "home";
 
     transporter.sendMail(
-      mailOptions({
+      EMAIL.mailOptions(
         receiversEmail,
-        firstName,
+        customerNeeds,
+        service,
+        totalAmount,
         link,
-        subject,
-        emailIntro,
-        buttonInstructions,
-        buttonText,
-      }),
+        firstName
+      ),
       (error, info) => {
         if (error) {
           return "Error occurred:", error;

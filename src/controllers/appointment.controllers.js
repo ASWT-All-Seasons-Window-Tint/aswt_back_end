@@ -43,6 +43,7 @@ class AppointmentController {
 
     let timeOfCompletion = 8;
     let emailService = "measurement enquiry";
+    let totalAmount;
 
     if (appointmentType.toLowerCase() === "auto") {
       const { serviceDetails, category } = carDetails;
@@ -80,7 +81,8 @@ class AppointmentController {
         return badReqResponse(res, error.message);
       }
 
-      emailService = priceBreakdownArray[0].serviceName;
+      emailService = priceBreakdownArray.map((price) => price.serviceName);
+      totalAmount = price;
 
       req.body.carDetails.priceBreakdown = priceBreakdownArray;
       req.body.carDetails.price = price;
@@ -103,7 +105,9 @@ class AppointmentController {
       }
 
       if (residentialDetails.customerMeasurementAwareness)
-        emailService = priceBreakdownArray[0].serviceName;
+        emailService = priceBreakdownArray.map((price) => price.serviceName);
+
+      totalAmount = price;
 
       req.body.residentialDetails.priceBreakdown = priceBreakdownArray;
       req.body.residentialDetails.price = price;
@@ -140,7 +144,9 @@ class AppointmentController {
       customerEmail,
       customerName,
       appointment._id,
-      emailService
+      emailService,
+      appointmentType.toLowerCase(),
+      totalAmount
     );
 
     res.send(successMessage(MESSAGES.CREATED, appointment));

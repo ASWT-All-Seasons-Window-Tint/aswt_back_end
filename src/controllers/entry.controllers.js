@@ -3,6 +3,7 @@ const Queue = require("bull");
 const { DistanceThreshold } = require("../model/distanceThreshold.model");
 const entryService = require("../services/entry.services");
 const userService = require("../services/user.services");
+const notificationService = require("../services/notification.services");
 const customerService = require("../services/customer.service");
 const serviceService = require("../services/service.services");
 const { MESSAGES } = require("../common/constants.common");
@@ -328,6 +329,28 @@ class EntryController {
       if (results) return jsonResponse(res, 500, false, "Something failed");
 
       return res.send(successMessage(MESSAGES.UPDATED, carWithoutPrice));
+    }
+
+    if (locationType === "TakenToShop") {
+      const activeStaffQueue = await userService.getStaffQueues();
+      const numberOfStaffInQueue = activeStaffQueue.length;
+      const numberOfServices = carWithVin.serviceIds.length;
+      const concernedStaffIds =
+        numberOfStaffInQueue > numberOfServices
+          ? activeStaffQueue.slice(0, numberOfServices)
+          : activeStaffQueue;
+      const url = process.env.clientUrl;
+      const link = `${url}/?vin=${vin}`;
+
+      const body = {
+        title: "A vehicle needs your attention",
+        concernedStaffIds,
+        body: link,
+        type: locationType,
+        vin,
+      };
+
+      await notificationService.createNotification(body);
     }
 
     await entryService.updateEntryById(entry._id, entry);
@@ -858,6 +881,9 @@ class EntryController {
 
   async modifyPrice(req, res) {
     const { serviceId, price, vin } = req.body;
+
+    if ([serviceId, price, vin].includes(undefined))
+      return badReqResponse(req, "All of [serviceId, price, vin] are required");
 
     const [[entry], service] = await Promise.all([
       entryService.getEntries({ entryId: req.params.id }),

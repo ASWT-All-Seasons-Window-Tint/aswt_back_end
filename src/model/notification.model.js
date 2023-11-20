@@ -3,7 +3,7 @@ const Joi = require("joi");
 const addVirtualIdUtils = require("../utils/addVirtualId.utils");
 const { User } = require("./user.model").user;
 
-const jobSchema = new mongoose.Schema(
+const notificationSchema = new mongoose.Schema(
   {
     title: {
       type: String,
@@ -17,49 +17,46 @@ const jobSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    isReadBy: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: User,
-        required: true,
-      },
-    ],
-    concernedStaffIds: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: User,
-        required: true,
-      },
-    ],
+    vin: {
+      type: String,
+      required: true,
+    },
+    isReadBy: {
+      type: [mongoose.Schema.Types.ObjectId],
+      ref: User,
+    },
+    concernedStaffIds: {
+      type: [mongoose.Schema.Types.ObjectId],
+      ref: User,
+      required: true,
+    },
   },
   { toJSON: { virtuals: true } },
   { toObject: { virtuals: true } }
 );
 
-addVirtualIdUtils(jobSchema);
+addVirtualIdUtils(notificationSchema);
 
-const Job = mongoose.model("Job", jobSchema);
+const Notification = mongoose.model("Notification", notificationSchema);
 
-function validate(job) {
+function validate(notification) {
   const schema = Joi.object({
-    staffId: Joi.objectId().require(),
-    entryId: Joi.objectId().require(),
-    serviceId: Joi.objectId().require(),
+    body: Joi.string().required(),
+    title: Joi.string().required(),
+    type: Joi.string().required(),
   });
 
-  return schema.validate(job);
+  return schema.validate(notification);
 }
 
-function validatePatch(job) {
+function validatePatch(notification) {
   const schema = Joi.object({
-    staffId: Joi.objectId().require(),
-    entryId: Joi.objectId().require(),
-    serviceId: Joi.objectId().require(),
+    body: Joi.string().required(),
+    title: Joi.string().required(),
+    type: Joi.string().required(),
   });
 
-  return schema.validate(job);
+  return schema.validate(notification);
 }
 
-exports.validatePatch = validatePatch;
-exports.validate = validate;
-exports.Job = Job;
+exports.notification = { Notification, validate, validatePatch };

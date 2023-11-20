@@ -7,6 +7,7 @@ const getWebhookDataUtils = require("../utils/getWebhookData.utils");
 const { pipeline } = require("../utils/entry.utils");
 const { carDetailsProperties } = require("../model/entry.model").joiValidator;
 const { isIncentiveActive } = require("./incentive.services");
+const notificationServices = require("./notification.services");
 
 class EntryService {
   getCarsThatHasNotBeenPickedUp(carDetails) {
@@ -841,6 +842,19 @@ class EntryService {
     if (serviceIds.length < 1) {
       carWithVin.waitingList = false;
       carWithVin.isCompleted = true;
+
+      const concernedStaffIds = [carWithVin.porterId];
+      const vin = carWithVin.vin;
+
+      const body = {
+        title: `Service completed for Car`,
+        concernedStaffIds,
+        body: `The tinting service for the car with the VIN (${vin}) has been completed.`,
+        type: `Completed service`,
+        vin,
+      };
+
+      await notificationServices.createNotification(body);
     }
 
     carWithVin.serviceIds = serviceIds;

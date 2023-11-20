@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 const { MESSAGES } = require("./constants.common");
 
 const errorMessage = (resource, resourceId = resource) => {
@@ -54,6 +56,71 @@ const EMAIL = {
     `I trust this email finds you well. We appreciate the opportunity to provide you with a quotation for ${service}.`,
   buttonInstructions: `Please find the quotation button below, where you can view the detailed quotation:`,
   buttonText: `Click to view quotation`,
+  mailOptions: (
+    customerEmail,
+    customerNeeds,
+    selectedServices,
+    totalAmount,
+    customerURL,
+    customerName
+  ) => {
+    const aswtDetails = JSON.parse(process.env.aswtDetails);
+
+    return {
+      from: process.env.emailId,
+      to: customerEmail,
+      subject: "Quotation and Booking Confirmation",
+      html: `
+      <p>Dear ${customerName},</p>
+      
+      <p>I trust this email finds you well. Thank you for considering our services for your ${customerNeeds}. It is our pleasure to provide you with a detailed quotation based on the services you have selected.</p>
+  
+      <p><b>Quotation Details:</b></p>
+  
+      <p>Service Package: ${selectedServices}</p>
+  
+      <p>Total Amount: $${totalAmount}</p>
+  
+      <p>Please find attached a comprehensive breakdown of the costs associated with the selected services. We believe that our offerings align perfectly with your requirements, and we are eager to be of service to you.</p>
+  
+      <p><b>Booking Appointment:</b></p>
+      
+      <p>To streamline the scheduling process and ensure your preferred time slot, we have created a unique URL for you to book your appointment. Please click on the following link: <a href="${customerURL}">${customerURL}</a></p>
+  
+      <p><b>Payment Details:</b></p>
+  
+      <p>To confirm and secure your appointment, a 30% down payment of the total quoted amount is required. Kindly note that payments are to be made exclusively through our official website. For your convenience and security, please use the following link to process your payment: <a href="${customerURL}">${customerURL}</a></p>
+  
+      <p><b>Important Dates:</b></p>
+  
+      <p>- Down Payment Due Date: At the time of booking the appointment online</p>
+  
+      <p>- Total Payment Deadline: The remaining balance is due at the time when the service is completed at our shop</p>
+  
+      <p><b>Cancellation Policy:</b></p>
+  
+      <p>We understand that circumstances may change. Should you need to reschedule or cancel your appointment, please notify us at least 24 hours in advance to avoid any cancellation fees.</p>
+      <p><b>Next Steps:</b></p>
+      
+      <ol>
+        <li>Review the attached quotation thoroughly.</li>
+        <li>Click on the unique URL to book your appointment.</li>  
+        <li>Process the 30% down payment through our official website.</li>
+      </ol>
+  
+      <p>If you have any questions or require further clarification, feel free to reach out to us at ${aswtDetails.ContactInformation}.</p>
+  
+      <p>Thank you for choosing ${aswtDetails.CompanyName}. We look forward to serving you and ensuring your experience exceeds expectations.</p>
+  
+      <p>Best regards,</p>
+  
+      <p>${aswtDetails.FullName}</p>
+      <p>${aswtDetails.Position}</p>
+      <p>${aswtDetails.CompanyName}</p>
+      <p>${aswtDetails.ContactInformation}</p>
+    `,
+    };
+  },
 };
 
 const SMS = {

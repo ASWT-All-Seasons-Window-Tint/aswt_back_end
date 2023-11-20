@@ -8,6 +8,7 @@ const {
 const { MESSAGES, errorAlreadyExists } = require("../common/constants.common");
 const convertEntryQbInvoiceReqBody = require("../utils/convertDbInvoiceToQbInvoiceReqBody.utils");
 const initializeQbUtils = require("../utils/initializeQb.utils");
+const userServices = require("../services/user.services");
 
 class DepartmentController {
   async getStatus(req, res) {
@@ -37,8 +38,19 @@ class DepartmentController {
   async createAndSendInvoice(entry) {
     const { invoice: invoiceData } = convertEntryQbInvoiceReqBody(entry);
     const qbo = await initializeQbUtils();
-    const { customerEmail } = entry;
+    let { customerEmail, customerId } = entry;
 
+    const customer = await userServices.findCustomerByQbId(customerId);
+
+    if (customer) {
+      const alterNativeEmails = customer.customerDetails.alterNativeEmails;
+      const newEmail = customerEmail;
+      if (alterNativeEmails.length > 0)
+        for (const email of alterNativeEmails)
+          if (newEmail !== email) customerEmail += `, ${email}`;
+    }
+
+    console.log(customerEmail);
     const { invoice } = await invoiceService.createInvoiceOnQuickBooks(
       qbo,
       invoiceData,
@@ -57,8 +69,18 @@ class DepartmentController {
 
   async sendInvoiceWithoutCreating(entry) {
     const qbo = await initializeQbUtils();
-    const { customerEmail } = entry;
+    let { customerEmail, customerId } = entry;
     const invoiceId = entry.invoice.qbId;
+
+    const customer = await userServices.findCustomerByQbId(customerId);
+
+    if (customer) {
+      const alterNativeEmails = customer.customerDetails.alterNativeEmails;
+      const newEmail = customerEmail;
+      if (alterNativeEmails.length > 0)
+        for (const email of alterNativeEmails)
+          if (newEmail !== email) customerEmail += `, ${email}`;
+    }
 
     invoiceService.sendInvoicePdf(qbo, invoiceId, customerEmail);
   }

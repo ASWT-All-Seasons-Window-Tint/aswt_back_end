@@ -227,7 +227,11 @@ class UserService {
   }
 
   findCustomerByQbId(qbId) {
-    return User.findOne({ "customerDetails.qbId": qbId, isDeleted: undefined });
+    return User.findOne({
+      "customerDetails.qbId": qbId,
+      "customerDetails.canCreate": true,
+      isDeleted: undefined,
+    }).sort({ _id: 1 });
   }
 
   async signInStaff(email, currentSignInLocation, session) {

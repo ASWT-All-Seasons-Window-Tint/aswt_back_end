@@ -250,10 +250,7 @@ const Appointment = mongoose.model("Appointment", appointmentSchema);
 
 function validate(appointment) {
   const schema = Joi.object({
-    appointmentType: Joi.string()
-      .valid("auto", "commercial")
-      .insensitive()
-      .required(),
+    appointmentType: Joi.string().valid("auto", "commercial").required(),
     customerEmail: Joi.string().email().required(),
     customerName: Joi.string().min(2).max(255).required(),
     customerNumber: Joi.string().required(),
