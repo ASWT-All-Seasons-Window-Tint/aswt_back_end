@@ -139,6 +139,7 @@ const carDetails = [
         qbId: {
           type: String,
         },
+        lineId: String,
       },
     ],
   },
@@ -353,6 +354,16 @@ function validateModifyPrice(entry) {
 
   return schema.validate(entry);
 }
+
+function validateModifyPriceForSentInvoice(entry) {
+  const schema = Joi.object({
+    carId: Joi.objectId().required(),
+    price: Joi.number().required(),
+    serviceId: Joi.objectId().required(),
+  });
+
+  return schema.validate(entry);
+}
 function validateModifyServiceDone(entry) {
   const schema = Joi.object({
     note: Joi.string(),
@@ -372,6 +383,7 @@ exports.joiValidator = {
   validateModifyCarDetails,
   validateModifyServiceDone,
   validateAddCarGeolocation,
+  validateModifyPriceForSentInvoice,
   carDetailsProperties: Object.keys(carDetails[0]),
   entryProperties: Object.keys(entry),
   paymentDetailsProperties: Object.keys(entry.invoice.paymentDetails),

@@ -139,10 +139,13 @@ class EntryController {
 
     if (message || status) return res.status(status).send(message);
 
+    let lineId = entryService.sumPriceBreakdownLength(entry);
+
     const { price, priceBreakdown } = entryService.getPriceForService(
       services,
       entry.customerId,
-      category
+      category,
+      lineId
     );
 
     entryService.updateCarDetails(
@@ -879,11 +882,11 @@ class EntryController {
     res.send(successMessage(MESSAGES.UPDATED, carWithoutPrice));
   }
 
-  async modifyPrice(req, res) {
-    const { serviceId, price, vin } = req.body;
+  async modifyPrice(req, res, fromInvoice) {
+    const { serviceId, price, vin, carId } = req.body;
 
-    if ([serviceId, price, vin].includes(undefined))
-      return badReqResponse(req, "All of [serviceId, price, vin] are required");
+    if ([serviceId, price, vin].includes(undefined) && !fromInvoice)
+      return badReqResponse(res, "All of [serviceId, price, vin] are required");
 
     const [[entry], service] = await Promise.all([
       entryService.getEntries({ entryId: req.params.id }),
@@ -892,21 +895,19 @@ class EntryController {
     if (!entry) return res.status(404).send(errorMessage("entry"));
     if (!service) return res.status(404).send(errorMessage("service"));
 
-    const { carWithVin, carIndex } = entryService.getCarByVin({ entry, vin });
-    if (!carWithVin || carIndex < 0)
-      return notFoundResponse(res, "Car with VIN number not found in invoice.");
-
-    const porterServiceIds = carWithVin.serviceIds.map((id) =>
-      id ? id.toString() : id
-    );
-    const staffServiceIds = carWithVin.servicesDone.map((serviceDone) => {
-      if (serviceDone) {
-        const serviceId = serviceDone.serviceId.toString();
-        return serviceId;
-      }
+    const { carWithVin, carIndex } = entryService.getCarByVin({
+      entry,
+      vin,
+      carId,
     });
+    if (!carWithVin || carIndex < 0) {
+      const errorResponse = vin
+        ? "Car with VIN number not found in invoice."
+        : "Car with ID not found in invoice.";
+      return notFoundResponse(res, errorResponse);
+    }
 
-    const validServiceIds = [...porterServiceIds, ...staffServiceIds];
+    const validServiceIds = entryService.getCompleteServiceIds(carWithVin);
 
     if (!validServiceIds.includes(serviceId)) {
       return badReqResponse(
@@ -915,7 +916,7 @@ class EntryController {
       );
     }
 
-    if (!entry.isActive)
+    if (!entry.isActive && !fromInvoice)
       return jsonResponse(
         res,
         401,
@@ -923,7 +924,7 @@ class EntryController {
         "Altering the price of a sent invoice is not allowed."
       );
 
-    if (!entryService.carWasAddedRecently(carWithVin)) {
+    if (!entryService.carWasAddedRecently(carWithVin) && !fromInvoice) {
       return res.status(401).send({
         message:
           "Modifying car details is not allowed beyond 24 hours after adding.",
@@ -931,18 +932,11 @@ class EntryController {
       });
     }
 
-    let priceBreakdown = carWithVin.priceBreakdown;
-
-    const { servicePrice, servicePriceIndex } = entryService.getServicePrice(
-      priceBreakdown,
-      serviceId
+    const servicePrice = entryService.modifyCarWithVinPrice(
+      carWithVin,
+      serviceId,
+      price
     );
-
-    servicePrice.price = parseFloat(price);
-    priceBreakdown[servicePriceIndex] = servicePrice;
-
-    carWithVin.price =
-      entryService.calculateServicePriceDoneforCar(priceBreakdown);
 
     entry.invoice.carDetails[carIndex] = carWithVin;
 
@@ -956,7 +950,9 @@ class EntryController {
       true
     );
 
-    res.send(successMessage(MESSAGES.UPDATED, updatedEntry));
+    return fromInvoice
+      ? { servicePrice, updatedEntry }
+      : res.send(successMessage(MESSAGES.UPDATED, updatedEntry));
   }
 
   //Delete entry account entirely from the database

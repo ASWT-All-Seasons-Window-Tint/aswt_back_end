@@ -9,6 +9,7 @@
 .env
 test*
 olisa*
+quotation*
 /client
 /views
 items.json
