@@ -7,19 +7,20 @@ const priceListServices = require("./priceList.services");
 const categoryService = require("./category.services");
 const convertToLowerCaseAndRemoveNonAlphanumeric = require("../utils/convertToLowerCaseAndRemoveNonAlphanumeric.utils");
 const calculateSquareFeetutils = require("../utils/calculateSquareFeetutils");
-const {
-  VideoV1RoomRoomParticipantRoomParticipantSubscribeRuleRules,
-} = require("twilio/lib/rest/video/v1/room/participant/subscribeRules");
 const filmQualityServices = require("./filmQuality.services");
 const { FilmQuality } = require("../model/filmQuality.model").filmQuality;
+const { transporter, mailOptions } = require("../utils/email.utils");
+const { EMAIL } = require("../common/messages.common");
 
 class AppointmentService {
   //Create new appointment
   async createAppointment({ body, staffId }) {
     let { startTime, endTime } = body;
 
-    startTime = new Date(startTime);
-    endTime = new Date(endTime);
+    if (startTime) {
+      startTime = new Date(startTime);
+      endTime = new Date(endTime);
+    }
 
     const appointment = new Appointment({
       staffId,
@@ -45,6 +46,46 @@ class AppointmentService {
 
   async fetchAllAppointments() {
     return Appointment.find({ "refundDetails.refunded": false });
+  }
+
+  sendEmailQuotaion(
+    receiversEmail,
+    firstName,
+    appointmentId,
+    service,
+    appointmentType,
+    totalAmount
+  ) {
+    // const subject = `Quotation and Appointment Booking Details for Selected Services`;
+    // const emailIntro = EMAIL.appointmentIntro(service);
+    // const buttonInstructions = EMAIL.buttonInstructions;
+    // const buttonText = EMAIL.buttonText;
+    const appointmentUrl = JSON.parse(process.env.appointmentUrl);
+    const autoAppointmentType = appointmentType === "auto";
+    const url = autoAppointmentType
+      ? appointmentUrl.auto
+      : appointmentUrl.commercial;
+
+    const link = `${url}/?appointmentId=${appointmentId}`;
+    const customerNeeds = autoAppointmentType ? "vehicle" : "home";
+
+    transporter.sendMail(
+      EMAIL.mailOptions(
+        receiversEmail,
+        customerNeeds,
+        service,
+        totalAmount,
+        link,
+        firstName
+      ),
+      (error, info) => {
+        if (error) {
+          return "Error occurred:", error;
+        } else {
+          console.log("Email sent successfully");
+        }
+      }
+    );
   }
 
   calculateTotalTimeOfCompletion(services) {

@@ -49,6 +49,7 @@ module.exports = function (mongoDBInvoice, type) {
         DetailType: "SalesItemLineDetail",
         SalesItemLineDetail: {
           ItemRef: {
+            Id: priceBreakdown.lineId,
             value: priceDetail.qbId, // Use the serviceId from priceBreakdown
             name: priceDetail.serviceName, // Use the serviceName from priceBreakdown
           },

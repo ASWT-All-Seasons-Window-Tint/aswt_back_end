@@ -24,81 +24,41 @@ const mailGenerator = new Mailgen({
   },
 });
 
-const url = process.env.clientUrl;
 const intro = "This is a Password reset Mail";
-const link = (token) => `${url}/?token=${token}`;
 const instructions = "Click this link to reset your password:";
 const text = "Reset your password";
 
-const email = (
-  firstName,
-  token,
-  emailIntro,
-  emailLink,
-  buttonInstructions,
-  buttonText
-) => {
-  return {
-    body: {
-      name: firstName,
-      intro: emailIntro,
-      action: {
-        instructions: buttonInstructions,
-        button: {
-          color: "#22BC66", // Optional action button color
-          text: buttonText,
-          link: emailLink(token),
-        },
-      },
-      outro:
-        "Need help, or have questions? Just reply to this email, we'd love to help.",
-    },
-  };
-};
-
 const mailSubject = `Your password reset link`;
 
-const emailBody = (
-  firstName,
-  token,
-  emailIntro,
-  emailLink,
-  buttonInstructions,
-  buttonText
-) =>
-  mailGenerator.generate(
-    email(
-      firstName,
-      token,
-      emailIntro,
-      emailLink,
-      buttonInstructions,
-      buttonText
-    )
-  );
-
-const mailOptions = (
+const mailOptions = ({
   receiversEmail,
   firstName,
-  token,
   subject = mailSubject,
   emailIntro = intro,
-  emailLink = link,
+  link,
   buttonInstructions = instructions,
-  buttonText = text
-) => {
+  buttonText = text,
+}) => {
   return {
     from: emailId,
     to: receiversEmail,
     subject,
-    html: emailBody(
-      firstName,
-      token,
-      emailIntro,
-      emailLink,
-      buttonInstructions,
-      buttonText
-    ),
+    html: mailGenerator.generate({
+      body: {
+        name: firstName,
+        intro: emailIntro,
+        action: {
+          instructions: buttonInstructions,
+          button: {
+            color: "#22BC66", // Optional action button color
+            text: buttonText,
+            link,
+          },
+        },
+        outro:
+          "Need help, or have questions? Just reply to this email, we'd love to help.",
+      },
+    }),
   };
 };
 

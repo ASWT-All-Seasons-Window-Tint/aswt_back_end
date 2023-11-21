@@ -34,17 +34,16 @@ class AppointmentController {
   createAppointment = async (req, res) => {
     const {
       startTime,
-      customerNumber,
+      customerEmail,
+      customerName,
       carDetails,
       appointmentType,
       residentialDetails,
     } = req.body;
-    let { formattedDate: date, formattedTime: timeString } =
-      freeTimeSlotServices.getFormattedDate(startTime);
-
-    const smsDate = getSmsDateUtils(startTime);
 
     let timeOfCompletion = 8;
+    let emailService = "measurement enquiry";
+    let totalAmount;
 
     if (appointmentType.toLowerCase() === "auto") {
       const { serviceDetails, category } = carDetails;
@@ -82,6 +81,9 @@ class AppointmentController {
         return badReqResponse(res, error.message);
       }
 
+      emailService = priceBreakdownArray.map((price) => price.serviceName);
+      totalAmount = price;
+
       req.body.carDetails.priceBreakdown = priceBreakdownArray;
       req.body.carDetails.price = price;
       req.body.carDetails.category = carDetails.category;
@@ -102,10 +104,57 @@ class AppointmentController {
         return badReqResponse(res, error.message);
       }
 
+      if (residentialDetails.customerMeasurementAwareness)
+        emailService = priceBreakdownArray.map((price) => price.serviceName);
+
+      totalAmount = price;
+
       req.body.residentialDetails.priceBreakdown = priceBreakdownArray;
       req.body.residentialDetails.price = price;
       req.body.appointmentType = req.body.appointmentType.toLowerCase(); // Auto
     }
+
+    let appointment;
+
+    if (startTime) {
+      const takenTimeSlotForStaff = await this.checkAndUpdateTakenTimeSlot(
+        startTime,
+        timeOfCompletion,
+        res
+      );
+      if (!takenTimeSlotForStaff) return;
+
+      const endTime = appointmentService.calculateEndTime(
+        startTime,
+        timeOfCompletion
+      );
+      req.body.endTime = endTime;
+
+      appointment = await appointmentService.createAppointment({
+        body: req.body,
+        staffId: takenTimeSlotForStaff.staffId,
+      });
+    }
+
+    appointment = await appointmentService.createAppointment({
+      body: req.body,
+    });
+
+    appointmentService.sendEmailQuotaion(
+      customerEmail,
+      customerName,
+      appointment._id,
+      emailService,
+      appointmentType.toLowerCase(),
+      totalAmount
+    );
+
+    res.send(successMessage(MESSAGES.CREATED, appointment));
+  };
+
+  checkAndUpdateTakenTimeSlot = async (startTime, timeOfCompletion, res) => {
+    let { formattedDate: date, formattedTime: timeString } =
+      freeTimeSlotServices.getFormattedDate(startTime);
 
     const takenTimeslotsDetails =
       await takenTimeslotsControllers.generateTakenTimeslots({
@@ -137,34 +186,7 @@ class AppointmentController {
       timeOfCompletion,
       date
     );
-
-    const endTime = appointmentService.calculateEndTime(
-      startTime,
-      timeOfCompletion
-    );
-    req.body.endTime = endTime;
-
-    const appointment = await appointmentService.createAppointment({
-      body: req.body,
-      staffId: takenTimeSlotForStaff.staffId,
-    });
-
-    // const delay = this.getDelay(startTime);
-    // const { nowBody, reminderBody } = SMS;
-
-    // sendTextMessage(customerNumber, nowBody(smsDate));
-
-    // appointmentQueue.add(
-    //   {
-    //     customerNumber,
-    //     body: reminderBody(smsDate),
-    //   },
-    //   {
-    //     delay,
-    //   }
-    // );
-
-    res.send(successMessage(MESSAGES.CREATED, appointment));
+    return takenTimeSlotForStaff;
   };
 
   async createCustomerFromAppointmentDetails(req, res) {
@@ -366,6 +388,53 @@ class AppointmentController {
       req.params.id,
       updatedAppointment
     );
+
+    res.send(successMessage(MESSAGES.UPDATED, updatedAppointment));
+  };
+
+  updateQuote = async (req, res) => {
+    const { startTime } = req.body;
+    const { appointmentId } = req.params;
+
+    const appointment = await appointmentService.getAppointmentById(
+      appointmentId
+    );
+
+    let timeOfCompletion = 8;
+
+    if (appointment.appointmentType === "auto") {
+      const { serviceDetails } = appointment.carDetails;
+
+      const { serviceIds } =
+        appointmentService.getServiceIdsAndfilmQualityIds(serviceDetails);
+
+      const services = await serviceServices.getMultipleServices(
+        serviceIds,
+        true
+      );
+
+      timeOfCompletion =
+        appointmentService.calculateTotalTimeOfCompletion(services);
+    }
+
+    const endTime = appointmentService.calculateEndTime(
+      startTime,
+      timeOfCompletion
+    );
+
+    const takenTimeSlotForStaff = await this.checkAndUpdateTakenTimeSlot(
+      startTime,
+      timeOfCompletion,
+      res
+    );
+
+    if (!takenTimeSlotForStaff) return;
+
+    appointment.staffId = takenTimeSlotForStaff.staffId;
+    appointment.startTime = startTime;
+    appointment.endTime = endTime;
+
+    const updatedAppointment = await appointment.save();
 
     res.send(successMessage(MESSAGES.UPDATED, updatedAppointment));
   };
