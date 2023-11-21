@@ -41,6 +41,9 @@ const staffDetailsSchema = new mongoose.Schema({
     type: Number,
     min: 1,
   },
+  mostRecentScannedTime: {
+    type: Date,
+  },
   totalEarning: {
     type: Number,
     default: 0,

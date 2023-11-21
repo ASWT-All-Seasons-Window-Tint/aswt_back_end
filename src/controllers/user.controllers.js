@@ -252,8 +252,16 @@ class UserController {
     user.resetToken = token;
     await user.save();
 
+    const url = process.env.clientUrl;
+    const link = `${url}/?token=${token}`;
+    const { firstName, email: receiversEmail } = user;
+
     transporter.sendMail(
-      mailOptions(user.email, user.firstName, token),
+      mailOptions({
+        receiversEmail,
+        firstName,
+        link,
+      }),
       (error, info) => {
         if (error) {
           return "Error occurred:", error;

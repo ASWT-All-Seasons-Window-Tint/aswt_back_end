@@ -1,10 +1,8 @@
 const express = require("express");
 const auth = require("../middleware/auth.middleware");
 const appointmentControllers = require("../controllers/appointment.controllers");
-const freeTimeSlotControllers = require("../controllers/freeTimeSlot.controllers");
 const router = express.Router();
 const validateMiddleware = require("../middleware/validate.middleware");
-const receptionistMiddleware = require("../middleware/receptionist.middleware");
 const { joiValidators } = require("../model/appointment.model");
 const validateTimeslotsMiddleware = require("../middleware/validateTimeslots.middleware");
 const takenTimeslotsControllers = require("../controllers/takenTimeslots.controllers");
@@ -12,8 +10,10 @@ const validateObjectId = require("../middleware/validateObjectId.middleware");
 const asyncMiddleware = require("../middleware/async.middleware");
 const roleBaseAuthMiddleware = require("../middleware/roleBaseAuth.middleware.");
 const validDateParamsMiddleware = require("../middleware/validDateParams.middleware");
+const validateObjectIdWithXargs = require("../middleware/validateObjectIdWithXArg.middleware");
 
-const { validate, validateGetTakenTimeslots } = joiValidators;
+const { validate, validateGetTakenTimeslots, validateUpdateQuote } =
+  joiValidators;
 
 router.post(
   "/",
@@ -73,6 +73,16 @@ router.put(
   auth,
   roleBaseAuthMiddleware(["receptionist", "admin"]),
   asyncMiddleware(takenTimeslotsControllers.clearOutAppointment)
+);
+
+router.put(
+  "/quote/:appointmentId",
+  validateObjectIdWithXargs(["appointmentId"]),
+  auth,
+  roleBaseAuthMiddleware(["receptionist", "admin"]),
+  validateMiddleware(validateUpdateQuote),
+  validateTimeslotsMiddleware,
+  asyncMiddleware(appointmentControllers.updateQuote)
 );
 
 router.put(

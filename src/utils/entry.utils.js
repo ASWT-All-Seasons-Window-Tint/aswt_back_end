@@ -569,6 +569,8 @@ class EntryUtils {
       porterId,
       waitingList,
       isFromAppointment,
+      startDate,
+      endDate,
     } = req.params;
     const filterArguments = [entryId, staffId, customerId, date];
 
@@ -584,6 +586,8 @@ class EntryUtils {
 
     if (range) {
       const { startDate, endDate } = range;
+      filterArguments.push(startDate, endDate, vin);
+    } else if (startDate && endDate) {
       filterArguments.push(startDate, endDate, vin);
     } else {
       filterArguments.push(undefined, undefined, vin);
@@ -647,7 +651,9 @@ class EntryUtils {
     this.getJobCount(entries, monthCounts, "month");
     this.getJobCount(entries, dayCounts, "dayOfWeek");
 
-    return { dayCounts, monthCounts };
+    const totalJobCount = this.getTotalJobCount(dayCounts);
+
+    return { dayCounts, monthCounts, totalJobCount };
   };
 
   getJobCount(entries, counts, period) {
@@ -656,6 +662,18 @@ class EntryUtils {
         counts[car[period]]++;
       });
     });
+  }
+
+  getTotalJobCount(obj) {
+    let total = 0;
+
+    for (let day in obj) {
+      if (obj.hasOwnProperty(day)) {
+        total += obj[day];
+      }
+    }
+
+    return total;
   }
 
   test = ({ staffId }) => {

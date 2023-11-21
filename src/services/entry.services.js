@@ -4,15 +4,10 @@ const serviceServices = require("./service.services");
 const { DATE, errorMessage } = require("../common/constants.common");
 const { getNewAccessToken } = require("../utils/getNewAccessToken.utils");
 const getWebhookDataUtils = require("../utils/getWebhookData.utils");
-const {
-  pipeline,
-  pipelineForCustomerIdAndVin,
-  test,
-} = require("../utils/entry.utils");
-const { validMonthNames } = require("../common/constants.common");
-const newDateUtils = require("../utils/newDate.utils");
-const { carDetailsProperties, entryProperties } =
-  require("../model/entry.model").joiValidator;
+const { pipeline } = require("../utils/entry.utils");
+const { carDetailsProperties } = require("../model/entry.model").joiValidator;
+const { isIncentiveActive } = require("./incentive.services");
+const notificationServices = require("./notification.services");
 
 class EntryService {
   getCarsThatHasNotBeenPickedUp(carDetails) {
@@ -415,7 +410,7 @@ class EntryService {
     return numberOfCarsAdded;
   }
 
-  getPriceForService = (services, customerId, category) => {
+  getPriceForService = (services, customerId, category, lineId) => {
     const lowerCaseCategory = category.toLowerCase();
     // To check if customer has a dealership price
     const dealershipPrices = services.filter((service) =>
@@ -427,34 +422,99 @@ class EntryService {
       .filter(
         (service) => !dealershipPrices.some((dp) => dp._id === service._id) // Default prices for services without dealership
       )
-      .map((service) => ({
-        dealership: false,
-        serviceName: service.name,
-        price: service.defaultPrices.find(
-          (p) => p.category === lowerCaseCategory
-        ).price,
-        serviceType: service.type,
-        serviceId: service._id,
-        qbId: service.qbId,
-      }));
+      .map((service) => {
+        lineId++;
+
+        return {
+          dealership: false,
+          serviceName: service.name,
+          price: service.defaultPrices.find(
+            (p) => p.category === lowerCaseCategory
+          ).price,
+          serviceType: service.type,
+          serviceId: service._id,
+          qbId: service.qbId,
+          lineId,
+        };
+      });
 
     const priceBreakdown = [
-      ...dealershipPrices.map((service) => ({
-        dealership: true,
-        serviceName: service.name,
-        price: service.dealershipPrices.find(
-          (p) => p.customerId.toString() === customerId.toString()
-        ).price,
-        serviceType: service.type,
-        serviceId: service._id,
-        qbId: service.qbId,
-      })),
+      ...dealershipPrices.map((service) => {
+        lineId++;
+
+        return {
+          dealership: true,
+          serviceName: service.name,
+          price: service.dealershipPrices.find(
+            (p) => p.customerId.toString() === customerId.toString()
+          ).price,
+          serviceType: service.type,
+          serviceId: service._id,
+          qbId: service.qbId,
+          lineId,
+        };
+      }),
       ...defaultPrices,
     ];
 
     const price = this.calculateServicePriceDoneforCar(priceBreakdown);
 
     return { price, priceBreakdown, lowerCaseCategory };
+  };
+
+  getCarBylineIdAndEntryId(entryId, lineId) {
+    return Entry.aggregate([
+      {
+        $match: {
+          _id: new mongoose.Types.ObjectId(entryId),
+        },
+      },
+      {
+        $unwind: "$invoice.carDetails",
+      },
+      {
+        $unwind: "$invoice.carDetails.priceBreakdown",
+      },
+      {
+        $match: {
+          "invoice.carDetails.priceBreakdown.lineId": lineId,
+        },
+      },
+    ]);
+  }
+
+  getCompleteServiceIds(carWithVin) {
+    const porterServiceIds = carWithVin.serviceIds.map((id) =>
+      id ? id.toString() : id
+    );
+    const staffServiceIds = carWithVin.servicesDone
+      ? carWithVin.servicesDone.map((serviceDone) => {
+          if (serviceDone) {
+            const serviceId = serviceDone.serviceId.toString();
+            return serviceId;
+          }
+        })
+      : [];
+
+    const validServiceIds = [...porterServiceIds, ...staffServiceIds];
+
+    return validServiceIds;
+  }
+
+  modifyCarWithVinPrice = (carWithVin, serviceId, price) => {
+    let priceBreakdown = carWithVin.priceBreakdown;
+
+    const { servicePrice, servicePriceIndex } = this.getServicePrice(
+      priceBreakdown,
+      serviceId
+    );
+
+    servicePrice.price = parseFloat(price);
+    priceBreakdown[servicePriceIndex] = servicePrice;
+
+    carWithVin.price = this.calculateServicePriceDoneforCar(priceBreakdown);
+
+    return servicePrice;
   };
 
   calculateServicePriceDoneforCar(priceBreakdown) {
@@ -491,7 +551,20 @@ class EntryService {
       { new: true }
     );
   }
+  sumPriceBreakdownLength(entry) {
+    let totalPriceBreakdownLength = 0;
 
+    // Check if entry has carDetails
+    // Loop through each carDetail
+    for (const carDetail of entry.invoice.carDetails) {
+      // Check if carDetail has priceBreakdown array
+      if (carDetail.priceBreakdown && Array.isArray(carDetail.priceBreakdown)) {
+        totalPriceBreakdownLength += carDetail.priceBreakdown.length;
+      }
+    }
+
+    return totalPriceBreakdownLength;
+  }
   getCarDoneByStaff(entry, req, vin) {
     const { carDetails } = entry.invoice;
 
@@ -847,6 +920,19 @@ class EntryService {
     if (serviceIds.length < 1) {
       carWithVin.waitingList = false;
       carWithVin.isCompleted = true;
+
+      const concernedStaffIds = [carWithVin.porterId];
+      const vin = carWithVin.vin;
+
+      const body = {
+        title: `Service completed for Car`,
+        concernedStaffIds,
+        body: `The tinting service for the car with the VIN (${vin}) has been completed.`,
+        type: `Completed service`,
+        vin,
+      };
+
+      await notificationServices.createNotification(body);
     }
 
     carWithVin.serviceIds = serviceIds;
@@ -897,13 +983,15 @@ class EntryService {
   }
 
   async checkDuplicateEntry(customerId, vin) {
+    const { today, tomorrow } = this.getTodayAndTomorrow();
     return await Entry.findOne({
       $and: [
         { customerId },
         { "invoice.carDetails.vin": vin },
         {
           entryDate: {
-            $gte: DATE.yesterday,
+            $gte: today,
+            $lte: tomorrow,
           },
         },
       ],
