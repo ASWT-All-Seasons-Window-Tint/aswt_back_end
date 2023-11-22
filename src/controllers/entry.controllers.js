@@ -733,12 +733,16 @@ class EntryController {
     const waitingList = carWithVin.waitingList;
     const isServiceIdsEmpty = carWithVin.serviceIds.length < 1;
 
-    const { priceBreakdown: newPriceBreakdown } =
-      entryService.getPriceForService(
-        [service],
-        entry.customerId,
-        carWithVin.category
-      );
+    let lineId = entryService.sumPriceBreakdownLength(entry);
+
+    const { priceBreakdown: newPriceBreakdown } = !entry.isFromAppointment
+      ? entryService.getPriceForService(
+          [service],
+          entry.customerId,
+          carWithVin.category,
+          lineId
+        )
+      : { priceBreakdown: [] };
 
     const priceBreakdown = carWithVin.priceBreakdown;
     carWithVin.priceBreakdown = [...priceBreakdown, ...newPriceBreakdown];
