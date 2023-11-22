@@ -43,8 +43,7 @@ router.get(
 
 router.get(
   "/appointmentId/:id",
-  auth,
-  roleBaseAuthMiddleware(["receptionist", "admin"]),
+  validateObjectId,
   asyncMiddleware(appointmentControllers.getAppointmentById)
 );
 
