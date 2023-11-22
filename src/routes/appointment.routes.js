@@ -77,8 +77,6 @@ router.put(
 router.put(
   "/quote/:appointmentId",
   validateObjectIdWithXargs(["appointmentId"]),
-  auth,
-  roleBaseAuthMiddleware(["receptionist", "admin"]),
   validateMiddleware(validateUpdateQuote),
   validateTimeslotsMiddleware,
   asyncMiddleware(appointmentControllers.updateQuote)
