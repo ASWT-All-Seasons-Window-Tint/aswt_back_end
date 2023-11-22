@@ -350,7 +350,7 @@ class EntryController {
         concernedStaffIds,
         body: link,
         type: locationType,
-        vin,
+        carId: carWithVin._id,
       };
 
       await notificationService.createNotification(body);
@@ -777,6 +777,26 @@ class EntryController {
         await userService.updateStaffTotalEarnings(req.user, mongoSession);
 
       const entryId = entry._id;
+
+      if (updatedCarWithVIn.isCompleted) {
+        const concernedStaffIds = [carWithVin.porterId];
+        const vin = carWithVin.vin;
+
+        const body = {
+          title: `Service completed for Car`,
+          concernedStaffIds,
+          body: `The tinting service for the car with the VIN (${vin}) has been completed.`,
+          type: `Completed service`,
+          vin,
+        };
+
+        const carId = carWithVin._id;
+
+        await Promise.all([
+          notificationService.createNotification(body, mongoSession),
+          notificationService.removeNotificationForStaff(carId, mongoSession),
+        ]);
+      }
 
       if (!entry.invoice.isAutoSentScheduled) {
         const delay = this.getDelay();

@@ -18,9 +18,21 @@ class NotificationController {
     const { userId } = req.params;
 
     const notificationsForStaff =
-      await notificationService.getNotificationsForStaff(userId);
+      await notificationService.getAllNotificationsForUser({ userId });
 
     res.send(successMessage(MESSAGES.FETCHED, notificationsForStaff));
+  }
+
+  async getVehicleInQueues(req, res) {
+    const { userId } = req.params;
+
+    const vehicleInQueues =
+      await notificationService.getAllNotificationsForUser({
+        userId,
+        vehicleQueue: true,
+      });
+
+    res.send(successMessage(MESSAGES.FETCHED, vehicleInQueues));
   }
 
   async getLatestNotificationForStaff(req, res) {

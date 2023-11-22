@@ -384,6 +384,7 @@ exports.joiValidator = {
   validateModifyServiceDone,
   validateAddCarGeolocation,
   validateModifyPriceForSentInvoice,
+  carDetails: carDetails[0],
   carDetailsProperties: Object.keys(carDetails[0]),
   entryProperties: Object.keys(entry),
   paymentDetailsProperties: Object.keys(entry.invoice.paymentDetails),

@@ -24,6 +24,13 @@ router.get(
 );
 
 router.get(
+  "/vehicle-in-queue/:userId",
+  auth,
+  validateObjectIdWithXArg(["userId"]),
+  asyncMiddleware(notificationController.getVehicleInQueues)
+);
+
+router.get(
   "/has-user-read-notification/user/:userId/notification/:notificationId",
   auth,
   admin,

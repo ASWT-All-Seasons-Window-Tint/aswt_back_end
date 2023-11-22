@@ -17,9 +17,8 @@ const notificationSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    vin: {
-      type: String,
-      required: true,
+    carId: {
+      type: mongoose.Schema.Types.ObjectId,
     },
     isReadBy: {
       type: [mongoose.Schema.Types.ObjectId],
@@ -29,6 +28,10 @@ const notificationSchema = new mongoose.Schema(
       type: [mongoose.Schema.Types.ObjectId],
       ref: User,
       required: true,
+    },
+    isDeleted: {
+      type: Boolean,
+      default: undefined,
     },
   },
   { toJSON: { virtuals: true } },
