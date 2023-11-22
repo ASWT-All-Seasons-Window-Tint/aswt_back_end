@@ -400,6 +400,8 @@ class AppointmentController {
       appointmentId
     );
 
+    if (!appointment) return res.status(404).send(errorMessage("appointment"));
+
     let timeOfCompletion = 8;
 
     if (appointment.appointmentType === "auto") {
