@@ -48,6 +48,13 @@ class AppointmentController {
     if (appointmentType.toLowerCase() === "auto") {
       const { serviceDetails, category } = carDetails;
 
+      for (const serviceDetail of serviceDetails)
+        if (!serviceDetail.serviceId)
+          return badReqResponse(res, "Service ID is required");
+
+      if (serviceDetails.length < 1)
+        return badReqResponse(res, "Service details array should not be empty");
+
       const { serviceIds, filmQualityIds } =
         appointmentService.getServiceIdsAndfilmQualityIds(serviceDetails); //Auto
 
