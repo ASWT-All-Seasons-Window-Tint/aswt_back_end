@@ -66,7 +66,7 @@ class AppointmentService {
       ? appointmentUrl.auto
       : appointmentUrl.commercial;
 
-    const link = `${url}/?appointmentId=${appointmentId}`;
+    const link = `${url}/${appointmentId}`;
     const customerNeeds = autoAppointmentType ? "vehicle" : "home";
 
     transporter.sendMail(
@@ -80,6 +80,7 @@ class AppointmentService {
       ),
       (error, info) => {
         if (error) {
+          console.log(error);
           return "Error occurred:", error;
         } else {
           console.log("Email sent successfully");
