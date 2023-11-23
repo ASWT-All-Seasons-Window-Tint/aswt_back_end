@@ -502,6 +502,18 @@ class EntryService {
     return validServiceIds;
   }
 
+  addLineId(entry) {
+    let lineId = 0;
+
+    entry.invoice.carDetails.map((car) => {
+      car.priceBreakdown.map((price) => {
+        lineId++;
+
+        price.lineId = lineId;
+      });
+    });
+  }
+
   modifyCarWithVinPrice = (carWithVin, serviceId, price) => {
     let priceBreakdown = carWithVin.priceBreakdown;
 
@@ -652,11 +664,11 @@ class EntryService {
     const dLat = (lat2 - lat1) * (Math.PI / 180);
     const dLon = (lon2 - lon1) * (Math.PI / 180);
     const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(lat1 * (Math.PI / 180)) *
-        Math.cos(lat2 * (Math.PI / 180)) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) + //ab
+      Math.cos(lat1 * (Math.PI / 180)) * //cd
+        Math.cos(lat2 * (Math.PI / 180)) * //ef
+        Math.sin(dLon / 2) * //gh
+        Math.sin(dLon / 2); //ij
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     const distance = R * c;
 

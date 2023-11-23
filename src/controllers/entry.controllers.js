@@ -20,6 +20,7 @@ const {
 const { default: mongoose } = require("mongoose");
 const mongoTransactionUtils = require("../utils/mongoTransaction.utils");
 const entryServices = require("../services/entry.services");
+const invoiceControllers = require("./invoice.controllers");
 
 const redisConnection = { url: process.env.redisUrl };
 const entryQueue = new Queue("reminders", redisConnection);
@@ -907,11 +908,14 @@ class EntryController {
     res.send(successMessage(MESSAGES.UPDATED, carWithoutPrice));
   }
 
-  async modifyPrice(req, res, fromInvoice) {
+  async modifyPrice(req, res) {
     const { serviceId, price, vin, carId } = req.body;
 
-    if ([serviceId, price, vin].includes(undefined) && !fromInvoice)
-      return badReqResponse(res, "All of [serviceId, price, vin] are required");
+    if ([serviceId, price, carId].includes(undefined) && !fromInvoice)
+      return badReqResponse(
+        res,
+        "All of [serviceId, price, carId] are required"
+      );
 
     const [[entry], service] = await Promise.all([
       entryService.getEntries({ entryId: req.params.id }),
@@ -922,7 +926,6 @@ class EntryController {
 
     const { carWithVin, carIndex } = entryService.getCarByVin({
       entry,
-      vin,
       carId,
     });
     if (!carWithVin || carIndex < 0) {
@@ -930,6 +933,10 @@ class EntryController {
         ? "Car with VIN number not found in invoice."
         : "Car with ID not found in invoice.";
       return notFoundResponse(res, errorResponse);
+    }
+
+    if (!carWithVin.priceBreakdown[0].lineId) {
+      entryService.addLineId(entry);
     }
 
     const validServiceIds = entryService.getCompleteServiceIds(carWithVin);
@@ -941,15 +948,7 @@ class EntryController {
       );
     }
 
-    if (!entry.isActive && !fromInvoice)
-      return jsonResponse(
-        res,
-        401,
-        false,
-        "Altering the price of a sent invoice is not allowed."
-      );
-
-    if (!entryService.carWasAddedRecently(carWithVin) && !fromInvoice) {
+    if (!entryService.carWasAddedRecently(carWithVin) && !entry.invoice.sent) {
       return res.status(401).send({
         message:
           "Modifying car details is not allowed beyond 24 hours after adding.",
@@ -963,6 +962,17 @@ class EntryController {
       price
     );
 
+    if (entry.invoice.sent) {
+      const { statusCode, message } =
+        await invoiceControllers.updateInvoiceById(
+          price,
+          entry,
+          servicePrice.lineId
+        );
+
+      if (statusCode) return jsonResponse(res, statusCode, false, message);
+    }
+
     entry.invoice.carDetails[carIndex] = carWithVin;
 
     const totalPrice = entryService.getTotalprice(entry.invoice);
@@ -975,9 +985,7 @@ class EntryController {
       true
     );
 
-    return fromInvoice
-      ? { servicePrice, updatedEntry }
-      : res.send(successMessage(MESSAGES.UPDATED, updatedEntry));
+    return res.send(successMessage(MESSAGES.UPDATED, updatedEntry));
   }
 
   //Delete entry account entirely from the database
