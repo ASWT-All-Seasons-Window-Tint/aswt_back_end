@@ -30,7 +30,6 @@ class NotificationService {
   }
 
   getAllNotificationsForUser = ({ userId, vehicleQueue }) => {
-    console.log(userId);
     const notificationPipeLine = [
       {
         $unwind: "$concernedStaffIds",
@@ -98,6 +97,27 @@ class NotificationService {
         },
       },
       {
+        $lookup: {
+          from: "entries",
+          let: {
+            carId: "$carId",
+          },
+          pipeline: [
+            {
+              $unwind: "$invoice.carDetails",
+            },
+            {
+              $match: {
+                $expr: {
+                  $eq: ["$invoice.carDetails._id", "$$carId"],
+                },
+              },
+            },
+          ],
+          as: "entry",
+        },
+      },
+      {
         $project: {
           _id: 1,
           title: 1,
@@ -111,6 +131,8 @@ class NotificationService {
               in: {
                 ...entryUtils.getCarDetailsField("$$car"),
                 serviceNames: entryUtils.serviceNames,
+                customerId: { $first: "$entry.customerId" },
+                customerName: { $first: "$entry.customerName" },
               },
             },
           },
