@@ -274,12 +274,14 @@ function validate(appointment) {
       category: Joi.string()
         .min(1)
         .valid(...validCarTypes),
-      serviceDetails: Joi.array().items(
-        Joi.object({
-          serviceId: Joi.objectId().required(),
-          filmQualityId: Joi.objectId(),
-        })
-      ),
+      serviceDetails: Joi.array()
+        .items(
+          Joi.object({
+            serviceId: Joi.objectId().required(),
+            filmQualityId: Joi.objectId(),
+          }).required()
+        )
+        .required(),
     }).when("appointmentType", {
       is: "auto",
       then: Joi.required(),
