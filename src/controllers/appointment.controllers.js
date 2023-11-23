@@ -107,6 +107,10 @@ class AppointmentController {
       if (residentialDetails.customerMeasurementAwareness)
         emailService = priceBreakdownArray.map((price) => price.serviceName);
 
+      if (!price) {
+        console.log(req.body);
+      }
+
       totalAmount = price;
 
       req.body.residentialDetails.priceBreakdown = priceBreakdownArray;
@@ -141,6 +145,10 @@ class AppointmentController {
     });
 
     console.log(totalAmount);
+
+    if (!totalAmount) {
+      console.log(req.body);
+    }
 
     appointmentService.sendEmailQuotaion(
       customerEmail,
