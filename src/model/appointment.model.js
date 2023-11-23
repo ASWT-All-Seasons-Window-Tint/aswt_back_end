@@ -86,6 +86,8 @@ const residentialDetailsSchema = new mongoose.Schema({
     },
     tintShade: {
       type: String,
+      minlength: 1,
+      maxlength: 255,
     },
     length: {
       type: Number,
@@ -286,7 +288,7 @@ function validate(appointment) {
     residentialDetails: Joi.object({
       customerMeasurementAwareness: Joi.boolean().required(),
       measurementDetails: Joi.object({
-        tintShade: Joi.string().min(3).max(255).required(),
+        tintShade: Joi.string().min(1).max(255).required(),
         unit: Joi.string()
           .valid(...validUnits)
           .required(),
