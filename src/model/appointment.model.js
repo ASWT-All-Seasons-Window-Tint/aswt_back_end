@@ -84,6 +84,9 @@ const residentialDetailsSchema = new mongoose.Schema({
       type: String,
       enum: validUnits,
     },
+    tintShade: {
+      type: String,
+    },
     length: {
       type: Number,
     },
@@ -123,6 +126,11 @@ const carDetailsSchema = new mongoose.Schema({
     type: String,
     minlength: 4,
     maxlength: 4,
+  },
+  tintShade: {
+    type: String,
+    minlength: 1,
+    maxlength: 255,
   },
   make: {
     type: String,
@@ -260,6 +268,7 @@ function validate(appointment) {
       year: Joi.string().min(4).max(4).required(),
       make: Joi.string().min(1).max(255).required(),
       model: Joi.string().min(1).max(255).required(),
+      tintShade: Joi.string().min(1).max(255).required(),
       category: Joi.string()
         .min(1)
         .valid(...validCarTypes),
@@ -277,6 +286,7 @@ function validate(appointment) {
     residentialDetails: Joi.object({
       customerMeasurementAwareness: Joi.boolean().required(),
       measurementDetails: Joi.object({
+        tintShade: Joi.string().min(3).max(255).required(),
         unit: Joi.string()
           .valid(...validUnits)
           .required(),
