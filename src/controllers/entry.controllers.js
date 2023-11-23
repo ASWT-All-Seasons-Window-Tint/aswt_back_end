@@ -787,16 +787,15 @@ class EntryController {
       if (updatedCarWithVIn.isCompleted) {
         const concernedStaffIds = [carWithVin.porterId];
         const vin = carWithVin.vin;
+        const carId = carWithVin._id;
 
         const body = {
           title: `Service completed for Car`,
           concernedStaffIds,
           body: `The tinting service for the car with the VIN (${vin}) has been completed.`,
           type: `Completed service`,
-          vin,
+          carId,
         };
-
-        const carId = carWithVin._id;
 
         await Promise.all([
           notificationService.createNotification(body, mongoSession),
