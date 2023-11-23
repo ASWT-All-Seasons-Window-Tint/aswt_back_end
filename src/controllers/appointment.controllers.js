@@ -140,6 +140,8 @@ class AppointmentController {
       body: req.body,
     });
 
+    console.log(totalAmount);
+
     appointmentService.sendEmailQuotaion(
       customerEmail,
       customerName,
