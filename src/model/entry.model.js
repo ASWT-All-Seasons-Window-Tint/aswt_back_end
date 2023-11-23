@@ -347,9 +347,10 @@ function validateAddCarGeolocation(entry) {
 }
 function validateModifyPrice(entry) {
   const schema = Joi.object({
-    vin: Joi.string().required(),
+    vin: Joi.string(),
     price: Joi.number().required(),
     serviceId: Joi.objectId().required(),
+    carId: Joi.objectId().required(),
   });
 
   return schema.validate(entry);

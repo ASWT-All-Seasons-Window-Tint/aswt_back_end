@@ -12,11 +12,39 @@ const userServices = require("../services/user.services");
 const serviceServices = require("../services/service.services");
 const { updateCache } = require("../utils/getOrSetCache.utils");
 const entryControllers = require("./entry.controllers");
+const estimateServices = require("../services/estimate.services");
+const getEstimatePdfUtils = require("../utils/getEstimatePdf.utils");
 
 class DepartmentController {
+  async createEstimate(appointment, appointmentType) {
+    const qbo = await initializeQbUtils();
+    const { invoice: estimateData } = convertEntryQbInvoiceReqBody(
+      appointment,
+      appointmentType
+    );
+
+    const {
+      AllowIPNPayment,
+      AllowOnlineACHPayment,
+      AllowOnlineCreditCardPayment,
+      AllowOnlinePayment,
+      ...restEstimateData
+    } = estimateData;
+
+    const { estimate } = await estimateServices.createEstimateOnQuickBooks(
+      qbo,
+      restEstimateData
+    );
+
+    const estimateId = estimate.Id;
+
+    const pdfBuffer = await getEstimatePdfUtils(estimateId);
+    return pdfBuffer;
+  }
+
   async getInvoiceById(req, res) {
     const { invoiceId } = req.params;
-    const qbo = initializeQbUtils();
+    const qbo = await initializeQbUtils();
 
     const { data: invoice, error } =
       await invoiceService.getOrSetInvoiceOnCache(invoiceId, qbo);
@@ -61,7 +89,6 @@ class DepartmentController {
           if (newEmail !== email) customerEmail += `, ${email}`;
     }
 
-    console.log(customerEmail);
     const { invoice } = await invoiceService.createInvoiceOnQuickBooks(
       qbo,
       invoiceData,
@@ -96,25 +123,32 @@ class DepartmentController {
     invoiceService.sendInvoicePdf(qbo, invoiceId, customerEmail);
   }
 
-  async updateInvoiceById(req, res) {
-    const { price } = req.body;
+  async updateInvoiceById(price, entry, lineId) {
     const qbo = await initializeQbUtils();
 
-    const results = await entryControllers.modifyPrice(req, res, true);
+    // const entry = await entryControllers.modifyPrice(req, res, true);
 
-    if (results.statusCode) return;
+    // if (entry.statusCode) return;
+    const errorResponse = {};
 
-    const { qbId: invoiceId } = results.updatedEntry.invoice;
-    const { lineId } = results.servicePrice;
+    const { qbId: invoiceId } = entry.invoice;
 
-    if (!invoiceId)
-      return jsonResponse(res, 400, false, "This invoice has not been sent");
+    if (!invoiceId) {
+      errorResponse.statusCode = 404;
+      errorResponse.message = "This invoice has not been sent";
+
+      return errorResponse;
+    }
 
     const { data: invoice, error } =
       await invoiceService.getOrSetInvoiceOnCache(invoiceId, qbo);
 
-    if (error)
-      return jsonResponse(res, 404, false, error.Fault.Error[0].Detail);
+    if (error) {
+      errorResponse.statusCode = 404;
+      errorResponse.message = error.Fault.Error[0].Detail;
+
+      return errorResponse;
+    }
 
     const { SyncToken } = invoice;
 
@@ -142,7 +176,8 @@ class DepartmentController {
 
     await invoiceService.sendInvoicePdf(qbo, invoiceId);
 
-    return res.send(successMessage(MESSAGES.UPDATED, results.updatedEntry));
+    return errorResponse;
+    //return res.send(successMessage(MESSAGES.UPDATED, entry.updatedEntry));
   }
 }
 
