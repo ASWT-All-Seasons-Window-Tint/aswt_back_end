@@ -468,6 +468,12 @@ class EntryController {
     res.send(successMessage(MESSAGES.FETCHED, carDetails));
   }
 
+  async getDrivingSpeedForPorter(req, res) {
+    const entries = await entryService.getDrivingSpeedForPorter();
+
+    res.send(successMessage(MESSAGES.FETCHED, entries));
+  }
+
   async getAllAppointmentEntriesPerCustomerId(req, res) {
     req.params.isFromAppointment = true;
 
@@ -769,6 +775,8 @@ class EntryController {
     if (!entry.invoice.createdBy) entry.invoice.createdBy = staffId;
 
     entry.invoice.carDetails[carIndex] = updatedCarWithVIn;
+
+    if (!carWithVin.entryDate) carWithVin.entryDate = new Date();
 
     const mongoSession = await mongoose.startSession();
 

@@ -151,8 +151,6 @@ class AppointmentController {
       body: req.body,
     });
 
-    console.log(totalAmount);
-
     if (!totalAmount) {
       console.log(req.body);
     }
