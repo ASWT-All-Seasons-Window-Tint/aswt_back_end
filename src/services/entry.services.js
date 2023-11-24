@@ -5,7 +5,8 @@ const { DATE, errorMessage } = require("../common/constants.common");
 const { getNewAccessToken } = require("../utils/getNewAccessToken.utils");
 const getWebhookDataUtils = require("../utils/getWebhookData.utils");
 const { pipeline } = require("../utils/entry.utils");
-const { carDetailsProperties } = require("../model/entry.model").joiValidator;
+const { carDetailsProperties, invoiceProperties, entryProperties } =
+  require("../model/entry.model").joiValidator;
 const { isIncentiveActive } = require("./incentive.services");
 const notificationServices = require("./notification.services");
 const mongoTransactionUtils = require("../utils/mongoTransaction.utils");
@@ -609,6 +610,378 @@ class EntryService {
     return { carIndex, carAddedByCustomer };
   }
 
+  getDrivingSpeedForPorter = () => {
+    return Entry.aggregate([
+      {
+        $unwind: "$invoice.carDetails",
+      },
+      {
+        $match: {
+          "invoice.carDetails.geoLocations.locationType": "TakenToShop",
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "invoice.carDetails.porterId",
+          foreignField: "_id",
+          as: "user",
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          ...this.getEntryField(),
+          invoice: {
+            ...this.getInvoiceField("$invoice"),
+            carDetails: {
+              _id: "$invoice.carDetails._id",
+              ...this.getCarDetailsField("$invoice.carDetails"),
+              porterName: {
+                $concat: [
+                  { $first: "$user.firstName" },
+                  " ",
+                  { $first: "$user.lastName" },
+                ],
+              },
+              pickUpLocation: {
+                $first: {
+                  $filter: {
+                    input: "$invoice.carDetails.geoLocations",
+                    as: "geolocation",
+                    cond: {
+                      $eq: [
+                        "$$geolocation.locationType",
+                        "PickupFromDealership",
+                      ],
+                    },
+                  },
+                },
+              },
+              takenToShopLocation: {
+                $first: {
+                  $filter: {
+                    input: "$invoice.carDetails.geoLocations",
+                    as: "geolocation",
+                    cond: {
+                      $eq: ["$$geolocation.locationType", "TakenToShop"],
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          ...this.getEntryField(),
+          invoice: {
+            ...this.getInvoiceField("$invoice"),
+            carDetails: {
+              _id: "$invoice.carDetails._id",
+              ...this.getCarDetailsField("$invoice.carDetails"),
+              porterName: "$invoice.carDetails.porterName",
+              distance: {
+                $round: [
+                  {
+                    $let: {
+                      vars: {
+                        earthRadius: 6371,
+                        lat2: "$invoice.carDetails.pickUpLocation.coordinates.latitude",
+                        lat1: "$invoice.carDetails.takenToShopLocation.coordinates.latitude",
+                        dLat: {
+                          $multiply: [
+                            {
+                              $subtract: [
+                                "$invoice.carDetails.pickUpLocation.coordinates.latitude",
+                                "$invoice.carDetails.takenToShopLocation.coordinates.latitude",
+                              ],
+                            },
+                            Math.PI / 180,
+                          ],
+                        },
+                        dLong: {
+                          $multiply: [
+                            {
+                              $subtract: [
+                                "$invoice.carDetails.pickUpLocation.coordinates.longitude",
+                                "$invoice.carDetails.takenToShopLocation.coordinates.longitude",
+                              ],
+                            },
+                            Math.PI / 180,
+                          ],
+                        },
+                      },
+                      in: {
+                        $let: {
+                          vars: {
+                            ab: {
+                              $multiply: [
+                                {
+                                  $sin: {
+                                    $divide: ["$$dLat", 2],
+                                  },
+                                },
+                                {
+                                  $sin: {
+                                    $divide: ["$$dLat", 2],
+                                  },
+                                },
+                              ],
+                            },
+                            de: {
+                              $cos: {
+                                $multiply: ["$$lat1", Math.PI / 180],
+                              },
+                            },
+                            fg: {
+                              $cos: {
+                                $multiply: ["$$lat2", Math.PI / 180],
+                              },
+                            },
+                            hi: {
+                              $sin: {
+                                $divide: ["$$dLong", 2],
+                              },
+                            },
+                            kl: {
+                              $sin: {
+                                $divide: ["$$dLong", 2],
+                              },
+                            },
+                          },
+                          in: {
+                            $let: {
+                              vars: {
+                                a: {
+                                  $add: [
+                                    "$$ab",
+                                    {
+                                      $multiply: [
+                                        "$$de",
+                                        "$$fg",
+                                        "$$hi",
+                                        "$$kl",
+                                      ],
+                                    },
+                                  ],
+                                },
+                              },
+                              in: {
+                                $let: {
+                                  vars: {
+                                    c: {
+                                      $multiply: [
+                                        {
+                                          $atan2: [
+                                            {
+                                              $sqrt: "$$a",
+                                            },
+                                            {
+                                              $sqrt: {
+                                                $subtract: [1, "$$a"],
+                                              },
+                                            },
+                                          ],
+                                        },
+                                        2,
+                                      ],
+                                    },
+                                  },
+                                  in: {
+                                    $multiply: ["$$earthRadius", "$$c"],
+                                  },
+                                },
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                  2,
+                ],
+              },
+              drivingTime: {
+                $dateToString: {
+                  format: "%Hh:%Mm:%Ss",
+                  date: {
+                    $toDate: {
+                      $subtract: [
+                        "$invoice.carDetails.takenToShopLocation.timestamp",
+                        "$invoice.carDetails.pickUpLocation.timestamp",
+                      ],
+                    },
+                  },
+                },
+              },
+              hourTime: {
+                $divide: [
+                  {
+                    $subtract: [
+                      "$invoice.carDetails.takenToShopLocation.timestamp",
+                      "$invoice.carDetails.pickUpLocation.timestamp",
+                    ],
+                  },
+                  3600000,
+                ],
+              },
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          ...this.getEntryField(),
+          invoice: {
+            ...this.getInvoiceField("$invoice"),
+            carDetails: {
+              _id: "$invoice.carDetails._id",
+              ...this.getCarDetailsField("$invoice.carDetails"),
+              porterName: "$invoice.carDetails.porterName",
+              distance: "$invoice.carDetails.distance",
+              drivingTime: "$invoice.carDetails.drivingTime",
+              drivingSpeedPerHour: {
+                $round: [
+                  {
+                    $divide: [
+                      "$invoice.carDetails.distance",
+                      "$invoice.carDetails.hourTime",
+                    ],
+                  },
+                  2,
+                ],
+              },
+            },
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: "services",
+          localField: "invoice.carDetails.servicesDone.serviceId",
+          foreignField: "_id",
+          as: "servicesDet",
+        },
+      },
+      {
+        $lookup: {
+          from: "services",
+          localField: "invoice.carDetails.serviceIds",
+          foreignField: "_id",
+          as: "services",
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "invoice.carDetails.servicesDone.staffId",
+          foreignField: "_id",
+          as: "staffs",
+        },
+      },
+      {
+        $addFields: {
+          "invoice.carDetails.servicesLeftDetails": {
+            $map: {
+              input: "$services",
+              as: "service",
+              in: {
+                serviceName: "$$service.name",
+                serviceType: "$$service.type",
+              },
+            },
+          },
+        },
+      },
+      {
+        $addFields: {
+          "invoice.carDetails.servicesDoneDetails": {
+            $map: {
+              input: {
+                $map: {
+                  input: "$invoice.carDetails.servicesDone",
+                  as: "serviceDone",
+                  in: {
+                    $mergeObjects: [
+                      {
+                        $first: {
+                          $filter: {
+                            input: "$servicesDet",
+                            as: "serviceDet",
+                            cond: {
+                              $eq: [
+                                "$$serviceDone.serviceId",
+                                "$$serviceDet._id",
+                              ],
+                            },
+                          },
+                        },
+                      },
+                      "$$serviceDone",
+                    ],
+                  },
+                },
+              },
+              as: "serviceDet",
+              in: {
+                serviceName: "$$serviceDet.name",
+                serviceType: "$$serviceDet.type",
+                staffName: {
+                  $first: {
+                    $map: {
+                      input: {
+                        $filter: {
+                          input: "$staffs",
+                          as: "staff",
+                          cond: {
+                            $eq: ["$$staff._id", "$$serviceDet.staffId"],
+                          },
+                        },
+                      },
+                      as: "staffDetails",
+                      in: {
+                        $concat: [
+                          "$$staffDetails.firstName",
+                          " ",
+                          "$$staffDetails.lastName",
+                        ],
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      {
+        $group: {
+          _id: "$_id",
+          ...this.getEntryField(true),
+          invoice: {
+            $first: "$invoice",
+          },
+          carDetails: {
+            $push: "$invoice.carDetails",
+          },
+        },
+      },
+      {
+        $project: {
+          ...this.getEntryField(),
+          invoice: {
+            ...this.getInvoiceField("$invoice"),
+            carDetails: "$carDetails",
+          },
+        },
+      },
+    ]);
+  };
+
   getCarByVin({ entry, vin, carId }) {
     const { carDetails } = entry.invoice;
 
@@ -825,6 +1198,32 @@ class EntryService {
     }, {});
 
     return carDetailsField;
+  }
+
+  getInvoiceField(field) {
+    const invoiceField = invoiceProperties.reduce((result, property) => {
+      if (property !== "carDetails") result[property] = `${field}.${property}`;
+
+      return result;
+    }, {});
+
+    return invoiceField;
+  }
+  getEntryField(field) {
+    const entryField = !field
+      ? entryProperties.reduce((result, property) => {
+          if (property !== "carDetails") result[property] = 1;
+
+          return result;
+        }, {})
+      : entryProperties.reduce((result, property) => {
+          if (property !== "carDetails")
+            result[property] = { $first: `$${property}` };
+
+          return result;
+        }, {});
+
+    return entryField;
   }
 
   getCarLocationByType(car, locationType) {

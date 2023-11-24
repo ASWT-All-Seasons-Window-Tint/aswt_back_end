@@ -388,6 +388,7 @@ exports.joiValidator = {
   carDetails: carDetails[0],
   carDetailsProperties: Object.keys(carDetails[0]),
   entryProperties: Object.keys(entry),
+  invoiceProperties: Object.keys(entry.invoice),
   paymentDetailsProperties: Object.keys(entry.invoice.paymentDetails),
   validLocationType,
 };

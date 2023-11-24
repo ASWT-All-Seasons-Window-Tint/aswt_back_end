@@ -46,6 +46,13 @@ router.get(
 );
 
 router.get(
+  "/driving-speed",
+  auth,
+  admin,
+  asyncMiddleware(entryController.getDrivingSpeedForPorter)
+);
+
+router.get(
   "/:id",
   auth,
   validateObjectId,
