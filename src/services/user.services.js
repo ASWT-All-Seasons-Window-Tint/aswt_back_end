@@ -332,23 +332,87 @@ class UserService {
     const staffFromDb = await User.findById(staff._id).session(session);
     staff = staffFromDb;
 
+    const date = new Date();
+
     const staffEarningRate = staff.staffDetails.earningRate;
+    const amountToBePaid = amountToBeAdded
+      ? amountToBeAdded + staffEarningRate
+      : staffEarningRate;
+
+    const earningHistory = {
+      timestamp: date,
+      amountEarned: amountToBePaid,
+    };
 
     return await User.updateOne(
       { _id: staff._id },
       {
         $inc: {
-          "staffDetails.totalEarning": amountToBeAdded
-            ? amountToBeAdded + staffEarningRate
-            : staffEarningRate,
+          "staffDetails.totalEarning": amountToBePaid,
         },
         $set: {
-          "staffDetails.mostRecentScannedTime": new Date(),
+          "staffDetails.mostRecentScannedTime": date,
+        },
+        $push: {
+          "staffDetails.earningHistory": earningHistory,
         },
       },
       { session }
     );
   };
+
+  getTotalAmountEarnedByStaffInASpecifiedTime(startDate, endDate, staffId) {
+    const match = {
+      $and: [{ role: "staff" }],
+    };
+
+    if (staffId) match.$and.push({ _id: new mongoose.Types.ObjectId(staffId) });
+
+    return User.aggregate([
+      {
+        $match: match,
+      },
+      {
+        $unwind: {
+          path: "$staffDetails.earningHistory",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $match: {
+          $and: [
+            {
+              "staffDetails.earningHistory.timestamp": {
+                $gte: new Date(startDate),
+              },
+            },
+            {
+              "staffDetails.earningHistory.timestamp": {
+                $lte: new Date(endDate),
+              },
+            },
+          ],
+        },
+      },
+      {
+        $group: {
+          _id: "$_id",
+          firstName: {
+            $first: "$firstName",
+          },
+          lastName: {
+            $first: "$lastName",
+          },
+          earningHistory: {
+            $push: "$staffDetails.earningHistory",
+          },
+          totalAmountEarned: {
+            $sum: "$staffDetails.earningHistory.amountEarned",
+          },
+        },
+      },
+    ]);
+  }
 
   updateStaffTotalEarningsBasedOnInCentives = async (
     mongoSession,
