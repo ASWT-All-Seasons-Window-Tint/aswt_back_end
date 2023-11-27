@@ -337,8 +337,12 @@ class UserController {
       if (user.isAdmin)
         return badReqResponse(res, "Cannot change role of an admin");
 
-      // if (user.role === role)
-      //   return badReqResponse(res, `The user is already a ${role}`);
+      if (role === "staff") {
+        const staffDetails = user.staffDetails ? user.staffDetails : {};
+        staffDetails.earningRate = req.body.staffDetails.earningRate;
+
+        req.body.staffDetails = staffDetails;
+      }
 
       if (roleOfUserMakingRequest === "manager") {
         if (forbiddenRolesForManager.includes(role))
