@@ -16,6 +16,7 @@ const { user } = require("../model/user.model");
 const validateObjectIdWithXArgMiddleware = require("../middleware/validateObjectIdWithXArg.middleware");
 const roleBaseAuthMiddleware = require("../middleware/roleBaseAuth.middleware.");
 const addRoleMiddleware = require("../middleware/addRole.middleware");
+const validDateParamsMiddleware = require("../middleware/validDateParams.middleware");
 
 const {
   validate,
@@ -78,6 +79,22 @@ router.get(
   auth,
   roleBaseAuth(["porter", "staff"]),
   asyncMiddleware(userController.gethUserById)
+);
+
+router.get(
+  "/staff-total-earning-per-date/start/:startDate/end/:endDate",
+  auth,
+  validDateParamsMiddleware,
+  roleBaseAuth(["gm", "admin"]),
+  asyncMiddleware(userController.getTotalAmountEarnedByStaffInASpecifiedTime)
+);
+
+router.get(
+  "/staff-total-earning-per-date/start/:startDate/end/:endDate/:staffId",
+  auth,
+  validateObjectIdWithXArgMiddleware(["staffId"]),
+  roleBaseAuth(["gm", "admin"]),
+  asyncMiddleware(userController.getTotalAmountEarnedByStaffInASpecifiedTime)
 );
 
 router.get(

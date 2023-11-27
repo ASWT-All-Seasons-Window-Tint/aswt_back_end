@@ -41,6 +41,16 @@ const staffDetailsSchema = new mongoose.Schema({
     type: Number,
     min: 1,
   },
+  earningHistory: [
+    {
+      timestamp: {
+        type: Date,
+      },
+      amountEarned: {
+        type: Number,
+      },
+    },
+  ],
   mostRecentScannedTime: {
     type: Date,
   },
@@ -308,7 +318,8 @@ function validatePatch(user) {
         is: "receptionist",
         then: Joi.forbidden(),
       })
-      .when("role", { is: "editor", then: Joi.forbidden() }),
+      .when("role", { is: "editor", then: Joi.forbidden() })
+      .when("role", { is: "staff", then: Joi.required() }),
     staffDetails: Joi.object({
       earningRate: Joi.number().min(1).required(),
     }).when("role", {
