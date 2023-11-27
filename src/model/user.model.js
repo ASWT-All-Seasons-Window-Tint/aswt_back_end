@@ -41,6 +41,16 @@ const staffDetailsSchema = new mongoose.Schema({
     type: Number,
     min: 1,
   },
+  earningHistory: [
+    {
+      timestamp: {
+        type: Date,
+      },
+      amountEarned: {
+        type: Number,
+      },
+    },
+  ],
   mostRecentScannedTime: {
     type: Date,
   },

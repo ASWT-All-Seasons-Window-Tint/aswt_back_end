@@ -126,6 +126,19 @@ class UserController {
     res.send(successMessage(MESSAGES.FETCHED, loggedInStaff));
   }
 
+  async getTotalAmountEarnedByStaffInASpecifiedTime(req, res) {
+    const { startDate, endDate, staffId } = req.params;
+
+    const staffsDetails =
+      await userService.getTotalAmountEarnedByStaffInASpecifiedTime(
+        startDate,
+        endDate,
+        staffId
+      );
+
+    res.send(successMessage(MESSAGES.FETCHED, staffsDetails));
+  }
+
   async updateStaffLocationsVisibleToManager(req, res) {
     const { managerId } = req.params;
     const { idToAdd, idToRemove } = req.body;
