@@ -84,7 +84,7 @@ router.get(
 router.get(
   "/staff-total-earning-per-date/start/:startDate/end/:endDate",
   auth,
-  validDateParamsMiddleware,
+  validDateParamsMiddleware(7, true),
   roleBaseAuth(["gm", "admin"]),
   asyncMiddleware(userController.getTotalAmountEarnedByStaffInASpecifiedTime)
 );
@@ -92,6 +92,7 @@ router.get(
 router.get(
   "/staff-total-earning-per-date/start/:startDate/end/:endDate/:staffId",
   auth,
+  validDateParamsMiddleware(7, true),
   validateObjectIdWithXArgMiddleware(["staffId"]),
   roleBaseAuth(["gm", "admin"]),
   asyncMiddleware(userController.getTotalAmountEarnedByStaffInASpecifiedTime)

@@ -364,6 +364,19 @@ function validateGetTakenTimeslots(appointment) {
   return schema.validate(appointment);
 }
 
+function unavailableTimeslots(appointment) {
+  const schema = Joi.object({
+    appointmentType: Joi.string().valid("auto", "commercial"),
+    serviceIds: Joi.array().items(Joi.objectId()).when("appointmentType", {
+      is: "commercial",
+      then: Joi.forbidden(),
+      otherwise: Joi.required(),
+    }),
+  });
+
+  return schema.validate(appointment);
+}
+
 function validatePatch(appointment) {
   const schema = Joi.object({
     startTime: Joi.date().required(),
@@ -397,6 +410,7 @@ exports.joiValidators = {
   validatePatch,
   validateGetTakenTimeslots,
   validateUpdateQuote,
+  unavailableTimeslots,
 };
 exports.validate = validate;
 exports.validatePatch = validatePatch;
