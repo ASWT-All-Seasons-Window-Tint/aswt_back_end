@@ -12,8 +12,12 @@ const roleBaseAuthMiddleware = require("../middleware/roleBaseAuth.middleware.")
 const validDateParamsMiddleware = require("../middleware/validDateParams.middleware");
 const validateObjectIdWithXargs = require("../middleware/validateObjectIdWithXArg.middleware");
 
-const { validate, validateGetTakenTimeslots, validateUpdateQuote } =
-  joiValidators;
+const {
+  validate,
+  validateGetTakenTimeslots,
+  validateUpdateQuote,
+  unavailableTimeslots,
+} = joiValidators;
 
 router.post(
   "/",
@@ -55,10 +59,19 @@ router.get(
 );
 
 router.get(
+  "/get-unavailable-dates/start/:startDate/end/:endDate",
+  auth,
+  validDateParamsMiddleware(30, false),
+  roleBaseAuthMiddleware(["gm", "admin"]),
+  validateMiddleware(unavailableTimeslots),
+  asyncMiddleware(takenTimeslotsControllers.getUnavailableDatesInTheCalendar)
+);
+
+router.get(
   "/:date",
   auth,
   roleBaseAuthMiddleware(["receptionist", "admin"]),
-  validDateParamsMiddleware,
+  validDateParamsMiddleware(30, false),
   asyncMiddleware(appointmentControllers.getAppointmentsByDate)
 );
 
