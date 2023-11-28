@@ -16,6 +16,21 @@ const validCarTypes = [
   "Truck4Doors",
 ];
 
+const tintShade = [
+  {
+    tintArea: {
+      type: String,
+      minlength: 1,
+      maxlength: 255,
+    },
+    shade: {
+      type: String,
+      minlength: 1,
+      maxlength: 255,
+    },
+  },
+];
+
 const validUnits = convertToInchesUtils();
 
 const paymentDetailsSchema = new mongoose.Schema({
@@ -84,11 +99,7 @@ const residentialDetailsSchema = new mongoose.Schema({
       type: String,
       enum: validUnits,
     },
-    tintShade: {
-      type: String,
-      minlength: 1,
-      maxlength: 255,
-    },
+    tintShade,
     length: {
       type: Number,
     },
@@ -129,11 +140,7 @@ const carDetailsSchema = new mongoose.Schema({
     minlength: 4,
     maxlength: 4,
   },
-  tintShade: {
-    type: String,
-    minlength: 1,
-    maxlength: 255,
-  },
+  tintShade,
   make: {
     type: String,
     minlength: 1,
@@ -270,7 +277,14 @@ function validate(appointment) {
       year: Joi.string().min(4).max(4).required(),
       make: Joi.string().min(1).max(255).required(),
       model: Joi.string().min(1).max(255).required(),
-      tintShade: Joi.string().min(1).max(255).required(),
+      tintShade: Joi.array()
+        .items(
+          Joi.object({
+            tintArea: Joi.string().min(1).max(255).required(),
+            shade: Joi.string().min(1).max(255).required(),
+          }).required()
+        )
+        .required(),
       category: Joi.string()
         .min(1)
         .valid(...validCarTypes),
@@ -290,7 +304,14 @@ function validate(appointment) {
     residentialDetails: Joi.object({
       customerMeasurementAwareness: Joi.boolean().required(),
       measurementDetails: Joi.object({
-        tintShade: Joi.string().min(1).max(255).required(),
+        tintShade: Joi.array()
+          .items(
+            Joi.object({
+              tintArea: Joi.string().min(1).max(255).required(),
+              shade: Joi.string().min(1).max(255).required(),
+            }).required()
+          )
+          .required(),
         unit: Joi.string()
           .valid(...validUnits)
           .required(),

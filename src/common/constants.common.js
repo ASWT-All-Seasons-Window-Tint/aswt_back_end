@@ -95,7 +95,7 @@ const constants = {
     VALID_TIME_SLOTS() {
       const VALID_TIME_SLOTS = [];
       const startTime = "09:00";
-      const endTime = "18:00";
+      const endTime = "17:00";
 
       // Split the start and end time into hours and minutes
       const [startHour, startMinute] = startTime.split(":").map(Number);
