@@ -78,6 +78,12 @@ class UserService {
     return staffsWhoCanTakeAppointments.map((staff) => staff._id);
   }
 
+  countStaffsWhoCanTakeAppointments() {
+    return User.count({
+      "staffDetails.isAvailableForAppointments": true,
+    });
+  }
+
   createUserWithAvatar = async (req, user, departments) => {
     const { body } = req;
     const staffRoles = ["staff", "porter"];
