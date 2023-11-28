@@ -160,7 +160,7 @@ router.get(
 router.get(
   "/staff/:staffId/date/:date",
   auth,
-  validateDateParams,
+  validateDateParams(7),
   validateMonthYearParamsMiddleware,
   validateObjectIdWithXArgMiddleware(["staffId"]),
   asyncMiddleware(entryController.getCarsDoneByStaff)

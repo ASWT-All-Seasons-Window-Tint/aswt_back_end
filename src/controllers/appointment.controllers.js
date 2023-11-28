@@ -41,7 +41,7 @@ class AppointmentController {
       residentialDetails,
     } = req.body;
 
-    let timeOfCompletion = 8;
+    let timeOfCompletion = 7;
     let emailService = "measurement enquiry";
     let totalAmount;
 
@@ -417,7 +417,7 @@ class AppointmentController {
 
     if (!appointment) return res.status(404).send(errorMessage("appointment"));
 
-    let timeOfCompletion = 8;
+    let timeOfCompletion = 7;
 
     if (appointment.appointmentType === "auto") {
       const { serviceDetails } = appointment.carDetails;
@@ -498,7 +498,7 @@ class AppointmentController {
   async retrieveTimeSlot(appointment) {
     const { appointmentType } = appointment;
 
-    let timeOfCompletion = 8;
+    let timeOfCompletion = 7;
 
     if (appointmentType === "auto") {
       const { serviceIds } = appointmentService.getServiceIdsAndfilmQualityIds(

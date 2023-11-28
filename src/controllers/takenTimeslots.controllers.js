@@ -41,9 +41,15 @@ class TakenTimeslotControllers {
     return res.send(successMessage("Successfully cleared out date", null));
   }
 
+  async getAllTakenTimeSlots(req, res) {
+    const takenTimeslots = await takenTimeslotsServices.test();
+
+    return res.send(successMessage(MESSAGES.FETCHED, takenTimeslots));
+  }
+
   getTakenTimeSlots = async (req, res) => {
     const { date, serviceIds, appointmentType } = req.body;
-    let timeOfCompletion = 8;
+    let timeOfCompletion = 7;
 
     if (appointmentType !== "commercial") {
       if (!serviceIds) return badReqResponse(res, "serviceIds is required");
@@ -137,6 +143,42 @@ class TakenTimeslotControllers {
       );
 
     return takenTimeslotsForAllStaffs;
+  }
+
+  async getUnavailableDatesInTheCalendar(req, res) {
+    const { startDate, endDate } = req.params;
+    const { serviceIds, appointmentType } = req.body;
+
+    let timeOfCompletion = 7;
+
+    if (appointmentType === "auto") {
+      const [services, missingIds] = await Promise.all([
+        serviceServices.getMultipleServices(serviceIds, true),
+        serviceServices.validateServiceIds(serviceIds),
+      ]);
+
+      if (missingIds.length > 0)
+        return jsonResponse(
+          res,
+          404,
+          false,
+          `Services with IDs: [${missingIds}] could not be found`
+        );
+
+      timeOfCompletion =
+        appointmentServices.calculateTotalTimeOfCompletion(services);
+    }
+
+    const unavailableDatesInTheCalendar =
+      await takenTimeslotsServices.getUnavailableDatesInTheCalendar(
+        startDate,
+        endDate,
+        timeOfCompletion
+      );
+
+    return res.send(
+      successMessage(MESSAGES.FETCHED, unavailableDatesInTheCalendar)
+    );
   }
 
   findStaffsWithoutGivenTime(data, givenTime) {
