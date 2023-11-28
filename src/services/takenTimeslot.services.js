@@ -129,7 +129,12 @@ class TakenTimeslotService {
     return TakenTimeslot.find({ date }).sort({ _id: -1 });
   }
 
-  getUnavailableDatesInTheCalendar = (startDate, endDate, timeOfCompletion) => {
+  getUnavailableDatesInTheCalendar = (
+    startDate,
+    endDate,
+    timeOfCompletion,
+    numberOfStaffsAvailableForAppointment
+  ) => {
     return TakenTimeslot.aggregate([
       {
         $addFields: {
@@ -402,7 +407,9 @@ class TakenTimeslotService {
           timeslotsAsDecimal: {
             $map: {
               input: {
-                $setIntersection: this.getIntersectionArr(),
+                $setIntersection: this.getIntersectionArr(
+                  numberOfStaffsAvailableForAppointment
+                ),
               },
               as: "timeString",
               in: {
@@ -585,10 +592,10 @@ class TakenTimeslotService {
     ]);
   };
 
-  getIntersectionArr() {
+  getIntersectionArr(numberOfStaffsAvailableForAppointment) {
     const intersectionArr = [];
 
-    for (let i = 0; i < 2; i++) {
+    for (let i = 0; i < numberOfStaffsAvailableForAppointment; i++) {
       intersectionArr.push({
         $first: {
           $slice: ["$timeslots", i, 1],
