@@ -60,9 +60,7 @@ router.get(
 
 router.get(
   "/get-unavailable-dates/start/:startDate/end/:endDate",
-  auth,
   validDateParamsMiddleware(30, false),
-  roleBaseAuthMiddleware(["gm", "admin"]),
   validateMiddleware(unavailableTimeslots),
   asyncMiddleware(takenTimeslotsControllers.getUnavailableDatesInTheCalendar)
 );
