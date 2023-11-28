@@ -91,6 +91,9 @@ class UserController {
 
     if (!user) return res.status(404).send(errorMessage("user"));
 
+    const count = await userService.countStaffsWhoCanTakeAppointments();
+    console.log(count);
+
     return res.send(successMessage(MESSAGES.FETCHED, user));
   }
 

@@ -150,6 +150,8 @@ class TakenTimeslotControllers {
     const { serviceIds, appointmentType } = req.body;
 
     let timeOfCompletion = 7;
+    const numberOfStaffsAvailableForAppointment =
+      await userService.countStaffsWhoCanTakeAppointments();
 
     if (appointmentType === "auto") {
       const [services, missingIds] = await Promise.all([
@@ -173,7 +175,8 @@ class TakenTimeslotControllers {
       await takenTimeslotsServices.getUnavailableDatesInTheCalendar(
         startDate,
         endDate,
-        timeOfCompletion
+        timeOfCompletion,
+        numberOfStaffsAvailableForAppointment
       );
 
     return res.send(
