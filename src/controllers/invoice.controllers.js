@@ -4,6 +4,8 @@ const {
   errorMessage,
   successMessage,
   jsonResponse,
+  forbiddenResponse,
+  notFoundResponse,
 } = require("../common/messages.common");
 const { MESSAGES, errorAlreadyExists } = require("../common/constants.common");
 const convertEntryQbInvoiceReqBody = require("../utils/convertDbInvoiceToQbInvoiceReqBody.utils");
@@ -14,6 +16,7 @@ const { updateCache } = require("../utils/getOrSetCache.utils");
 const entryControllers = require("./entry.controllers");
 const estimateServices = require("../services/estimate.services");
 const getEstimatePdfUtils = require("../utils/getEstimatePdf.utils");
+const entryServices = require("../services/entry.services");
 
 class DepartmentController {
   async createEstimate(appointment, appointmentType) {
@@ -105,6 +108,27 @@ class DepartmentController {
     return invoice;
   }
 
+  resendInvoice = async (req, res) => {
+    const { id: entryId } = req.params;
+    const entry = await entryServices.getEntryById(entryId);
+
+    if (!entry)
+      return notFoundResponse(res, "Can't find entry with the given ID");
+
+    if (!entry.invoice.sent)
+      return forbiddenResponse(res, "You can only resend sent invoice");
+
+    const response = await this.sendInvoiceWithoutCreating(entry);
+    if (!response) return jsonResponse(res, 500, false, "Something failed");
+
+    return jsonResponse(
+      res,
+      200,
+      true,
+      "The invoice has been effectively resent."
+    );
+  };
+
   async sendInvoiceWithoutCreating(entry) {
     const qbo = await initializeQbUtils();
     let { customerEmail, customerId } = entry;
@@ -120,7 +144,7 @@ class DepartmentController {
           if (newEmail !== email) customerEmail += `, ${email}`;
     }
 
-    invoiceService.sendInvoicePdf(qbo, invoiceId, customerEmail);
+    return invoiceService.sendInvoicePdf(qbo, invoiceId, customerEmail);
   }
 
   async updateInvoiceById(price, entry, lineId) {
