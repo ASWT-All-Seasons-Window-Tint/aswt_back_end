@@ -17,8 +17,25 @@ class IncentiveService {
   }
 
   getAllIncentives() {
-    return Incentive.find().sort({ _id: -1 });
+    return Incentive.find()
+      .populate("eligibleStaffs", "firstName lastName email")
+      .sort({ _id: -1 });
   }
+
+  getIncentiveById(id) {
+    return Incentive.findById(id)
+      .populate("eligibleStaffs", "firstName lastName email")
+      .sort({ _id: -1 });
+  }
+
+  isIncentiveOngoing = (startDate, endDate) => {
+    startDate = new Date(startDate);
+    endDate = new Date(endDate);
+
+    return Incentive.findOne({
+      $or: [{ endTime: { $gte: startDate } }, { startTime: { $lt: endDate } }],
+    });
+  };
 
   isIncentiveActive = async () => {
     const currentDate = new Date();

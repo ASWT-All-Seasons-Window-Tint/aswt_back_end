@@ -2,9 +2,14 @@ const { badReqResponse } = require("../common/messages.common");
 
 module.exports = (numberOfDaysAllowed, canStartDateBeFuture) => {
   return function (req, res, next) {
+    if (req.body.startTime && req.body.endTime) {
+      req.params.startDate = req.body.startTime;
+      req.params.endDate = req.body.endTime;
+    }
+
     const { date, startDate, endDate } = req.params;
 
-    if (!startDate && endDate) {
+    if (!startDate) {
       // Check if the date parameter is not provided
       if (!date) {
         return badReqResponse(res, "Date parameter is required");
@@ -51,7 +56,7 @@ module.exports = (numberOfDaysAllowed, canStartDateBeFuture) => {
           return badReqResponse(res, "Year value should not be less than 2023");
       }
 
-      if (canStartDateBeFuture) {
+      if (!canStartDateBeFuture) {
         if (parsedStartDate > currentDate)
           return badReqResponse(res, "Start date should not be future date");
       }

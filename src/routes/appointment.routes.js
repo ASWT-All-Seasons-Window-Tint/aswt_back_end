@@ -60,7 +60,7 @@ router.get(
 
 router.get(
   "/get-unavailable-dates/start/:startDate/end/:endDate",
-  validDateParamsMiddleware(30, false),
+  validDateParamsMiddleware(30, true),
   validateMiddleware(unavailableTimeslots),
   asyncMiddleware(takenTimeslotsControllers.getUnavailableDatesInTheCalendar)
 );
