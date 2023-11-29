@@ -35,12 +35,12 @@ router.post(
   qboAsyncMiddleware(invoiceController.sendInvoice)
 );
 
-// router.post(
-//   "/estimate/:id",
-//   validateObjectId,
-//   auth,
-//   adminOrManager,
-//   qboAsyncMiddleware(invoiceController.createEstimate)
-// );
+router.post(
+  "/resend-invoice/:id",
+  validateObjectId,
+  auth,
+  adminOrManager,
+  qboAsyncMiddleware(invoiceController.resendInvoice)
+);
 
 module.exports = router;
