@@ -7,6 +7,7 @@ const { validate } = require("../model/incentive.model").incentive;
 const asyncMiddleware = require("../middleware/async.middleware");
 const validateObjectId = require("../middleware/validateObjectId.middleware");
 const incentiveController = require("../controllers/incentive.controllers");
+const validDateParamsMiddleware = require("../middleware/validDateParams.middleware");
 
 const router = express.Router();
 
@@ -16,10 +17,16 @@ router.post(
   auth,
   roleBaseAuth(["admin", "gm"]),
   validateMiddleware(validate),
+  validDateParamsMiddleware(100, true),
   asyncMiddleware(incentiveController.createIncentive)
 );
 
-router.get("/", asyncMiddleware(incentiveController.fetchIncentives));
+router.get(
+  "/",
+  auth,
+  roleBaseAuth(["admin", "gm"]),
+  asyncMiddleware(incentiveController.fetchIncentives)
+);
 
 router.get(
   "/:id",
