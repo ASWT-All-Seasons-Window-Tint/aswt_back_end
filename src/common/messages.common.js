@@ -126,8 +126,9 @@ const EMAIL = {
 const SMS = {
   nowBody: (date, time, customerName, serviceName) => `Dear ${customerName},
 
-  Congratulations! Your appointment booking was successful. We are pleased to confirm your reservation for ${serviceName} on ${date} at ${time} CST. Thank you for choosing us, and we look forward to serving you.
-  
+  Congratulations on securing your appointment with All Seasons Tint & Graphic Designs for ${serviceName} on ${date} at ${time} CST. To cancel or for inquiries, ${process.env.customerAddress}.
+
+
   Best regards,
   All Seasons Tint & Graphic Designs`,
   reminderBody: (
