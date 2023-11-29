@@ -1,10 +1,22 @@
 const { Incentive } = require("../model/incentive.model").incentive;
 const { MESSAGES } = require("../common/constants.common");
-const { errorMessage, successMessage } = require("../common/messages.common");
+const {
+  errorMessage,
+  successMessage,
+  badReqResponse,
+} = require("../common/messages.common");
 const incentiveServices = require("../services/incentive.services");
 
 class IncentiveController {
   async createIncentive(req, res) {
+    const isThereAnActiveIncentive = await incentiveServices.isIncentiveOngoing(
+      req.body.startTime,
+      req.body.endTime
+    );
+
+    if (isThereAnActiveIncentive)
+      return badReqResponse(res, "There is an ongoing incentive");
+
     const incentive = await incentiveServices.createIncentive(req.body);
 
     // Sends the created incentive as response
