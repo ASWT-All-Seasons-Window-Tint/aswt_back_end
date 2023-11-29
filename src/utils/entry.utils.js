@@ -108,6 +108,11 @@ class EntryUtils {
               }
             : {},
       },
+      {
+        $sort: {
+          _id: -1,
+        },
+      },
     ];
     const addFields = {
       $addFields: {
