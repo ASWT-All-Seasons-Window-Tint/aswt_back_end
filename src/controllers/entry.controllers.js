@@ -811,6 +811,28 @@ class EntryController {
         ]);
       }
 
+      const carDetails = entry.invoice.carDetails;
+      const isAllServiceCompleted = carDetails.every((car) => car.isCompleted);
+      const { today } = entryService.getTodayAndTomorrow();
+      const entryDate = new Date(entry.entryDate);
+
+      if (isAllServiceCompleted) {
+        const concernedStaffIds = [carWithVin.porterId];
+
+        const body = {
+          title: `Services completed for Waiting List`,
+          concernedStaffIds,
+          body: `The tinting services for the Waiting List for customer ${entry.customerName} has been completed.`,
+          type: `Completed waiting list`,
+        };
+
+        if (entry.invoice.sent) {
+          await invoiceControllers.sendInvoiceWithoutCreating(entry);
+        }
+
+        await notificationService.createNotification(body, mongoSession);
+      }
+
       if (!entry.invoice.isAutoSentScheduled) {
         const delay = this.getDelay();
 

@@ -110,6 +110,12 @@ class StripeController {
         //   stripeAccount,
         // }
       );
+
+      await appointmentServices.updateAppointmentSessionId(
+        appointmentId,
+        session.id
+      );
+
       res.json({ url: session.url });
     } catch (e) {
       res.status(500).json({ error: e.message });

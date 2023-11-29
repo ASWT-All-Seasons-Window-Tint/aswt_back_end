@@ -62,6 +62,9 @@ const paymentDetailsSchema = new mongoose.Schema({
   paymentIntentId: {
     type: String,
   },
+  sessionId: {
+    type: String,
+  },
   chargeId: {
     type: String,
   },

@@ -168,6 +168,7 @@ class WebhookControllers {
               startTime,
               customerName,
               customerNumber,
+              paymentDetails,
             } = appointment;
 
             const smsService =
@@ -231,6 +232,7 @@ class WebhookControllers {
               }
               if (Array.isArray(customer)) customer = customer[0];
 
+              const { sessionId } = paymentDetails;
               const qbId = customer.Id;
               const { invoice: invoiceReqBody } =
                 convertDbInvoiceToQbInvoiceReqBodyUtils(
@@ -239,6 +241,18 @@ class WebhookControllers {
                 );
 
               invoiceReqBody.CustomerRef.value = qbId;
+
+              const checkoutSession = await stripe.checkout.sessions.retrieve(
+                sessionId
+              );
+
+              const discount = checkoutSession.total_details.amount_discount;
+              if (discount > 0) {
+                const DiscountLineDetail =
+                  appointmentServices.getDiscountLine(discount);
+
+                invoiceReqBody.Line.push(DiscountLineDetail);
+              }
 
               const { invoice } = await createInvoiceOnQuickBooks(
                 qbo,
@@ -367,7 +381,7 @@ class WebhookControllers {
     const delay =
       appointmentTime.getTime() - currentDate.getTime() - TwentyFourHours;
 
-    return delay > 0 ? delay : delay + oneHour;
+    return delay > 0 ? delay : delay + TwentyFourHours;
   }
 
   exportQueue() {
