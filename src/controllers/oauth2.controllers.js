@@ -117,7 +117,7 @@ class Ouath2Controller {
       code,
     });
 
-    console.log(response);
+    // console.log(response);
 
     // Save the access token to use for API requests
     // ...
