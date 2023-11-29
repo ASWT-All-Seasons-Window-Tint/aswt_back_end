@@ -48,6 +48,24 @@ class AppointmentService {
     return Appointment.find({ "refundDetails.refunded": false });
   }
 
+  updateAppointmentSessionId(appointmentId, sessionId) {
+    return Appointment.findByIdAndUpdate(appointmentId, {
+      $set: { "paymentDetails.sessionId": sessionId },
+    });
+  }
+
+  getDiscountLine(amountInCent) {
+    const amountInUsd = amountInCent / 100;
+
+    return {
+      Amount: amountInUsd,
+      DetailType: "DiscountLineDetail",
+      DiscountLineDetail: {
+        PercentBased: false,
+      },
+    };
+  }
+
   sendEmailQuotaion(
     receiversEmail,
     firstName,
