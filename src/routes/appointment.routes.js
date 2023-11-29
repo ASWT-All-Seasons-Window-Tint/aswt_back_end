@@ -58,7 +58,7 @@ router.get(
   asyncMiddleware(takenTimeslotsControllers.getClearedOutDates)
 );
 
-router.get(
+router.post(
   "/get-unavailable-dates/start/:startDate/end/:endDate",
   validDateParamsMiddleware(30, true),
   validateMiddleware(unavailableTimeslots),
