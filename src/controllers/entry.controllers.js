@@ -32,7 +32,8 @@ class EntryController {
 
   //Create a new entry
   async createEntry(req, res) {
-    const { customerId, numberOfVehicles } = req.body;
+    const { numberOfVehicles } = req.body;
+    const { qbId: customerId } = req.user.customerDetails;
 
     const { data: customer, error } =
       await customerService.getOrSetCustomerOnCache(customerId);

@@ -18,6 +18,7 @@ const validateDateParams = require("../middleware/validDateParams.middleware");
 const roleBaseAuth = require("../middleware/roleBaseAuth.middleware.");
 const addLocationTypeMiddleware = require("../middleware/addLocationType.middleware");
 const addWaitingListMiddleware = require("../middleware/addWaitingList.middleware");
+const roleBaseAuthMiddleware = require("../middleware/roleBaseAuth.middleware.");
 
 const {
   validate,
@@ -32,7 +33,7 @@ const {
 
 router.post(
   "/",
-  [auth, adminOrManagerMiddleware, validateMiddleware(validate)],
+  [auth, roleBaseAuthMiddleware(["customer"]), validateMiddleware(validate)],
   asyncMiddleware(entryController.createEntry)
 );
 
