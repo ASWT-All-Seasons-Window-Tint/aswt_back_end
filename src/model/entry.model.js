@@ -265,7 +265,7 @@ const Entry = mongoose.model("Entry", entrySchema);
 
 function validate(entry) {
   const schema = Joi.object({
-    customerId: Joi.string().required(),
+    // customerId: Joi.string().required(),
     numberOfVehicles: Joi.number().min(1).max(100000).required(),
   });
 
