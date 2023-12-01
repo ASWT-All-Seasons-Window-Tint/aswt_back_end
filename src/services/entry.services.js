@@ -847,9 +847,14 @@ class EntryService {
               drivingSpeedPerHour: {
                 $round: [
                   {
-                    $divide: [
-                      "$invoice.carDetails.distance",
-                      "$invoice.carDetails.hourTime",
+                    $multiply: [
+                      {
+                        $divide: [
+                          "$invoice.carDetails.distance",
+                          "$invoice.carDetails.hourTime",
+                        ],
+                      },
+                      0.621371,
                     ],
                   },
                   2,
@@ -977,6 +982,11 @@ class EntryService {
             ...this.getInvoiceField("$invoice"),
             carDetails: "$carDetails",
           },
+        },
+      },
+      {
+        $sort: {
+          _id: -1,
         },
       },
     ]);
