@@ -4,9 +4,11 @@ const {
   successMessage,
   jsonResponse,
   badReqResponse,
+  notFoundResponse,
 } = require("../common/messages.common");
 const { MESSAGES } = require("../common/constants.common");
 const { default: mongoose } = require("mongoose");
+const userServices = require("../services/user.services");
 
 class NotificationController {
   async getStatus(req, res) {
@@ -17,8 +19,17 @@ class NotificationController {
   async getNotificationsForStaff(req, res) {
     const { userId } = req.params;
 
+    const user = await userServices.getUserById(userId);
+    if (!user)
+      return notFoundResponse(res, "Can't find user with the given ID");
+
+    const isUserStaff = user.role === "staff";
+
     const notificationsForStaff =
-      await notificationService.getAllNotificationsForUser({ userId });
+      await notificationService.getAllNotificationsForUser({
+        userId,
+        isUserStaff,
+      });
 
     res.send(successMessage(MESSAGES.FETCHED, notificationsForStaff));
   }
@@ -26,10 +37,16 @@ class NotificationController {
   async getVehicleInQueues(req, res) {
     const { userId } = req.params;
 
+    if (!user)
+      return notFoundResponse(res, "Can't find user with the given ID");
+
+    const isUserStaff = user.role === "staff";
+
     const vehicleInQueues =
       await notificationService.getAllNotificationsForUser({
         userId,
         vehicleQueue: true,
+        isUserStaff,
       });
 
     res.send(successMessage(MESSAGES.FETCHED, vehicleInQueues));

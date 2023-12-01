@@ -5,7 +5,7 @@ module.exports = function (req, res, next) {
   let role = req.params.role;
   if (role) role = role.toLowerCase();
 
-  const roleLists = ["customer", "manager", "staff"];
+  const roleLists = ["customer", "manager", "staff", "gm", "editor", "porter"];
 
   if (!roleLists.includes(role))
     return jsonResponse(res, 400, false, errorMessage);
