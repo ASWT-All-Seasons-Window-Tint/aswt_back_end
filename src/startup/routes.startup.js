@@ -23,6 +23,7 @@ const forms = require("../routes/form.routes");
 const oauth2 = require("../routes/oauth2.routes");
 const webhook = require("../routes/webhook.routes");
 const services = require("../routes/service.routes");
+const tickets = require("../routes/ticket.routes");
 const stripe = require("../routes/stripe.routes");
 const distanceThreshold = require("../routes/distanceThreshold.routes");
 const session = require("./session.startup");
@@ -73,6 +74,7 @@ module.exports = function (app) {
   app.use(`${localEndpoint}/webhook`, webhook);
   app.use(`${localEndpoint}/stripe`, stripe);
   app.use(`${localEndpoint}/distanceThreshold`, distanceThreshold);
+  app.use(`${localEndpoint}/tickets`, tickets);
   app.use(`${localEndpoint}/services`, services);
 
   // it calls the error middleware if there was a rejected promise.

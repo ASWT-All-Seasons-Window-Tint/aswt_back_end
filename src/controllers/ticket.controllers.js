@@ -1,0 +1,110 @@
+require("dotenv").config();
+const cloudinary = require("cloudinary").v2;
+const ticketService = require("../services/ticket.services");
+const userService = require("../services/user.services");
+const { MESSAGES } = require("../common/constants.common");
+const { successMessage, errorMessage } = require("../common/messages.common");
+const streamifier = require("streamifier");
+
+const { cloud_name, api_key, api_secret } = JSON.parse(
+  process.env.cloudinaryConfig
+);
+// Configure Cloudinary credentials
+cloudinary.config({
+  cloud_name,
+  api_key,
+  api_secret,
+});
+
+class CertificationController {
+  async addTicket(req, res) {
+    try {
+      const { _id: customerId } = req.user;
+      const { subject, message } = req.body;
+
+      const ticketBody = {
+        customerId,
+        subject,
+        message,
+      };
+
+      if (req.file) {
+        const fileBuffer = req.file.buffer;
+
+        const cld_upload_stream = cloudinary.uploader.upload_stream(
+          {
+            resource_type: "image",
+            folder: "foo",
+          },
+
+          async function (error, result) {
+            if (error) {
+              console.error("Error uploading ticket:", error);
+              res.status(500).json({ error: "Internal Server Error" });
+            } else {
+              const imageURL = result.secure_url;
+
+              ticketBody.imageURL = imageURL;
+
+              const ticket = await ticketService.createTicket(ticketBody);
+              res.send(successMessage(MESSAGES.CREATED, ticket));
+            }
+          }
+        );
+        streamifier.createReadStream(fileBuffer).pipe(cld_upload_stream);
+      } else {
+        const ticket = await ticketService.createTicket(ticketBody);
+
+        res.send(successMessage(MESSAGES.CREATED, ticket));
+      }
+    } catch (error) {
+      console.error("Error uploading ticket:", error);
+      res
+        .status(500)
+        .json({ success: false, message: "Internal Server Error" });
+    }
+  }
+  async getAllTickets(req, res) {
+    const ticket = await ticketService.getAllTickets();
+
+    res.send(successMessage(MESSAGES.FETCHED, ticket));
+  }
+
+  async getTicketByUserId(req, res) {
+    const ticket = await ticketService.getTicketByUserId(req.params.id);
+
+    if (ticket) {
+      res.send(successMessage(MESSAGES.FETCHED, ticket));
+    } else {
+      res.status(404).send(errorMessage("ticket"));
+    }
+  }
+
+  async getTicketById(req, res) {
+    const ticket = await ticketService.getTicketById(req.params.id);
+
+    if (ticket) {
+      res.send(successMessage(MESSAGES.FETCHED, ticket));
+    } else {
+      res.status(404).send(errorMessage("ticket"));
+    }
+  }
+
+  async deleteTicket(req, res) {
+    const { id: ticketId } = req.params;
+
+    const ticket = await ticketService.getTicketById(ticketId);
+
+    if (!ticket) return res.status(404).send(errorMessage("ticket"));
+
+    const student = await userService.getStudentById(ticket.studentId);
+
+    await Promise.all([
+      ticketService.deleteTicket(ticketId),
+      userService.updateUserById(student[0]._id, { hasTicket: false }),
+    ]);
+
+    res.send(successMessage(MESSAGES.DELETED, ticket));
+  }
+}
+module.exports = new CertificationController();
