@@ -6,7 +6,7 @@ const userService = require("../services/user.services");
 const notificationService = require("../services/notification.services");
 const customerService = require("../services/customer.service");
 const serviceService = require("../services/service.services");
-const { MESSAGES } = require("../common/constants.common");
+const { MESSAGES, NOTIFICATIONS } = require("../common/constants.common");
 const { getJobCounts, getFilterArguments } = require("../utils/entry.utils");
 
 const {
@@ -344,13 +344,10 @@ class EntryController {
         numberOfStaffInQueue > numberOfServices
           ? activeStaffQueue.slice(0, numberOfServices)
           : activeStaffQueue;
-      const url = process.env.clientUrl;
-      const link = `${url}/?vin=${vin}`;
 
       const body = {
-        title: "A vehicle needs your attention",
+        title: NOTIFICATIONS.TITLES.TAKEN_TO_SHOP,
         concernedStaffIds,
-        body: link,
         type: locationType,
         carId: carWithVin._id,
       };
@@ -800,9 +797,8 @@ class EntryController {
         const carId = carWithVin._id;
 
         const body = {
-          title: `Service completed for Car`,
+          title: NOTIFICATIONS.TITLES.VEHICLE_COMPLETED,
           concernedStaffIds,
-          body: `The tinting service for the car with the VIN (${vin}) has been completed.`,
           type: `Completed service`,
           carId,
         };
@@ -822,10 +818,10 @@ class EntryController {
         const concernedStaffIds = [carWithVin.porterId];
 
         const body = {
-          title: `Services completed for Waiting List`,
+          title: NOTIFICATIONS.TITLES.WAITING_LIST_COMPLETED,
           concernedStaffIds,
-          body: `The tinting services for the Waiting List for customer ${entry.customerName} has been completed.`,
           type: `Completed waiting list`,
+          entryId,
         };
 
         if (entry.invoice.sent) {

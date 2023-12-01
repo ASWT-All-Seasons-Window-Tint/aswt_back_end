@@ -15,9 +15,11 @@ const notificationSchema = new mongoose.Schema(
     },
     body: {
       type: String,
-      required: true,
     },
     carId: {
+      type: mongoose.Schema.Types.ObjectId,
+    },
+    entryId: {
       type: mongoose.Schema.Types.ObjectId,
     },
     isReadBy: {
