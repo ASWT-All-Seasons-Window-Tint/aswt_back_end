@@ -16,35 +16,16 @@ class TicketService {
   }
 
   getAllTickets() {
-    return Ticket.find()
-      .populate("eligibleStaffs", "firstName lastName email")
-      .sort({ _id: -1 });
+    return Ticket.find().sort({ _id: -1 });
   }
 
   getTicketById(id) {
-    return Ticket.findById(id)
-      .populate("eligibleStaffs", "firstName lastName email")
-      .sort({ _id: -1 });
+    return Ticket.findById(id).sort({ _id: -1 });
   }
 
-  isTicketOngoing = (startDate, endDate) => {
-    startDate = new Date(startDate);
-    endDate = new Date(endDate);
-
-    return Ticket.findOne({
-      $or: [{ endTime: { $gte: startDate } }, { startTime: { $lt: endDate } }],
-    });
-  };
-
-  isTicketActive = async () => {
-    const currentDate = new Date();
-    const activeTicket = await Ticket.findOne({
-      startTime: { $lte: currentDate },
-      endTime: { $gte: currentDate },
-    });
-
-    return activeTicket;
-  };
+  getTicketsByCustomerId(customerId) {
+    return Ticket.find({ customerId }).sort({ _id: -1 });
+  }
 
   async updateTicketById(id, ticket) {
     return await Ticket.findByIdAndUpdate(

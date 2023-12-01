@@ -3,7 +3,11 @@ const cloudinary = require("cloudinary").v2;
 const ticketService = require("../services/ticket.services");
 const userService = require("../services/user.services");
 const { MESSAGES } = require("../common/constants.common");
-const { successMessage, errorMessage } = require("../common/messages.common");
+const {
+  successMessage,
+  errorMessage,
+  notFoundResponse,
+} = require("../common/messages.common");
 const streamifier = require("streamifier");
 
 const { cloud_name, api_key, api_secret } = JSON.parse(
@@ -65,19 +69,15 @@ class CertificationController {
     }
   }
   async getAllTickets(req, res) {
-    const ticket = await ticketService.getAllTickets();
+    const tickets = await ticketService.getAllTickets();
 
-    res.send(successMessage(MESSAGES.FETCHED, ticket));
+    res.send(successMessage(MESSAGES.FETCHED, tickets));
   }
 
-  async getTicketByUserId(req, res) {
-    const ticket = await ticketService.getTicketByUserId(req.params.id);
+  async getTicketByCustomerId(req, res) {
+    const tickets = await ticketService.getTicketsByCustomerId(req.params.id);
 
-    if (ticket) {
-      res.send(successMessage(MESSAGES.FETCHED, ticket));
-    } else {
-      res.status(404).send(errorMessage("ticket"));
-    }
+    res.send(successMessage(MESSAGES.FETCHED, tickets));
   }
 
   async getTicketById(req, res) {
@@ -97,14 +97,26 @@ class CertificationController {
 
     if (!ticket) return res.status(404).send(errorMessage("ticket"));
 
-    const student = await userService.getStudentById(ticket.studentId);
-
-    await Promise.all([
-      ticketService.deleteTicket(ticketId),
-      userService.updateUserById(student[0]._id, { hasTicket: false }),
-    ]);
+    await ticketService.deleteTicket(ticketId);
 
     res.send(successMessage(MESSAGES.DELETED, ticket));
+  }
+
+  async updateTicketById(req, res) {
+    const { id: ticketId } = req.params;
+
+    const ticket = await ticketService.getTicketById(ticketId);
+    if (!ticket)
+      return notFoundResponse(res, "We can't find Ticket with the given ID");
+
+    req.body.responseTime = new Date();
+
+    const updatedTicket = await ticketService.updateTicketById(
+      ticketId,
+      req.body
+    );
+
+    res.send(successMessage(MESSAGES.UPDATED, updatedTicket));
   }
 }
 module.exports = new CertificationController();
