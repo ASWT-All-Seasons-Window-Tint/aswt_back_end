@@ -3,7 +3,7 @@ const Joi = require("@hapi/joi");
 const addVirtualIdUtils = require("../utils/addVirtualId.utils");
 const { User } = require("./user.model").user;
 
-const statusEnums = ["open", "close"];
+const statusEnums = ["open", "closed"];
 
 const ticketSchema = new mongoose.Schema(
   {
@@ -21,6 +21,8 @@ const ticketSchema = new mongoose.Schema(
     message: {
       type: String,
       required: true,
+      minlength: 4,
+      maxlength: 1024,
     },
     raisedTime: {
       type: Date,
@@ -69,7 +71,18 @@ const Ticket = mongoose.model("Ticket", ticketSchema);
 function validate(ticket) {
   const schema = Joi.object({
     subject: Joi.string().min(4).max(255).required(),
-    message: Joi.string().min(4).max(255).required(),
+    message: Joi.string().min(4).max(1024).required(),
+  });
+
+  return schema.validate(ticket);
+}
+
+function validatePatch(ticket) {
+  const schema = Joi.object({
+    status: Joi.string()
+      .valid(...statusEnums)
+      .required(),
+    adminResponse: Joi.string().min(4).max(512).required(),
   });
 
   return schema.validate(ticket);
@@ -89,5 +102,6 @@ const imageSchema = Joi.object({
 exports.ticket = {
   Ticket,
   validate,
+  validatePatch,
   imageSchema,
 };

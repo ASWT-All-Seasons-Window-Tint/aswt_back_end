@@ -6,10 +6,12 @@ const asyncMiddleware = require("../middleware/async.middleware");
 const ticketController = require("../controllers/ticket.controllers");
 const multerCommon = require("../common/multer.common");
 const multerErrorMiddleware = require("../middleware/multerError.middleware");
-const { validate, imageSchema } = require("../model/ticket.model").ticket;
 const validateMiddleware = require("../middleware/validate.middleware");
 const validateFileMiddleware = require("../middleware/validateFile.middleware");
 const validateObjectId = require("../middleware/validateObjectId.middleware");
+const roleBaseAuthMiddleware = require("../middleware/roleBaseAuth.middleware.");
+const { validate, validatePatch, imageSchema } =
+  require("../model/ticket.model").ticket;
 
 const router = express.Router();
 const fieldName = "image";
@@ -19,13 +21,19 @@ const upload = multer(multerCommon(multer, fileSize)).single(fieldName);
 router.post(
   "/",
   auth,
+  roleBaseAuthMiddleware(["customer"]),
   multerErrorMiddleware(upload, multer, fileSize, fieldName),
   validateMiddleware(validate),
   validateFileMiddleware("Image", imageSchema, false),
   asyncMiddleware(ticketController.addTicket)
 );
 
-router.get("/", asyncMiddleware(ticketController.getAllTickets));
+router.get(
+  "/",
+  auth,
+  roleBaseAuthMiddleware(["admin", "gm"]),
+  asyncMiddleware(ticketController.getAllTickets)
+);
 
 router.get(
   "/:id",
@@ -34,9 +42,11 @@ router.get(
 );
 
 router.get(
-  "/user/:id",
+  "/customer/:id",
+  auth,
+  roleBaseAuthMiddleware(["customer", "admin", "gm"]),
   validateObjectId,
-  asyncMiddleware(ticketController.getTicketByUserId)
+  asyncMiddleware(ticketController.getTicketByCustomerId)
 );
 
 router.delete(
@@ -45,6 +55,15 @@ router.delete(
   auth,
   admin,
   asyncMiddleware(ticketController.deleteTicket)
+);
+
+router.put(
+  "/:id",
+  auth,
+  roleBaseAuthMiddleware(["admin", "gm"]),
+  validateObjectId,
+  validateMiddleware(validatePatch),
+  asyncMiddleware(ticketController.updateTicketById)
 );
 
 module.exports = router;
