@@ -82,6 +82,9 @@ class NotificationService {
           title: {
             $first: "$title",
           },
+          type: {
+            $first: "$type",
+          },
           body: {
             $first: "$body",
           },
@@ -212,6 +215,7 @@ class NotificationService {
         $project: {
           _id: 1,
           title: 1,
+          type: 1,
           entryId: 1,
           body: {
             $cond: {
