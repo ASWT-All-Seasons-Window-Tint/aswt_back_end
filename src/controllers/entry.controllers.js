@@ -811,8 +811,6 @@ class EntryController {
 
       const carDetails = entry.invoice.carDetails;
       const isAllServiceCompleted = carDetails.every((car) => car.isCompleted);
-      const { today } = entryService.getTodayAndTomorrow();
-      const entryDate = new Date(entry.entryDate);
 
       if (isAllServiceCompleted) {
         const concernedStaffIds = [carWithVin.porterId];
@@ -826,6 +824,14 @@ class EntryController {
 
         if (entry.invoice.sent) {
           await invoiceControllers.sendInvoiceWithoutCreating(entry);
+        }
+        if (entry.isFromAppointment) {
+          entryService.addLineId(entry);
+
+          const { statusCode, message } =
+            await invoiceControllers.updateInvoiceById(undefined, entry);
+
+          if (statusCode) return jsonResponse(res, statusCode, false, message);
         }
 
         await notificationService.createNotification(body, mongoSession);
