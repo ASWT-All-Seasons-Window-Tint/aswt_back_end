@@ -21,10 +21,7 @@ class EntryUtils {
     if (entryId) {
       match._id = new mongoose.Types.ObjectId(entryId);
     }
-    if (customerId && isFromAppointment) {
-      (match.customerId = customerId),
-        (match.isFromAppointment = isFromAppointment);
-    }
+    if (isFromAppointment) match.isFromAppointment = isFromAppointment;
     if (customerId) match.customerId = customerId;
 
     const pipeline = [

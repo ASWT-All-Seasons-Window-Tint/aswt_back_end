@@ -90,5 +90,19 @@ class InvoiceService {
       });
     });
   }
+
+  addVInToAppointmentInvoice(carDetails, Line) {
+    carDetails.forEach((car) => {
+      car.priceBreakdown.forEach((priceObj) => {
+        const priceLine = Line.find((line) => line.Id === priceObj.lineId);
+        const description = priceLine.Description;
+        const vin = car.vin;
+
+        const newDescription = `${description} with VIN: ${vin}`;
+
+        priceLine.Description = newDescription;
+      });
+    });
+  }
 }
 module.exports = new InvoiceService();

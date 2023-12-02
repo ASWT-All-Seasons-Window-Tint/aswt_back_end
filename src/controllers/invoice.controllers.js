@@ -176,16 +176,24 @@ class DepartmentController {
 
     const { SyncToken } = invoice;
 
-    const lineItem = invoice.Line.find((line) => (line.Id = lineId));
-    const index = invoice.Line.findIndex(
-      (line) => line.DetailType === "SubTotalLineDetail"
+    if (price) {
+      const lineItem = invoice.Line.find((line) => (line.Id = lineId));
+
+      const index = invoice.Line.findIndex(
+        (line) => line.DetailType === "SubTotalLineDetail"
+      );
+
+      invoice.Line.splice(index, 1);
+
+      lineItem.SalesItemLineDetail.UnitPrice = price;
+      lineItem.Amount = price;
+      delete invoice.TotalAmount;
+    }
+
+    invoiceService.addVInToAppointmentInvoice(
+      entry.invoice.carDetails,
+      invoice.Line
     );
-
-    invoice.Line.splice(index, 1);
-
-    lineItem.SalesItemLineDetail.UnitPrice = price;
-    lineItem.Amount = price;
-    delete invoice.TotalAmount;
 
     const updatedInvoice = await invoiceService.updateInvoiceById(
       qbo,

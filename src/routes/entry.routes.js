@@ -68,6 +68,12 @@ router.get(
 );
 
 router.get(
+  "/appointments/all",
+  auth,
+  asyncMiddleware(entryController.getAllAppointmentEntriesPerCustomerId)
+);
+
+router.get(
   "/appointments/:customerId",
   auth,
   asyncMiddleware(entryController.getAllAppointmentEntriesPerCustomerId)
