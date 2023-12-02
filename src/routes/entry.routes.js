@@ -309,7 +309,7 @@ router.put(
     roleBaseAuth(["admin", "gm"]),
     validateMiddleware(validateModifyPrice),
   ],
-  asyncMiddleware(entryController.modifyPrice)
+  qboAsyncMiddleware(entryController.modifyPrice)
 );
 
 router.delete(

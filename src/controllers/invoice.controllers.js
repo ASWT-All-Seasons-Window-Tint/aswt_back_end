@@ -177,7 +177,7 @@ class DepartmentController {
     const { SyncToken } = invoice;
 
     if (price) {
-      const lineItem = invoice.Line.find((line) => (line.Id = lineId));
+      const lineItem = invoice.Line.find((line) => line.Id === lineId);
 
       const index = invoice.Line.findIndex(
         (line) => line.DetailType === "SubTotalLineDetail"
