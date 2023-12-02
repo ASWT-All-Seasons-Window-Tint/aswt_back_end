@@ -188,12 +188,12 @@ class DepartmentController {
       lineItem.SalesItemLineDetail.UnitPrice = price;
       lineItem.Amount = price;
       delete invoice.TotalAmount;
+    } else {
+      invoiceService.addVInToAppointmentInvoice(
+        entry.invoice.carDetails,
+        invoice.Line
+      );
     }
-
-    invoiceService.addVInToAppointmentInvoice(
-      entry.invoice.carDetails,
-      invoice.Line
-    );
 
     const updatedInvoice = await invoiceService.updateInvoiceById(
       qbo,
