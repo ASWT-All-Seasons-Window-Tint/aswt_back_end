@@ -68,6 +68,12 @@ router.get(
 );
 
 router.get(
+  "/appointments/all",
+  auth,
+  asyncMiddleware(entryController.getAllAppointmentEntriesPerCustomerId)
+);
+
+router.get(
   "/appointments/:customerId",
   auth,
   asyncMiddleware(entryController.getAllAppointmentEntriesPerCustomerId)
@@ -303,7 +309,7 @@ router.put(
     roleBaseAuth(["admin", "gm"]),
     validateMiddleware(validateModifyPrice),
   ],
-  asyncMiddleware(entryController.modifyPrice)
+  qboAsyncMiddleware(entryController.modifyPrice)
 );
 
 router.delete(
