@@ -274,10 +274,14 @@ function validate(entry) {
 
 function validateAddVin(entry) {
   const schema = Joi.object({
-    carDetails: Joi.object({
-      vin: Joi.string().required(),
-      customerNote: Joi.string().min(5).max(255),
-    }).required(),
+    carDetails: Joi.array()
+      .items(
+        Joi.object({
+          vin: Joi.string().required(),
+          customerNote: Joi.string().min(5).max(255),
+        }).required()
+      )
+      .required(),
   });
 
   return schema.validate(entry);
