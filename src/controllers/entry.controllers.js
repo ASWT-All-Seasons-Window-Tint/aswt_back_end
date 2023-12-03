@@ -59,7 +59,10 @@ class EntryController {
   async addVin(req, res) {
     const { id: customerId } = req.params;
     const { carDetails } = req.body;
-    const { vin } = carDetails;
+    const vinsArray = carDetails.map((car) => car.vin);
+
+    const hasDuplicates = entryService.hasDuplicateVins(vinsArray);
+    if (hasDuplicates) return badReqResponse(res, "Duplicate VINs found.");
 
     const customerOnDb = userService.findCustomerByQbId(customerId);
     if (!customerOnDb) return res.status(404).send(errorMessage("customer"));
@@ -71,12 +74,12 @@ class EntryController {
 
     let [entry, isVinAdded] = await Promise.all([
       (await entryService.getEntryForCustomerLast24Hours(customerId))
-        ? await entryService.getEntryForCustomerLast24Hours(customerId)
-        : await entryService.createNewEntry(customer),
-      entryService.checkDuplicateEntry(customerId, vin),
+        ? entryService.getEntryForCustomerLast24Hours(customerId)
+        : entryService.createNewEntry(customer),
+      entryService.checkDuplicateEntryForMultipleVins(customerId, vinsArray),
     ]);
 
-    if (isVinAdded) return badReqResponse(res, "Duplicate Entry");
+    if (isVinAdded.length > 0) return badReqResponse(res, "Duplicate Entry");
 
     entry = await entryService.addCarDetail(entry._id, carDetails);
 
