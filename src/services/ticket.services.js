@@ -16,7 +16,9 @@ class TicketService {
   }
 
   getAllTickets() {
-    return Ticket.find().sort({ _id: -1 });
+    return Ticket.find()
+      .populate("customerId", "_id firstName lastName email")
+      .sort({ _id: -1 });
   }
 
   getTicketById(id) {
