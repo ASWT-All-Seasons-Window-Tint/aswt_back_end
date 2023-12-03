@@ -36,7 +36,16 @@ router.get(
 );
 
 router.get(
+  "/ticket/:ticketId",
+  auth,
+  roleBaseAuthMiddleware(["customer", "admin", "gm"]),
+  asyncMiddleware(ticketController.getTicketByTicketId)
+);
+
+router.get(
   "/:id",
+  auth,
+  roleBaseAuthMiddleware(["admin", "gm"]),
   validateObjectId,
   asyncMiddleware(ticketController.getTicketById)
 );
