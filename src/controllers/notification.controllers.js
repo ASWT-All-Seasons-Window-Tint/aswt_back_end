@@ -37,9 +37,6 @@ class NotificationController {
   async getVehicleInQueues(req, res) {
     const { userId } = req.params;
 
-    if (!user)
-      return notFoundResponse(res, "Can't find user with the given ID");
-
     const isUserStaff = user.role === "staff";
 
     const vehicleInQueues =
