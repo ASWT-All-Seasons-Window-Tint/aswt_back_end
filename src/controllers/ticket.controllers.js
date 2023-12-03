@@ -90,6 +90,21 @@ class CertificationController {
     }
   }
 
+  async getTicketByTicketId(req, res) {
+    const { ticketId } = req.params;
+    const isUserCustomer = req.user.role === "customer";
+
+    const ticket = isUserCustomer
+      ? await ticketService.getTicketByTicketId(ticketId, req.user._id)
+      : await ticketService.getTicketByTicketId(ticketId);
+
+    if (ticket) {
+      res.send(successMessage(MESSAGES.FETCHED, ticket));
+    } else {
+      res.status(404).send(errorMessage("ticket"));
+    }
+  }
+
   async deleteTicket(req, res) {
     const { id: ticketId } = req.params;
 

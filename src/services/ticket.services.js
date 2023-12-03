@@ -16,15 +16,27 @@ class TicketService {
   }
 
   getAllTickets() {
-    return Ticket.find().sort({ _id: -1 });
+    return Ticket.find()
+      .populate("customerId", "_id firstName lastName email")
+      .sort({ _id: -1 });
   }
 
   getTicketById(id) {
     return Ticket.findById(id).sort({ _id: -1 });
   }
+  getTicketByTicketId(ticketId, customerId) {
+    const queryParams = customerId ? { ticketId, customerId } : { ticketId };
+
+    return Ticket.findOne(queryParams).populate(
+      "customerId",
+      "_id firstName lastName email"
+    );
+  }
 
   getTicketsByCustomerId(customerId) {
-    return Ticket.find({ customerId }).sort({ _id: -1 });
+    return Ticket.find({ customerId })
+      .populate("customerId", "_id firstName lastName email")
+      .sort({ _id: -1 });
   }
 
   async updateTicketById(id, ticket) {
