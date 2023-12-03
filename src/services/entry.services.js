@@ -1407,6 +1407,22 @@ class EntryService {
     });
   }
 
+  checkDuplicateEntryForMultipleVins(customerId, vinsArray) {
+    const { today, tomorrow } = this.getTodayAndTomorrow();
+    return Entry.find({
+      $and: [
+        { customerId },
+        { "invoice.carDetails.vin": { $in: vinsArray } },
+        {
+          entryDate: {
+            $gte: today,
+            $lte: tomorrow,
+          },
+        },
+      ],
+    });
+  }
+
   calculateServicePriceDoneforCar(priceBreakdown) {
     const price = priceBreakdown.reduce((acc, curr) => {
       return acc + curr.price;
@@ -1432,15 +1448,32 @@ class EntryService {
     );
   }
 
-  async addCarDetail(entryId, carDetail) {
+  async addCarDetail(entryId, carDetails) {
     return await Entry.findOneAndUpdate(
       { _id: entryId },
       {
-        $push: { "invoice.carDetails": carDetail },
-        $inc: { numberOfCarsAdded: 1 },
+        $push: { "invoice.carDetails": carDetails },
+        $inc: { numberOfCarsAdded: carDetails.length },
       },
       { new: true }
     );
+  }
+
+  hasDuplicateVins(vinsArray) {
+    const seenVins = new Set();
+
+    for (const vin of vinsArray) {
+      // If the VIN is already in the Set, it's a duplicate
+      if (seenVins.has(vin)) {
+        return true;
+      }
+
+      // Otherwise, add the VIN to the Set
+      seenVins.add(vin);
+    }
+
+    // No duplicates found
+    return false;
   }
 
   recalculatePrices = (req, entry, services, carDoneByStaff) => {

@@ -297,7 +297,7 @@ router.put(
   "/add-vin/:id",
   auth,
   roleBaseAuth(["customer"]),
-  [validateMiddleware(validateAddVin)],
+  validateMiddleware(validateAddVin),
   qboAsyncMiddleware(entryController.addVin)
 );
 
