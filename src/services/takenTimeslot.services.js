@@ -760,7 +760,45 @@ class TakenTimeslotService {
 
     staffTakenTimeslots.timeslots = sortedUpdatedTakenTimeslots;
 
-    return await staffTakenTimeslots.save();
+    let retryCount = 0;
+
+    while (retryCount < 3) {
+      try {
+        // Attempt to update the document
+        const result = await staffTakenTimeslots.save();
+
+        // Document updated successfully
+        return result;
+      } catch (error) {
+        // Handle VersionError
+        if (error.name === "VersionError") {
+          console.warn(
+            "VersionError: Document has been modified by another process."
+          );
+
+          const updatedDoc = await this.getTakenTimeSlotsByDateAndStaffId({
+            staffId,
+            date,
+          });
+
+          const updatedTimeSlots = updatedDoc.timeslots;
+
+          sortedUpdatedTakenTimeslots.forEach((timeSlot) => {
+            if (updatedTimeSlots.includes(timeSlot)) {
+              return false;
+            }
+          });
+
+          retryCount++;
+          // Increment the retry count and try again
+          console.log(`Retrying update. Retry count: ${retryCount}`);
+        } else {
+          // Handle other errors
+          console.error("Error during update:", error);
+          throw error; // Rethrow other errors
+        }
+      }
+    }
   };
 }
 

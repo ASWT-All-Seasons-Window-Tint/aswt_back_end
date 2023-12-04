@@ -166,6 +166,10 @@ const entry = {
     type: Boolean,
     default: undefined,
   },
+  isFromDealership: {
+    type: Boolean,
+    default: undefined,
+  },
   isActive: {
     type: Boolean,
     default: true,
