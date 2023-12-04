@@ -111,6 +111,27 @@ class NotificationService {
         },
       },
       {
+        $addFields: {
+          "carDetails.serviceDoneIds": {
+            $first: {
+              $map: {
+                input: "$carDetails.servicesDone",
+                as: "serviceDone",
+                in: "$$serviceDone.serviceId",
+              },
+            },
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: "services",
+          localField: "carDetails.serviceDoneIds",
+          foreignField: "_id",
+          as: "servicesDone",
+        },
+      },
+      {
         $lookup: {
           from: "entries",
           let: {
@@ -256,6 +277,7 @@ class NotificationService {
               in: {
                 ...entryUtils.getCarDetailsField("$$car"),
                 serviceNames: entryUtils.serviceNames,
+                serviceDoneIds: { $first: "$carDetails.serviceDoneIds" },
                 customerId: { $first: "$carEntry.customerId" },
                 customerName: { $first: "$carEntry.customerName" },
               },
@@ -349,10 +371,16 @@ class NotificationService {
             "<li><strong>Service Details:</strong> ",
             {
               $reduce: {
-                input: "$services",
+                input: "$servicesDone",
                 initialValue: "",
                 in: {
-                  $concat: ["$$value", "<br>", "$$this.name"],
+                  $concat: [
+                    "$$value",
+                    "<br>",
+                    "<strong>",
+                    "$$this.name",
+                    "</strong>",
+                  ],
                 },
               },
             },
@@ -360,7 +388,9 @@ class NotificationService {
             "</ul>",
             "<p>You may now proceed to collect the vehicle from its current location and return it to the customer slot. We appreciate your prompt attention to this matter, and we are confident that your efficiency will contribute to the overall satisfaction of our valued customers.</p>",
             "<p>If you have any questions or require further assistance, please do not hesitate to contact ",
+            "<strong>",
             "$$serviceManager",
+            "</strong>",
             ".</p>",
             "<p>Thank you for your continued commitment to providing excellent service.</p>",
             "<p>Best regards,<br>ASWT</p>",
@@ -377,9 +407,11 @@ class NotificationService {
         in: {
           $concat: [
             "<p>Dear",
+            " ",
             "$$firstName",
             " ",
             "$$lastName",
+            ",",
             "</p>",
             "<p>I trust this message finds you well. We are pleased to inform you that all the vehicles on your waiting list have been successfully serviced by our dedicated staff. The completed vehicles' details are as follows:</p>",
             "<ol>",
@@ -395,6 +427,7 @@ class NotificationService {
                     in: {
                       $concat: [
                         "$$value",
+                        "<strong>",
                         "Vehicle ",
                         {
                           $toString: {
@@ -409,20 +442,28 @@ class NotificationService {
                             ],
                           },
                         },
+                        "</strong>",
+                        "<br>",
                         "<br>",
                         "VIN: ",
                         "$$this.vin",
                         "<br>",
-                        "Service Details: <br>",
+                        "Service Details: ",
+                        "[",
                         {
                           $reduce: {
                             input: "$$this.serviceNames",
                             initialValue: "",
                             in: {
-                              $concat: ["$$value", "$$this", "<br>"],
+                              $concat: [
+                                "$$value",
+                                { $cond: [{ $eq: ["$$value", ""] }, "", ", "] },
+                                "$$this",
+                              ],
                             },
                           },
                         },
+                        "]",
                         "<br>",
                       ],
                     },
@@ -434,7 +475,9 @@ class NotificationService {
             "<p>You may now proceed to collect these vehicles from their respective locations and ensure they are returned to the customer slots promptly. Your efficiency and dedication to timely service delivery are highly commendable.</p>",
             "<p>If you have any questions or require further assistance, please do not hesitate to contact",
             " ",
+            "<strong>",
             "$$serviceManager",
+            "</strong>",
             ".</p>",
             "<p>Thank you for your continued commitment to ensuring our customers' satisfaction.</p>",
             "<p>Best regards,<br>ASWT</p>",
