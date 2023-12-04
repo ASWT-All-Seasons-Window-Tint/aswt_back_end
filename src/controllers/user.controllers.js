@@ -215,6 +215,13 @@ class UserController {
     res.send(successMessage(MESSAGES.FETCHED, users));
   }
 
+  async fetchAllDealershipStaffs(req, res) {
+    const { qbId } = req.user.customerDetails;
+    const users = await userService.findCustomersByQbId(qbId);
+
+    res.send(successMessage(MESSAGES.FETCHED, users));
+  }
+
   async getUsersByRole(req, res) {
     const users =
       req.user.role === "staff"
