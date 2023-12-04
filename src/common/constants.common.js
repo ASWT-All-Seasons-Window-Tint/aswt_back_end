@@ -137,12 +137,8 @@ const constants = {
     },
     DESCRIPTIONS: {
       TAKEN_TO_SHOP: `This is to inform you that a vehicle has been assigned to you for upcoming tasks. Kindly proceed to the shop to collect the vehicle keys and necessary documentation. Your cooperation in ensuring timely and efficient completion of assigned tasks is appreciated.`,
-      VEHICLE_COMPLETED: `We are pleased to inform you that the vehicle from your waiting list has been successfully serviced and is now ready for pickup. Kindly proceed to the service area to collect the vehicle, ensuring a smooth transition for delivery to the customer slot.
-
-      Thank you for your prompt attention to this matter.`,
-      WAITING_LIST_COMPLETED: `Great news! All vehicles on your waiting list have been successfully serviced and are ready for pickup. Please coordinate with the service team to ensure the efficient retrieval and delivery of these vehicles to their designated slots.
-
-      Thank you for your dedication to providing excellent service.`,
+      VEHICLE_COMPLETED: `We are pleased to inform you that the vehicle from your waiting list has been successfully serviced and is now ready for pickup. Kindly proceed to the service area to collect the vehicle, ensuring a smooth transition for delivery to the customer slot.\n\nThank you for your prompt attention to this matter.`,
+      WAITING_LIST_COMPLETED: `Great news! All vehicles on your waiting list have been successfully serviced and are ready for pickup. Please coordinate with the service team to ensure the efficient retrieval and delivery of these vehicles to their designated slots.\n\nThank you for your dedication to providing excellent service.`,
     },
   },
 };
