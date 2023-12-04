@@ -7,9 +7,6 @@ const getWebhookDataUtils = require("../utils/getWebhookData.utils");
 const { pipeline } = require("../utils/entry.utils");
 const { carDetailsProperties, invoiceProperties, entryProperties } =
   require("../model/entry.model").joiValidator;
-const { isIncentiveActive } = require("./incentive.services");
-const notificationServices = require("./notification.services");
-const mongoTransactionUtils = require("../utils/mongoTransaction.utils");
 
 class EntryService {
   getCarsThatHasNotBeenPickedUp(carDetails) {
@@ -45,9 +42,7 @@ class EntryService {
     return { today, tomorrow };
   }
 
-  getEntryByVin = async (vin, lean, porter) => {
-    const { today, tomorrow } = this.getTodayAndTomorrow();
-
+  getEntryByVin = async (vin, lean, porter, isFromDealership) => {
     const query = Entry.findOne({
       "invoice.carDetails": {
         $elemMatch: {
@@ -55,6 +50,7 @@ class EntryService {
           ...(porter ? { porterId: { $ne: null } } : {}),
         },
       },
+      ...(isFromDealership ? { isFromDealership } : {}),
     }).sort({ _id: -1 });
 
     return lean
@@ -336,10 +332,19 @@ class EntryService {
     const results = {};
 
     const serviceIds = carDetails.serviceIds;
+    const vin = carDetails.vin;
+    const isEntryFromDealership = await this.getEntryByVin(
+      vin,
+      false,
+      undefined,
+      true
+    );
 
     [results.services, results.entry] = await Promise.all([
       serviceServices.getMultipleServices(serviceIds),
-      (await this.getEntryForCustomerLast24Hours(customerId))
+      isEntryFromDealership
+        ? isEntryFromDealership
+        : (await this.getEntryForCustomerLast24Hours(customerId))
         ? this.getEntryForCustomerLast24Hours(customerId)
         : this.createNewEntry(customer),
     ]);
@@ -1454,6 +1459,7 @@ class EntryService {
       {
         $push: { "invoice.carDetails": carDetails },
         $inc: { numberOfCarsAdded: carDetails.length },
+        $set: { isFromDealership: true },
       },
       { new: true }
     );

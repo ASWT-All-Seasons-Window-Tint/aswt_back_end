@@ -240,6 +240,14 @@ class UserService {
     }).sort({ _id: 1 });
   }
 
+  findCustomersByQbId(qbId) {
+    return User.find({
+      "customerDetails.qbId": qbId,
+      "customerDetails.canCreate": undefined,
+      isDeleted: undefined,
+    }).sort({ _id: -1 });
+  }
+
   async signInStaff(email, currentSignInLocation, session) {
     return User.findOneAndUpdate(
       { email },

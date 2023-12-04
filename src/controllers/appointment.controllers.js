@@ -187,12 +187,19 @@ class AppointmentController {
     const takenTimeSlotForStaff =
       takenTimeslotServices.getTakenTimeslotForStaff(freeStaffPerTime);
 
-    await takenTimeslotServices.updateTakenTimeslotsForStaff(
+    const results = await takenTimeslotServices.updateTakenTimeslotsForStaff(
       takenTimeSlotForStaff,
       timeString,
       timeOfCompletion,
       date
     );
+
+    if (results === false)
+      return badReqResponse(
+        res,
+        "The time has already been taken, please select another available time"
+      );
+
     return takenTimeSlotForStaff;
   };
 

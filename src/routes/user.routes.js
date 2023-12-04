@@ -54,6 +54,13 @@ router.get(
 );
 
 router.get(
+  "/staff-for-dealership",
+  auth,
+  roleBaseAuth(["customer"]),
+  asyncMiddleware(userController.fetchAllDealershipStaffs)
+);
+
+router.get(
   "/staffs-not-added-for-manager/:managerId",
   auth,
   adminOrManagerMiddleware,
