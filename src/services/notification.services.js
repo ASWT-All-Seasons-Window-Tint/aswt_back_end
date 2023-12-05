@@ -82,6 +82,7 @@ class NotificationService {
           title: {
             $first: "$title",
           },
+          notificationTime: { $first: "$notificationTime" },
           type: {
             $first: "$type",
           },
@@ -238,6 +239,7 @@ class NotificationService {
           title: 1,
           type: 1,
           entryId: 1,
+          notificationTime: 1,
           body: {
             $cond: {
               if: { $eq: ["$title", NOTIFICATIONS.TITLES.TAKEN_TO_SHOP] },
