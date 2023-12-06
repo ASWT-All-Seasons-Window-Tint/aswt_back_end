@@ -11,6 +11,7 @@ const asyncMiddleware = require("../middleware/async.middleware");
 const roleBaseAuthMiddleware = require("../middleware/roleBaseAuth.middleware.");
 const validDateParamsMiddleware = require("../middleware/validDateParams.middleware");
 const validateObjectIdWithXargs = require("../middleware/validateObjectIdWithXArg.middleware");
+const { blockOut } = require("../model/takenTimeslot.model");
 
 const {
   validate,
@@ -56,6 +57,15 @@ router.get(
   auth,
   roleBaseAuthMiddleware(["receptionist", "admin"]),
   asyncMiddleware(takenTimeslotsControllers.getClearedOutDates)
+);
+
+router.post(
+  "/block-out-date/:date",
+  auth,
+  validDateParamsMiddleware(30, false),
+  validateMiddleware(blockOut),
+  roleBaseAuthMiddleware(["staff"]),
+  asyncMiddleware(takenTimeslotsControllers.staffBlockOutsADate)
 );
 
 router.post(

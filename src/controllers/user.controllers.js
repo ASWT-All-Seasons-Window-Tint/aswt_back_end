@@ -4,7 +4,11 @@ const _ = require("lodash");
 const jwt = require("jsonwebtoken");
 const userService = require("../services/user.services");
 const { MESSAGES } = require("../common/constants.common");
-const { errorMessage, successMessage } = require("../common/messages.common");
+const {
+  errorMessage,
+  successMessage,
+  notFoundResponse,
+} = require("../common/messages.common");
 const generateRandomAvatar = require("../utils/generateRandomAvatar.utils");
 const departmentServices = require("../services/department.services");
 const { transporter, mailOptions } = require("../utils/email.utils");
@@ -15,15 +19,51 @@ const {
   badReqResponse,
   forbiddenResponse,
 } = require("../common/messages.common");
+const serviceServices = require("../services/service.services");
 
 class UserController {
-  async getStatus(req, res) {
-    res.status(200).send({ message: MESSAGES.DEFAULT, success: true });
+  async assignOrRemoveDealerFromStaff(req, res) {
+    const { staffId } = req.params;
+    let { customerId, remove } = req.body;
+
+    if (remove === "false") remove = false;
+
+    const [customer] = await userService.getUserByRoleAndId(
+      customerId,
+      "customer"
+    );
+    if (!customer)
+      return notFoundResponse(
+        res,
+        "Can't find dealership with the provided ID"
+      );
+
+    const updatedStaff = await userService.assignOrRemoveDealershipFromStaff(
+      staffId,
+      customerId,
+      remove
+    );
+    if (!updatedStaff)
+      return notFoundResponse(res, "Can't find staff with the provided ID");
+
+    res.send(successMessage(MESSAGES.UPDATED, updatedStaff));
+  }
+
+  async fetchStaffsAssignedToDealership(req, res) {
+    const { customerId } = req.params;
+
+    console.log(customerId);
+
+    const staffs = await userService.fetchStaffsAssignedToDealership(
+      customerId ? customerId : req.user._id
+    );
+
+    res.send(successMessage(MESSAGES.UPDATED, staffs));
   }
 
   //Create a new user
   async register(req, res, customer) {
-    const { departments, email, role } = req.body;
+    const { departments, email, role, staffDetails } = req.body;
     const { createUserWithAvatar } = userService;
 
     if (req.body.departments)
@@ -39,6 +79,36 @@ class UserController {
       req.body.customerDetails = req.user.customerDetails;
 
       delete req.body.customerDetails.canCreate;
+    }
+
+    if (role === "staff") {
+      const serviceIds = [
+        ...new Set(
+          staffDetails.earningRates.map((earningRate) => earningRate.serviceId)
+        ),
+      ];
+
+      const [servicesNotInArray, missingIds] = await Promise.all([
+        serviceServices.findServicesNotInArray(serviceIds),
+        serviceServices.validateServiceIds(serviceIds),
+      ]);
+
+      if (missingIds.length > 0)
+        return notFoundResponse(
+          res,
+          `Services with IDs: (${missingIds}) could not be found`
+        );
+
+      if (servicesNotInArray.length > 0) {
+        const serviceNames = servicesNotInArray.map((service) => service.name);
+
+        return badReqResponse(
+          res,
+          `Earning rate is required for the following services: (${serviceNames.join(
+            ", "
+          )})`
+        );
+      }
     }
 
     const forbiddenRoles = {

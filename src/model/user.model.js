@@ -1,10 +1,11 @@
+require("dotenv").config();
 const _ = require("lodash");
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
 const Joi = require("joi");
 const { Department } = require("./department.model");
+const { Service } = require("./service.model");
 const addVirtualIdUtils = require("../utils/addVirtualId.utils");
-require("dotenv").config();
 
 const validUserRoles = [
   "staff",
@@ -33,14 +34,21 @@ const staffDetailsSchema = new mongoose.Schema({
       },
     },
   ],
+  assignedDealerships: {
+    type: [mongoose.Schema.Types.ObjectId],
+    default: undefined,
+    ref: "User",
+  },
   isAvailableForAppointments: {
     type: Boolean,
     default: false,
   },
-  earningRate: {
-    type: Number,
-    min: 1,
-  },
+  earningRates: [
+    {
+      earningRate: { type: Number, min: 1 },
+      serviceId: { type: mongoose.Schema.Types.ObjectId, ref: Service },
+    },
+  ],
   earningHistory: [
     {
       timestamp: {
@@ -279,16 +287,18 @@ function validate(user) {
         otherwise: Joi.required(),
       }),
     staffDetails: Joi.object({
-      earningRate: Joi.number().min(1).required(),
-    })
-      .when("role", {
-        is: "staff",
-        then: Joi.required(),
-      })
-      .when("role", {
-        is: "porter",
-        then: Joi.required(),
-      }),
+      earningRates: Joi.array()
+        .items(
+          Joi.object({
+            earningRate: Joi.number().min(1).max(10000).required(),
+            serviceId: Joi.objectId().required(),
+          }).required()
+        )
+        .required(),
+    }).when("role", {
+      is: "staff",
+      then: Joi.required(),
+    }),
     managerDetails: Joi.object({
       staffLocationsVisibleToManager: Joi.array().items(
         Joi.objectId().required()
@@ -359,6 +369,15 @@ function updateManagerPermission(user) {
 
   return schema.validate(user);
 }
+
+function validateAssignDealer(user) {
+  const schema = Joi.object({
+    customerId: Joi.objectId().required(),
+    remove: Joi.boolean().required(),
+  });
+
+  return schema.validate(user);
+}
 function validateRequestResetPassword(user) {
   const schema = Joi.object({
     email: Joi.string().email().min(5).max(255).required(),
@@ -374,6 +393,7 @@ exports.user = {
   validateUpdatePassword,
   validateRequestResetPassword,
   updateManagerPermission,
+  validateAssignDealer,
   User,
   validUserRoles,
 };

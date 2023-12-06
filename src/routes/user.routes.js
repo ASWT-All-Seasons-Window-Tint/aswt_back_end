@@ -21,6 +21,7 @@ const validDateParamsMiddleware = require("../middleware/validDateParams.middlew
 const {
   validate,
   validatePatch,
+  validateAssignDealer,
   validateUpdatePassword,
   validateResetPassword,
   validateRequestResetPassword,
@@ -89,6 +90,20 @@ router.get(
 );
 
 router.get(
+  "/staff-assigned-to-dealership",
+  auth,
+  roleBaseAuth(["customer"]),
+  asyncMiddleware(userController.fetchStaffsAssignedToDealership)
+);
+
+router.get(
+  "/staff-assigned-to-dealership/:customerId",
+  auth,
+  roleBaseAuth(["admin"]),
+  asyncMiddleware(userController.fetchStaffsAssignedToDealership)
+);
+
+router.get(
   "/staff-total-earning-per-date/start/:startDate/end/:endDate",
   auth,
   validDateParamsMiddleware(7, true),
@@ -132,6 +147,15 @@ router.put(
   auth,
   validateMiddleware(validateUpdatePassword),
   asyncMiddleware(userController.updateUserPassword)
+);
+
+router.put(
+  "/update-staff-dealership/:staffId",
+  validateObjectIdWithXArgMiddleware(["staffId"]),
+  auth,
+  admin,
+  validateMiddleware(validateAssignDealer),
+  asyncMiddleware(userController.assignOrRemoveDealerFromStaff)
 );
 
 router.put(
