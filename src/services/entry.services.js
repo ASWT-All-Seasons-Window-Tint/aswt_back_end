@@ -267,6 +267,34 @@ class EntryService {
     return await Entry.findOne({ name: caseInsensitiveName });
   }
 
+  getCarAddedByStaffOnPremise(staffId, vin, carId) {
+    return Entry.aggregate([
+      {
+        $unwind: "$invoice.carDetails",
+      },
+      vin
+        ? {
+            $match: {
+              "invoice.carDetails.vin": vin,
+            },
+          }
+        : {
+            $match: {
+              "invoice.carDetails._id": new mongoose.Types.ObjectId(carId),
+            },
+          },
+      {
+        $unwind: "$invoice.carDetails.servicesDone",
+      },
+      {
+        $match: {
+          "invoice.carDetails.servicesDone.staffId":
+            new mongoose.Types.ObjectId(staffId),
+        },
+      },
+    ]);
+  }
+
   getCarsDoneByStaff = async (
     entryId,
     staffId,
@@ -277,7 +305,8 @@ class EntryService {
     vin,
     porterId,
     waitingList,
-    isFromAppointment
+    isFromAppointment,
+    carId
   ) => {
     return Entry.aggregate(
       pipeline({
@@ -291,6 +320,7 @@ class EntryService {
         porterId,
         waitingList,
         isFromAppointment,
+        carId,
       })
     );
   };

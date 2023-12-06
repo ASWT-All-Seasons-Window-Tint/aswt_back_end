@@ -72,7 +72,8 @@ class UserService {
 
   async fetchIdsOfStaffsWhoCanTakeAppointments() {
     const staffsWhoCanTakeAppointments = await User.find({
-      "staffDetails.isAvailableForAppointments": true,
+      "staffDetails.assignedDealerships": undefined,
+      isDeleted: undefined,
     });
 
     return staffsWhoCanTakeAppointments.map((staff) => staff._id);
@@ -80,7 +81,7 @@ class UserService {
 
   countStaffsWhoCanTakeAppointments() {
     return User.count({
-      "staffDetails.isAvailableForAppointments": true,
+      "staffDetails.assignedDealerships": undefined,
     });
   }
 
@@ -151,6 +152,123 @@ class UserService {
       ? await this.query(role, "-departments -password")
       : await this.query(role, "-customerDetails -password");
   };
+
+  getServicesWithoutEarningRateAndTotalEarnings(serviceIds, staffId) {
+    return User.aggregate([
+      {
+        $match: {
+          _id: new mongoose.Types.ObjectId(staffId),
+          role: "staff",
+        },
+      },
+      {
+        $addFields: {
+          serviceIdsWithEarningRate: {
+            $ifNull: [
+              {
+                $map: {
+                  input: "$staffDetails.earningRates",
+                  as: "earningRate",
+                  in: "$$earningRate.serviceId",
+                },
+              },
+              [],
+            ],
+          },
+        },
+      },
+      {
+        $addFields: {
+          serviceIdsToCheck: {
+            $map: {
+              input: serviceIds,
+              in: {
+                $toObjectId: "$$this",
+              },
+            },
+          },
+        },
+      },
+      {
+        $addFields: {
+          totalEarnings: {
+            $sum: {
+              $map: {
+                input: {
+                  $filter: {
+                    input: {
+                      $ifNull: ["$staffDetails.earningRates", []],
+                    },
+                    cond: {
+                      $in: ["$$this.serviceId", "$serviceIdsToCheck"],
+                    },
+                  },
+                },
+                in: "$$this.earningRate",
+              },
+            },
+          },
+        },
+      },
+      {
+        $addFields: {
+          serviceIdsWithoutEarningRate: {
+            $filter: {
+              input: "$serviceIdsToCheck",
+              as: "serviceId",
+              cond: {
+                $not: {
+                  $in: ["$$serviceId", "$serviceIdsWithEarningRate"],
+                },
+              },
+            },
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: "services",
+          localField: "serviceIdsWithoutEarningRate",
+          foreignField: "_id",
+          as: "servicesWithoutEarningRate",
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          servicesWithoutEarningRate: {
+            $map: {
+              input: "$servicesWithoutEarningRate",
+              in: "$$this.name",
+            },
+          },
+          totalEarnings: 1,
+        },
+      },
+    ]);
+  }
+
+  assignOrRemoveDealershipFromStaff(staffId, customerId, remove) {
+    const assignedDealershipsArray = {
+      "staffDetails.assignedDealerships": customerId,
+    };
+
+    return User.findOneAndUpdate(
+      { _id: staffId, role: "staff" },
+      remove
+        ? { $pull: assignedDealershipsArray }
+        : { $addToSet: assignedDealershipsArray },
+      { new: true }
+    ).select(
+      "-password -staffDetails.signInLocations -staffDetails.earningHistory"
+    );
+  }
+
+  fetchStaffsAssignedToDealership(customerId) {
+    return User.find({
+      "staffDetails.assignedDealerships": customerId,
+    }).select("firstName lastName email");
+  }
 
   async getCustomersForStaff() {
     return await User.find({ role: "customer", isDeleted: undefined }).select(
@@ -343,26 +461,18 @@ class UserService {
   }
 
   updateStaffTotalEarnings = async (staff, session, amountToBeAdded) => {
-    const staffFromDb = await User.findById(staff._id).session(session);
-    staff = staffFromDb;
-
     const date = new Date();
-
-    const staffEarningRate = staff.staffDetails.earningRate;
-    const amountToBePaid = amountToBeAdded
-      ? amountToBeAdded + staffEarningRate
-      : staffEarningRate;
 
     const earningHistory = {
       timestamp: date,
-      amountEarned: amountToBePaid,
+      amountEarned: amountToBeAdded,
     };
 
     return await User.updateOne(
       { _id: staff._id },
       {
         $inc: {
-          "staffDetails.totalEarning": amountToBePaid,
+          "staffDetails.totalEarning": amountToBeAdded,
         },
         $set: {
           "staffDetails.mostRecentScannedTime": date,
@@ -431,9 +541,11 @@ class UserService {
   updateStaffTotalEarningsBasedOnInCentives = async (
     mongoSession,
     staffId,
-    user
+    user,
+    amountEarned,
+    numberOfVehicleToAdd
   ) => {
-    const activeIncentive = await isIncentiveActive();
+    let activeIncentive = await isIncentiveActive();
 
     if (!activeIncentive) return undefined;
 
@@ -445,6 +557,7 @@ class UserService {
       eligibleStaffs,
     } = activeIncentive;
 
+    const totalAmountEarned = amountToBePaid + amountEarned;
     const reqParam = {};
     reqParam.params = {};
 
@@ -456,13 +569,43 @@ class UserService {
 
     const entries = await entryServices.getCarsDoneByStaff(...filterArguments);
     const { totalJobCount } = getJobCounts(entries);
+    console.log(totalJobCount + numberOfVehicleToAdd);
 
-    if (totalJobCount >= numberOfVehiclesThreshold) {
+    if (totalJobCount + numberOfVehicleToAdd >= numberOfVehiclesThreshold) {
       if (!eligibleStaffs.includes(new mongoose.Types.ObjectId(staffId))) {
-        await this.updateStaffTotalEarnings(user, mongoSession, amountToBePaid);
-        activeIncentive.eligibleStaffs.push(staffId);
+        await this.updateStaffTotalEarnings(
+          user,
+          mongoSession,
+          totalAmountEarned
+        );
 
-        return await activeIncentive.save({ session: mongoSession });
+        let retryCount = 0;
+        while (retryCount < 10) {
+          try {
+            activeIncentive.eligibleStaffs.push(staffId);
+
+            const result = await activeIncentive.save({
+              session: mongoSession,
+            });
+
+            return result;
+          } catch (error) {
+            if (error.name === "VersionError") {
+              console.warn(
+                "VersionError: Document has been modified by another process."
+              );
+
+              activeIncentive = await isIncentiveActive();
+
+              retryCount++;
+              console.log(`Retrying update. Retry count: ${retryCount}`);
+            } else {
+              // Handle other errors
+              console.error("Error during update:", error);
+              throw error; // Rethrow other errors
+            }
+          }
+        }
       }
     }
   };

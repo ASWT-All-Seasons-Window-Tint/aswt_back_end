@@ -166,17 +166,48 @@ class EntryController {
     if (staffId && !entry.invoice.createdBy) entry.invoice.createdBy = staffId;
 
     const mongoSession = await mongoose.startSession();
+    const resultsError = {};
 
     const results = await mongoTransactionUtils(mongoSession, async () => {
       if (staffId) {
+        const [servicesWithoutEarningRateAndTotalEarnings] =
+          await userService.getServicesWithoutEarningRateAndTotalEarnings(
+            [...new Set(serviceIds)],
+            staffId
+          );
+
+        if (!servicesWithoutEarningRateAndTotalEarnings) {
+          resultsError.message = "We can't find staff with given ID";
+          resultsError.code = 404;
+
+          return resultsError;
+        }
+
+        const { servicesWithoutEarningRate, totalEarnings } =
+          servicesWithoutEarningRateAndTotalEarnings;
+
+        if (servicesWithoutEarningRate.length > 0) {
+          resultsError.message = `You do not have a rate for the following services (${servicesWithoutEarningRate.join(
+            ", "
+          )}`;
+          resultsError.code = 400;
+          return resultsError;
+        }
+
         const updatedStaffEarningByIncentives =
           await userService.updateStaffTotalEarningsBasedOnInCentives(
             mongoSession,
             staffId,
-            req.user
+            req.user,
+            totalEarnings,
+            1
           );
         if (!updatedStaffEarningByIncentives)
-          await userService.updateStaffTotalEarnings(req.user, mongoSession);
+          await userService.updateStaffTotalEarnings(
+            req.user,
+            mongoSession,
+            totalEarnings
+          );
       }
 
       const id = entry._id;
@@ -211,6 +242,9 @@ class EntryController {
 
       updatedEntry.id = updatedEntry._id;
     });
+    if (resultsError.message)
+      return jsonResponse(res, resultsError.code, false, resultsError.message);
+
     if (results) return jsonResponse(res, 500, false, "Something failed");
 
     delete carDetails.priceBreakdown;
@@ -782,14 +816,51 @@ class EntryController {
     const mongoSession = await mongoose.startSession();
 
     const results = await mongoTransactionUtils(mongoSession, async () => {
+      const [servicesWithoutEarningRateAndTotalEarnings] =
+        await userService.getServicesWithoutEarningRateAndTotalEarnings(
+          [serviceId],
+          staffId
+        );
+
+      if (!servicesWithoutEarningRateAndTotalEarnings) {
+        resultsError.message = "We can't find staff with given ID";
+        resultsError.code = 404;
+
+        return resultsError;
+      }
+
+      const { servicesWithoutEarningRate, totalEarnings } =
+        servicesWithoutEarningRateAndTotalEarnings;
+
+      if (servicesWithoutEarningRate.length > 0) {
+        resultsError.message = `You do not have a rate for the following services (${servicesWithoutEarningRate.join(
+          ", "
+        )}`;
+        resultsError.code = 400;
+        return resultsError;
+      }
+
+      const isTheCarWorkedOnByTheStaff =
+        await entryService.getCarAddedByStaffOnPremise(staffId, vin, carId);
+
+      const numberOfVehicleToAdd =
+        isTheCarWorkedOnByTheStaff.length < 1 ? 1 : 0;
+
       const updatedStaffEarningByIncentives =
         await userService.updateStaffTotalEarningsBasedOnInCentives(
           mongoSession,
           staffId,
-          req.user
+          req.user,
+          totalEarnings,
+          numberOfVehicleToAdd
         );
+
       if (!updatedStaffEarningByIncentives)
-        await userService.updateStaffTotalEarnings(req.user, mongoSession);
+        await userService.updateStaffTotalEarnings(
+          req.user,
+          mongoSession,
+          totalEarnings
+        );
 
       const entryId = entry._id;
 

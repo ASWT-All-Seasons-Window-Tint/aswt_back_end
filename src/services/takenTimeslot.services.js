@@ -144,6 +144,11 @@ class TakenTimeslotService {
         },
       },
       {
+        $match: {
+          forDealership: undefined,
+        },
+      },
+      {
         $group: {
           _id: "$date",
           id: {
@@ -161,12 +166,18 @@ class TakenTimeslotService {
           timeslots: {
             $push: "$timeslots",
           },
+          isAvailable: {
+            $push: "$isAvailable",
+          },
         },
       },
       {
         $project: {
           _id: "$id",
           id: 1,
+          isAvailable: {
+            $ifNull: ["$isAvailable", []],
+          },
           date: "$date",
           dateTime: "$dateTime",
           timeslots: {
@@ -195,27 +206,35 @@ class TakenTimeslotService {
           clearedOut: 1,
           dateTime: "$dateTime",
           timeslots: "$timeslots",
-          testsIntersection: {
-            $setIntersection: [
-              {
-                $arrayElemAt: ["$tests", 0],
-              },
-              {
-                $arrayElemAt: ["$tests", 1],
-              },
-            ],
-          },
           timeslotsAsDecimal: {
             $map: {
               input: {
-                $setIntersection: [
-                  {
-                    $arrayElemAt: ["$timeslots", 0],
+                $setIntersection: {
+                  $reduce: {
+                    input: {
+                      $range: [
+                        0,
+                        {
+                          $add: [
+                            { $size: "$isAvailable" },
+                            numberOfStaffsAvailableForAppointment - 1,
+                          ],
+                        },
+                      ],
+                    },
+                    initialValue: { $first: { $slice: ["$timeslots", 0, 1] } },
+                    in: {
+                      $setIntersection: [
+                        {
+                          $first: {
+                            $slice: ["$timeslots", { $add: ["$$this", 1] }, 1],
+                          },
+                        },
+                        "$$value",
+                      ],
+                    },
                   },
-                  {
-                    $arrayElemAt: ["$timeslots", 1],
-                  },
-                ],
+                },
               },
               as: "timeString",
               in: {
@@ -248,40 +267,6 @@ class TakenTimeslotService {
           date: "$date",
           dateTime: "$dateTime",
           timeslots: "$timeslots",
-          timeslotsAsDecimal: {
-            $map: {
-              input: {
-                $setIntersection: [
-                  {
-                    $arrayElemAt: ["$timeslots", 0],
-                  },
-                  {
-                    $arrayElemAt: ["$timeslots", 1],
-                  },
-                ],
-              },
-              as: "timeString",
-              in: {
-                $sum: [
-                  {
-                    $hour: {
-                      $toDate: "$$timeString",
-                    },
-                  },
-                  {
-                    $divide: [
-                      {
-                        $minute: {
-                          $toDate: "$$timeString",
-                        },
-                      },
-                      60,
-                    ],
-                  },
-                ],
-              },
-            },
-          },
           timeslotsInDecimal: {
             $map: {
               input: {
@@ -401,35 +386,6 @@ class TakenTimeslotService {
               },
               in: {
                 $divide: ["$$this", 4],
-              },
-            },
-          },
-          timeslotsAsDecimal: {
-            $map: {
-              input: {
-                $setIntersection: this.getIntersectionArr(
-                  numberOfStaffsAvailableForAppointment
-                ),
-              },
-              as: "timeString",
-              in: {
-                $sum: [
-                  {
-                    $hour: {
-                      $toDate: "$$timeString",
-                    },
-                  },
-                  {
-                    $divide: [
-                      {
-                        $minute: {
-                          $toDate: "$$timeString",
-                        },
-                      },
-                      60,
-                    ],
-                  },
-                ],
               },
             },
           },
@@ -592,6 +548,43 @@ class TakenTimeslotService {
     ]);
   };
 
+  getUnavailableDatesInTheCalendarForAStaff(staffId, startDate, endDate) {
+    return TakenTimeslot.aggregate([
+      {
+        $match: {
+          forDealership: true,
+        },
+      },
+      {
+        $addFields: {
+          dateTime: {
+            $toDate: "$date",
+          },
+        },
+      },
+      {
+        $addFields: {
+          staffString: {
+            $toString: "$staffId",
+          },
+        },
+      },
+      {
+        $match: {
+          dateTime: {
+            $gte: new Date(startDate),
+            $lte: new Date(endDate),
+          },
+        },
+      },
+      {
+        $match: {
+          staffString: staffId,
+        },
+      },
+    ]);
+  }
+
   getIntersectionArr(numberOfStaffsAvailableForAppointment) {
     const intersectionArr = [];
 
@@ -683,6 +676,36 @@ class TakenTimeslotService {
       takenTimeslots,
     };
   };
+
+  staffBlockOutsADate(staffId, willBeAvailableForOnlineBooking, date) {
+    const takenTimeslot = new TakenTimeslot({
+      staffId,
+      date,
+      isAvailable: willBeAvailableForOnlineBooking ? true : undefined,
+      forDealership: true,
+      clearedOut: true,
+    });
+
+    return takenTimeslot.save();
+  }
+
+  getTakenTimeSlotDateString(inputDate) {
+    inputDate = new Date(inputDate);
+
+    // Check if the input is a valid Date object
+    if (!(inputDate instanceof Date) || isNaN(inputDate)) {
+      return false;
+    }
+
+    // Get year, month, and day from the date
+    const year = inputDate.getFullYear();
+    const month = String(inputDate.getMonth() + 1).padStart(2, "0"); // Months are zero-based
+    const day = String(inputDate.getDate()).padStart(2, "0");
+
+    // Create the formatted date string
+    const formattedDate = `${year}-${month}-${day}`;
+    return formattedDate;
+  }
 
   retriveTakenTimeslots = async (appointment, timeOfCompletion) => {
     const staffId = appointment.staffId;

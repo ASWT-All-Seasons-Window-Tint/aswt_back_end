@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const Joi = require("joi");
 const { User } = require("./user.model").user;
 const addVirtualIdUtils = require("../utils/addVirtualId.utils");
 
@@ -20,6 +21,14 @@ const takenTimeslotSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    forDealership: {
+      type: Boolean,
+      default: undefined,
+    },
+    isAvailable: {
+      type: Boolean,
+      default: undefined,
+    },
   },
   { toJSON: { virtuals: true } },
   { toObject: { virtuals: true } }
@@ -29,4 +38,13 @@ addVirtualIdUtils(takenTimeslotSchema);
 
 const TakenTimeslot = mongoose.model("TakenTimeslot", takenTimeslotSchema);
 
+function blockOut(user) {
+  const schema = Joi.object({
+    willBeAvailableForOnlineBooking: Joi.boolean().required(),
+  });
+
+  return schema.validate(user);
+}
+
 exports.TakenTimeslot = TakenTimeslot;
+exports.blockOut = blockOut;
