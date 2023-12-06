@@ -2,6 +2,7 @@ const {
   jsonResponse,
   successMessage,
   badReqResponse,
+  notFoundResponse,
 } = require("../common/messages.common");
 const takenTimeslotsServices = require("../services/takenTimeslot.services");
 const userService = require("../services/user.services");
@@ -177,6 +178,52 @@ class TakenTimeslotControllers {
         endDate,
         timeOfCompletion,
         numberOfStaffsAvailableForAppointment
+      );
+
+    return res.send(
+      successMessage(MESSAGES.FETCHED, unavailableDatesInTheCalendar)
+    );
+  }
+  async getUnavailableDatesInTheCalendarForDealership(req, res) {
+    const { startDate, endDate } = req.params;
+    const { _id: customerId } = req.user;
+
+    const staffIds = await userService.fetchStaffIdsAssignedToDealership(
+      customerId
+    );
+
+    if (staffIds.length < 1)
+      return notFoundResponse(res, "No staff is assigned to the dealer");
+
+    const unavailableDatesInTheCalendar =
+      await takenTimeslotsServices.getUnavailableDatesInTheCalendarForADealer(
+        staffIds,
+        startDate,
+        endDate
+      );
+
+    return res.send(
+      successMessage(MESSAGES.FETCHED, unavailableDatesInTheCalendar)
+    );
+  }
+
+  async getUnavailableDatesInTheCalendarForStaff(req, res) {
+    const { startDate, endDate, staffId } = req.params;
+    const { _id: customerId } = req.user;
+
+    const staffCount = await userService.isDealerAssignedToStaff(
+      customerId,
+      staffId
+    );
+
+    if (staffCount < 1)
+      return notFoundResponse(res, "This staff is not assigned to the dealer");
+
+    const unavailableDatesInTheCalendar =
+      await takenTimeslotsServices.getUnavailableDatesInTheCalendarForAStaff(
+        staffId,
+        startDate,
+        endDate
       );
 
     return res.send(
