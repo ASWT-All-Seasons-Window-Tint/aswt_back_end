@@ -1593,6 +1593,8 @@ class EntryService {
         carDetails.vin
       );
 
+      if (carAddedByCustomer.staffId) return false;
+
       const combinedCardetail = this.mergeCarObjects(
         carAddedByCustomer,
         carDetails
