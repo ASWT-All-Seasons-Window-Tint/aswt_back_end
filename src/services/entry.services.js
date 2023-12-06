@@ -1427,17 +1427,11 @@ class EntryService {
   }
 
   async checkDuplicateEntry(customerId, vin) {
-    const { today, tomorrow } = this.getTodayAndTomorrow();
     return await Entry.findOne({
       $and: [
         { customerId },
+        { isFromDealership: true },
         { "invoice.carDetails.vin": vin },
-        {
-          entryDate: {
-            $gte: today,
-            $lte: tomorrow,
-          },
-        },
       ],
     });
   }
