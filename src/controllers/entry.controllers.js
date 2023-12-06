@@ -164,7 +164,7 @@ class EntryController {
     );
 
     if (!updateCarDetailsResult)
-      forbiddenResponse(res, "Services has already been added");
+      return forbiddenResponse(res, "Services has already been added");
 
     if (staffId && !entry.invoice.createdBy) entry.invoice.createdBy = staffId;
 

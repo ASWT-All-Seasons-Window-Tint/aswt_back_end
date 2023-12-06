@@ -584,7 +584,6 @@ class UserService {
 
     const entries = await entryServices.getCarsDoneByStaff(...filterArguments);
     const { totalJobCount } = getJobCounts(entries);
-    console.log(totalJobCount + numberOfVehicleToAdd);
 
     if (totalJobCount + numberOfVehicleToAdd >= numberOfVehiclesThreshold) {
       if (!eligibleStaffs.includes(new mongoose.Types.ObjectId(staffId))) {
