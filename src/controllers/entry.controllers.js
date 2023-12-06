@@ -153,7 +153,7 @@ class EntryController {
       lineId
     );
 
-    entryService.updateCarDetails(
+    const updateCarDetailsResult = entryService.updateCarDetails(
       entry,
       carDetails,
       price,
@@ -162,6 +162,9 @@ class EntryController {
       carExist,
       porterId
     );
+
+    if (!updateCarDetailsResult)
+      return forbiddenResponse(res, "Services has already been added");
 
     if (staffId && !entry.invoice.createdBy) entry.invoice.createdBy = staffId;
 
