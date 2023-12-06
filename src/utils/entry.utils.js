@@ -16,6 +16,7 @@ class EntryUtils {
     porterId,
     waitingList,
     isFromAppointment,
+    carId,
   }) => {
     const match = {};
     if (entryId) {
@@ -45,6 +46,7 @@ class EntryUtils {
                 vin,
                 porterId,
                 waitingList,
+                carId,
               }),
             },
           },
@@ -418,6 +420,7 @@ class EntryUtils {
     vin,
     waitingList,
     porterId,
+    carId,
   }) {
     const { today, tomorrow } = getTodayAndTomorrowUtils();
 
@@ -426,6 +429,9 @@ class EntryUtils {
     };
     const porterFilter = {
       $eq: ["$$car.porterId", new mongoose.Types.ObjectId(porterId)],
+    };
+    const carIdFilter = {
+      $eq: ["$$car.porterId", new mongoose.Types.ObjectId(carId)],
     };
     const waitingListFilter = {
       $and: [
@@ -529,6 +535,8 @@ class EntryUtils {
       results.$and.push(porterFilter);
     }
 
+    if (carId) results.$and.push(carIdFilter);
+
     if (date === "today") {
       results.$and.push({
         $eq: [
@@ -573,6 +581,7 @@ class EntryUtils {
       isFromAppointment,
       startDate,
       endDate,
+      carId,
     } = req.params;
     const filterArguments = [entryId, staffId, customerId, date];
 
@@ -595,7 +604,13 @@ class EntryUtils {
       filterArguments.push(undefined, undefined, vin);
     }
 
-    return [...filterArguments, porterId, waitingList, isFromAppointment];
+    return [
+      ...filterArguments,
+      porterId,
+      waitingList,
+      isFromAppointment,
+      carId,
+    ];
   };
   getDateRange({ type, year, month, date }) {
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;

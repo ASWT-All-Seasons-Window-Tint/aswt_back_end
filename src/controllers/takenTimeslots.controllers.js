@@ -191,7 +191,37 @@ class TakenTimeslotControllers {
     return staffWithoutGivenTime;
   }
 
-  async updateTakenTimeslots() {}
+  async staffBlockOutsADate(req, res) {
+    let { willBeAvailableForOnlineBooking } = req.body;
+    const { date } = req.params;
+    const { _id: staffId } = req.user;
+
+    const takenTimeslotDate =
+      takenTimeslotsServices.getTakenTimeSlotDateString(date);
+
+    const takenTimeslot =
+      await takenTimeslotsServices.getTakenTimeSlotsByDateAndStaffId({
+        date: takenTimeslotDate,
+        staffId,
+      });
+
+    if (takenTimeslot)
+      return badReqResponse(
+        res,
+        "You have either blockedout the date or there is appointment with this date"
+      );
+
+    if (willBeAvailableForOnlineBooking === "false")
+      willBeAvailableForOnlineBooking = false;
+
+    const blockedDate = await takenTimeslotsServices.staffBlockOutsADate(
+      staffId,
+      willBeAvailableForOnlineBooking,
+      date
+    );
+
+    res.send(successMessage("Date is successfully blocked out", blockedDate));
+  }
 
   async getClearedOutDates(req, res) {
     const clearedOutDates = await takenTimeslotsServices.getClearOutDates();

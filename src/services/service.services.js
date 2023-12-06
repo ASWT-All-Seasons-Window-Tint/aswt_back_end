@@ -25,6 +25,13 @@ class ServiceService {
     return missingIds;
   }
 
+  findServicesNotInArray(serviceIds) {
+    return Service.find({
+      _id: { $nin: serviceIds },
+      isResidential: undefined,
+    });
+  }
+
   async getServiceByName(name) {
     const caseInsensitiveName = new RegExp(name, "i");
 
