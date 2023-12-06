@@ -582,6 +582,96 @@ class TakenTimeslotService {
           staffString: staffId,
         },
       },
+      {
+        $project: {
+          _id: 1,
+          date: 1,
+          staffId: 1,
+          isTaken: { $literal: true },
+        },
+      },
+      {
+        $sort: {
+          date: -1,
+        },
+      },
+    ]);
+  }
+
+  getUnavailableDatesInTheCalendarForADealer(staffIds, startDate, endDate) {
+    const numberOfStaffAssignedTodealer = staffIds.length;
+
+    return TakenTimeslot.aggregate([
+      {
+        $match: {
+          forDealership: true,
+        },
+      },
+      {
+        $addFields: {
+          dateTime: {
+            $toDate: "$date",
+          },
+        },
+      },
+      {
+        $addFields: {
+          staffString: {
+            $toString: "$staffId",
+          },
+        },
+      },
+      {
+        $match: {
+          dateTime: {
+            $gte: new Date(startDate),
+            $lte: new Date(endDate),
+          },
+        },
+      },
+      {
+        $match: {
+          staffId: {
+            $in: staffIds,
+          },
+        },
+      },
+      {
+        $group: {
+          _id: "$date",
+          id: {
+            $first: "$_id",
+          },
+          forDealership: {
+            $push: "$forDealership",
+          },
+        },
+      },
+      {
+        $project: {
+          _id: "$id",
+          isTaken: {
+            $cond: [
+              {
+                $gte: [
+                  {
+                    $size: "$forDealership",
+                  },
+                  numberOfStaffAssignedTodealer,
+                ],
+              },
+              true,
+              false,
+            ],
+          },
+          date: "$_id",
+        },
+      },
+      {
+        $sort: {
+          date: -1,
+        },
+      },
     ]);
   }
 

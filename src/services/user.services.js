@@ -270,6 +270,21 @@ class UserService {
     }).select("firstName lastName email");
   }
 
+  async fetchStaffIdsAssignedToDealership(customerId) {
+    const staffs = await User.find({
+      "staffDetails.assignedDealerships": customerId,
+    });
+
+    return staffs.map((staff) => staff._id);
+  }
+
+  isDealerAssignedToStaff(customerId, staffId) {
+    return User.countDocuments({
+      "staffDetails.assignedDealerships": customerId,
+      _id: staffId,
+    });
+  }
+
   async getCustomersForStaff() {
     return await User.find({ role: "customer", isDeleted: undefined }).select(
       "firstName lastName id"

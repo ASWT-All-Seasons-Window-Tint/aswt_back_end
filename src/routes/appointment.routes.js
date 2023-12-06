@@ -76,6 +76,27 @@ router.post(
 );
 
 router.get(
+  "/get-unavailable-dates-for-dealer/start/:startDate/end/:endDate",
+  auth,
+  roleBaseAuthMiddleware(["customer"]),
+  validDateParamsMiddleware(30, true),
+  asyncMiddleware(
+    takenTimeslotsControllers.getUnavailableDatesInTheCalendarForDealership
+  )
+);
+
+router.get(
+  "/get-unavailable-dates-for-dealer/start/:startDate/end/:endDate/:staffId",
+  auth,
+  validateObjectIdWithXargs(["staffId"]),
+  roleBaseAuthMiddleware(["customer"]),
+  validDateParamsMiddleware(30, true),
+  asyncMiddleware(
+    takenTimeslotsControllers.getUnavailableDatesInTheCalendarForStaff
+  )
+);
+
+router.get(
   "/:date",
   auth,
   roleBaseAuthMiddleware(["receptionist", "admin"]),
