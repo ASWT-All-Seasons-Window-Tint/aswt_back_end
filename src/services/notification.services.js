@@ -236,6 +236,7 @@ class NotificationService {
       {
         $project: {
           _id: 1,
+          id: "$_id",
           title: 1,
           type: 1,
           entryId: 1,
