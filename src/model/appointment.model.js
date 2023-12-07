@@ -192,8 +192,16 @@ const carDetailsSchema = new mongoose.Schema({
 const appointmentSchema = new mongoose.Schema({
   appointmentType: {
     type: String,
-    enum: ["auto", "commercial"],
+    enum: ["auto", "commercial", "dealership"],
     required: true,
+  },
+  isSubscribed: {
+    type: Boolean,
+    default: undefined,
+  },
+  isFromDealership: {
+    type: Boolean,
+    default: undefined,
   },
   customerEmail: {
     type: String,
@@ -208,7 +216,7 @@ const appointmentSchema = new mongoose.Schema({
   },
   customerId: {
     type: String,
-    minlength: 2,
+    minlength: 1,
     maxlength: 10,
   },
   customerNumber: {
@@ -275,6 +283,7 @@ function validate(appointment) {
     customerName: Joi.string().min(2).max(255).required(),
     customerNumber: Joi.string().required(),
     startTime: Joi.date(),
+    isSubscribed: Joi.boolean().valid(true, false),
     description: Joi.string().max(255).min(3),
     carDetails: Joi.object({
       year: Joi.string().min(4).max(4).required(),
@@ -353,6 +362,15 @@ function validate(appointment) {
   return schema.validate(appointment);
 }
 
+function validateAppointmentForDealership(appointment) {
+  const schema = Joi.object({
+    startTime: Joi.date().required(),
+    isSubscribed: Joi.boolean().required(),
+  });
+
+  return schema.validate(appointment);
+}
+
 function validateGetTakenTimeslots(appointment) {
   const schema = Joi.object({
     date: Joi.date().required(),
@@ -414,6 +432,7 @@ exports.joiValidators = {
   validateGetTakenTimeslots,
   validateUpdateQuote,
   unavailableTimeslots,
+  validateAppointmentForDealership,
 };
 exports.validate = validate;
 exports.validatePatch = validatePatch;

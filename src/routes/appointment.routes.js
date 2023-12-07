@@ -18,6 +18,7 @@ const {
   validateGetTakenTimeslots,
   validateUpdateQuote,
   unavailableTimeslots,
+  validateAppointmentForDealership,
 } = joiValidators;
 
 router.post(
@@ -66,6 +67,15 @@ router.post(
   validateMiddleware(blockOut),
   roleBaseAuthMiddleware(["staff"]),
   asyncMiddleware(takenTimeslotsControllers.staffBlockOutsADate)
+);
+
+router.post(
+  "/create-appointment-for-dealership/:qbId",
+  auth,
+  validateMiddleware(validateAppointmentForDealership),
+  validateTimeslotsMiddleware,
+  roleBaseAuthMiddleware(["customer"]),
+  asyncMiddleware(appointmentControllers.createAppointmentForDealership)
 );
 
 router.post(
