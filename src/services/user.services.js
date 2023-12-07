@@ -248,6 +248,13 @@ class UserService {
     ]);
   }
 
+  getDealersAssignedToStaff(staffId) {
+    return User.findOne({ _id: staffId, role: "staff" }).populate(
+      "staffDetails.assignedDealerships",
+      "customerDetails.qbId"
+    );
+  }
+
   assignOrRemoveDealershipFromStaff(staffId, customerId, remove) {
     const assignedDealershipsArray = {
       "staffDetails.assignedDealerships": customerId,

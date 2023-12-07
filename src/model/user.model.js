@@ -286,19 +286,19 @@ function validate(user) {
         then: Joi.forbidden(),
         otherwise: Joi.required(),
       }),
-    staffDetails: Joi.object({
-      earningRates: Joi.array()
-        .items(
-          Joi.object({
-            earningRate: Joi.number().min(1).max(10000).required(),
-            serviceId: Joi.objectId().required(),
-          }).required()
-        )
-        .required(),
-    }).when("role", {
-      is: "staff",
-      then: Joi.required(),
-    }),
+    // staffDetails: Joi.object({
+    //   earningRates: Joi.array()
+    //     .items(
+    //       Joi.object({
+    //         earningRate: Joi.number().min(1).max(10000).required(),
+    //         serviceId: Joi.objectId().required(),
+    //       }).required()
+    //     )
+    //     .required(),
+    // }).when("role", {
+    //   is: "staff",
+    //   then: Joi.required(),
+    // }),
     managerDetails: Joi.object({
       staffLocationsVisibleToManager: Joi.array().items(
         Joi.objectId().required()
@@ -386,6 +386,15 @@ function validateRequestResetPassword(user) {
   return schema.validate(user);
 }
 
+function addEarningRate(user) {
+  const schema = Joi.object({
+    serviceId: Joi.objectId().required(),
+    earningRate: Joi.number().min(1).max(9999).required(),
+  });
+
+  return schema.validate(user);
+}
+
 exports.user = {
   validate,
   validatePatch,
@@ -394,6 +403,7 @@ exports.user = {
   validateRequestResetPassword,
   updateManagerPermission,
   validateAssignDealer,
+  addEarningRate,
   User,
   validUserRoles,
 };
