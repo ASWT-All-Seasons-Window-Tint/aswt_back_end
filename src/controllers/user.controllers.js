@@ -11,6 +11,7 @@ const {
 } = require("../common/messages.common");
 const generateRandomAvatar = require("../utils/generateRandomAvatar.utils");
 const departmentServices = require("../services/department.services");
+const customerServices = require("../services/customer.service");
 const { transporter, mailOptions } = require("../utils/email.utils");
 const bcrypt = require("bcrypt");
 const propertiesToPick = require("../common/propertiesToPick.common");
@@ -82,33 +83,36 @@ class UserController {
     }
 
     if (role === "staff") {
-      const serviceIds = [
-        ...new Set(
-          staffDetails.earningRates.map((earningRate) => earningRate.serviceId)
-        ),
-      ];
+      req.body.staffDetails = {};
+      req.body.staffDetails.earningRates = [];
 
-      const [servicesNotInArray, missingIds] = await Promise.all([
-        serviceServices.findServicesNotInArray(serviceIds),
-        serviceServices.validateServiceIds(serviceIds),
-      ]);
+      // const serviceIds = [
+      //   ...new Set(
+      //     staffDetails.earningRates.map((earningRate) => earningRate.serviceId)
+      //   ),
+      // ];
 
-      if (missingIds.length > 0)
-        return notFoundResponse(
-          res,
-          `Services with IDs: (${missingIds}) could not be found`
-        );
+      // const [servicesNotInArray, missingIds] = await Promise.all([
+      //   serviceServices.findServicesNotInArray(serviceIds),
+      //   serviceServices.validateServiceIds(serviceIds),
+      // ]);
 
-      if (servicesNotInArray.length > 0) {
-        const serviceNames = servicesNotInArray.map((service) => service.name);
+      // if (missingIds.length > 0)
+      //   return notFoundResponse(
+      //     res,
+      //     `Services with IDs: (${missingIds}) could not be found`
+      //   );
 
-        return badReqResponse(
-          res,
-          `Earning rate is required for the following services: (${serviceNames.join(
-            ", "
-          )})`
-        );
-      }
+      // if (servicesNotInArray.length > 0) {
+      //   const serviceNames = servicesNotInArray.map((service) => service.name);
+
+      //   return badReqResponse(
+      //     res,
+      //     `Earning rate is required for the following services: (${serviceNames.join(
+      //       ", "
+      //     )})`
+      //   );
+      // }
     }
 
     const forbiddenRoles = {
@@ -207,6 +211,22 @@ class UserController {
       );
 
     res.send(successMessage(MESSAGES.FETCHED, staffsDetails));
+  }
+
+  async getDealershipsAssignedToStaff(req, res) {
+    const { _id: staffId } = req.user;
+
+    const staff = await userService.getDealersAssignedToStaff(staffId);
+
+    const dealershipIds = staff.staffDetails.assignedDealerships.map(
+      (dealership) => dealership.customerDetails.qbId
+    );
+
+    const customers = await customerServices.getOrSetCustomersOnCache(
+      dealershipIds
+    );
+
+    res.send(successMessage(MESSAGES.FETCHED, customers));
   }
 
   async updateStaffLocationsVisibleToManager(req, res) {
