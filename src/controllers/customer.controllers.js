@@ -105,6 +105,17 @@ class Customer {
     return res.send(successMessage(MESSAGES.FETCHED, customer));
   }
 
+  async getCustomersByIds(ids) {
+    const { data: customers, error } =
+      await customerService.getOrSetCustomersOnCache(ids);
+
+    if (error)
+      return jsonResponse(res, 404, false, error.Fault.Error[0].Detail);
+
+    // 'customers' now contains an array of customer records from QuickBooksc
+    return customers;
+  }
+
   async updateCustomerById(req, res) {
     const { DisplayName, PrimaryEmailAddr } = req.body;
 
