@@ -21,6 +21,9 @@ const serviceServices = require("../services/service.services");
 const { initiateRefund } = require("./stripe.controllers");
 const initializeQbUtils = require("../utils/initializeQb.utils");
 const customerService = require("../services/customer.service");
+const mongoTransactionUtils = require("../utils/mongoTransaction.utils");
+const generateRandomIntegerWithinARangeUtils = require("../utils/generateRandomIntegerWithinARange.utils");
+const { default: mongoose } = require("mongoose");
 
 const redisConnection = { url: process.env.redisUrl };
 const appointmentQueue = new Queue("reminders", redisConnection);
@@ -202,6 +205,98 @@ class AppointmentController {
 
     return takenTimeSlotForStaff;
   };
+
+  async createAppointmentForDealership(req, res) {
+    const { qbId } = req.params;
+    const { startTime, isSubscribed } = req.body;
+
+    const { data: customer, error } =
+      await customerService.getOrSetCustomerOnCache(qbId);
+
+    if (error)
+      return jsonResponse(res, 404, false, error.Fault.Error[0].Detail);
+
+    const { customerEmail, customerName, customerNumber } =
+      appointmentService.getCustomerDetails(customer);
+
+    const startDate =
+      takenTimeslotServices.getTakenTimeSlotDateString(startTime);
+
+    const { errorCode, errorMessage, unavailableDatesInTheCalendar, staffIds } =
+      await takenTimeslotsControllers.generateTakenTimeslotsForDealership(
+        req.user._id,
+        startDate,
+        startDate
+      );
+
+    if (errorCode || errorMessage)
+      return jsonResponse(res, errorCode, false, errorMessage);
+
+    if (unavailableDatesInTheCalendar.length > 0) {
+      for (const unavailableDate of unavailableDatesInTheCalendar) {
+        if (unavailableDate.isTaken) {
+          return badReqResponse(
+            res,
+            "All assigned staffs are engaged for the specied date"
+          );
+        }
+      }
+    }
+
+    const [availableStafsIdsForDealership] =
+      await takenTimeslotServices.getAvailableStafsIdsForDealership(
+        startDate,
+        staffIds
+      );
+
+    let staffId;
+
+    if (!availableStafsIdsForDealership) {
+      const endOfRange = staffIds.length;
+      const index = generateRandomIntegerWithinARangeUtils(endOfRange);
+
+      staffId = staffIds[index];
+    } else {
+      const { availableStaffIds } = availableStafsIdsForDealership;
+      const endOfRange = availableStaffIds.length;
+      const index = generateRandomIntegerWithinARangeUtils(endOfRange);
+
+      staffId = availableStaffIds[index];
+    }
+    const appointmentBody = {
+      appointmentType: "dealership",
+      isSubscribed,
+      isFromDealership: true,
+      customerEmail,
+      customerName,
+      customerName,
+      customerNumber,
+      customerId: qbId,
+      startTime,
+    };
+
+    let appointment;
+    const mongoSession = await mongoose.startSession();
+
+    const results = await mongoTransactionUtils(mongoSession, async () => {
+      await takenTimeslotServices.staffBlockOutsADate(
+        staffId,
+        false,
+        startDate,
+        mongoSession
+      );
+
+      appointment = await appointmentService.createAppointment({
+        body: appointmentBody,
+        staffId,
+        session: mongoSession,
+      });
+    });
+
+    if (results) return jsonResponse(res, 500, false, "Something failed");
+
+    res.send(successMessage(MESSAGES.CREATED, appointment));
+  }
 
   async createCustomerFromAppointmentDetails(req, res) {
     const { appointmentId } = req.params;
