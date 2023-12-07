@@ -123,7 +123,7 @@ class UserService {
 
   getUserWithoutPasswordById = async (role, userId) => {
     const isUserStaff = this.staffRoles.includes(role);
-    const selectArgs = isUserStaff ? "-password" : "-password -staffDetails";
+    const selectArgs = isUserStaff ? "-password" : "-password";
 
     return await User.findOne({ _id: userId, isDeleted: undefined })
       .select(selectArgs)
@@ -131,7 +131,8 @@ class UserService {
         "firstName",
         "lastName",
         "role",
-      ]);
+      ])
+      .populate("staffDetails.earningRates.serviceId", ["name", "type"]);
   };
 
   query = (role, selectArg) =>

@@ -218,13 +218,23 @@ class UserController {
 
     const staff = await userService.getDealersAssignedToStaff(staffId);
 
-    const dealershipIds = staff.staffDetails.assignedDealerships.map(
+    let { assignedDealerships } = staff.staffDetails;
+
+    if (!assignedDealerships || assignedDealerships.length < 0)
+      return notFoundResponse(
+        res,
+        "There is no dealearship assigned to this staff"
+      );
+
+    const dealershipIds = assignedDealerships.map(
       (dealership) => dealership.customerDetails.qbId
     );
 
-    const customers = await customerServices.getOrSetCustomersOnCache(
-      dealershipIds
-    );
+    const { error, data: customers } =
+      await customerServices.getOrSetCustomersOnCache(dealershipIds);
+
+    if (error)
+      return jsonResponse(res, 404, false, error.Fault.Error[0].Detail);
 
     res.send(successMessage(MESSAGES.FETCHED, customers));
   }
@@ -512,8 +522,17 @@ class UserController {
         res,
         "None of earningRate nor serviceId parameter is allowed to be undefined."
       );
-    const isServiceRateAlreadyAdded =
-      await userService.isServiceRateAlreadyAdded(staffId, serviceId);
+
+    const [isServiceRateAlreadyAdded, service] = await Promise.all([
+      userService.isServiceRateAlreadyAdded(staffId, serviceId),
+      serviceServices.getServiceById(serviceId),
+    ]);
+
+    if (!service)
+      return notFoundResponse(
+        res,
+        "We are unable to locate service with the provided service ID."
+      );
 
     if (isServiceRateAlreadyAdded > 0)
       return badReqResponse(
