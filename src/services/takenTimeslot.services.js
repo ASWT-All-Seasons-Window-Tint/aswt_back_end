@@ -689,6 +689,35 @@ class TakenTimeslotService {
     return intersectionArr;
   }
 
+  getAvailableStafsIdsForDealership(date, staffIds) {
+    return TakenTimeslot.aggregate([
+      {
+        $match: {
+          date,
+          forDealership: true,
+        },
+      },
+      {
+        $group: {
+          _id: "$date",
+          allStaffIds: {
+            $push: "$staffId",
+          },
+          id: {
+            $first: "$_id",
+          },
+        },
+      },
+      {
+        $project: {
+          availableStaffIds: {
+            $setDifference: [staffIds, "$allStaffIds"],
+          },
+        },
+      },
+    ]);
+  }
+
   getTakenTimeSlotsByDateAndStaffId({ date, staffId }) {
     return TakenTimeslot.findOne({ date, staffId });
   }
@@ -767,7 +796,7 @@ class TakenTimeslotService {
     };
   };
 
-  staffBlockOutsADate(staffId, willBeAvailableForOnlineBooking, date) {
+  staffBlockOutsADate(staffId, willBeAvailableForOnlineBooking, date, session) {
     const takenTimeslot = new TakenTimeslot({
       staffId,
       date,
@@ -776,7 +805,7 @@ class TakenTimeslotService {
       clearedOut: true,
     });
 
-    return takenTimeslot.save();
+    return takenTimeslot.save(session ? { session } : undefined);
   }
 
   getTakenTimeSlotDateString(inputDate) {

@@ -69,7 +69,7 @@ module.exports = (numberOfDaysAllowed, canStartDateBeFuture) => {
 
       const daysDifference = getDaysDifference(startDate, endDate);
 
-      if (daysDifference > numberOfDaysAllowed)
+      if (daysDifference > numberOfDaysAllowed + 1)
         return badReqResponse(
           res,
           `The difference between end date and start date should not be more than ${numberOfDaysAllowed} days`

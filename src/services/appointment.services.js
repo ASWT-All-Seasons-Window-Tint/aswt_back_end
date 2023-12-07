@@ -14,7 +14,7 @@ const { EMAIL } = require("../common/messages.common");
 
 class AppointmentService {
   //Create new appointment
-  async createAppointment({ body, staffId }) {
+  async createAppointment({ body, staffId, session }) {
     let { startTime, endTime } = body;
 
     if (startTime) {
@@ -27,7 +27,7 @@ class AppointmentService {
       ...body,
     });
 
-    return await appointment.save();
+    return await appointment.save(session ? { session } : undefined);
   }
 
   calculateEndTime(startTime, hours) {
@@ -436,6 +436,14 @@ class AppointmentService {
   // async getAllAppointments() {
   //   return await Appointment.find().sort({ _id: -1 });
   // }
+
+  getCustomerDetails(customer) {
+    const customerEmail = customer.PrimaryEmailAddr.Address;
+    const customerName = customer.DisplayName;
+    const customerNumber = customer.PrimaryPhone.FreeFormNumber;
+
+    return { customerEmail, customerName, customerNumber };
+  }
 
   async updateAppointmentById(id, appointment) {
     return await Appointment.findByIdAndUpdate(
