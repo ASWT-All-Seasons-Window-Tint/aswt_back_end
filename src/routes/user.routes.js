@@ -1,6 +1,5 @@
 const validateMiddleware = require("../middleware/validate.middleware");
 const admin = require("../middleware/admin.middleware");
-const staffMiddleware = require("../middleware/staff.middleware");
 const auth = require("../middleware/auth.middleware");
 const _ = require("lodash");
 const express = require("express");
@@ -17,8 +16,10 @@ const validateObjectIdWithXArgMiddleware = require("../middleware/validateObject
 const roleBaseAuthMiddleware = require("../middleware/roleBaseAuth.middleware.");
 const addRoleMiddleware = require("../middleware/addRole.middleware");
 const validDateParamsMiddleware = require("../middleware/validDateParams.middleware");
+const qboAsyncMiddleware = require("../middleware/qboAsync.middleware");
 
 const {
+  addEarningRate,
   validate,
   validatePatch,
   validateAssignDealer,
@@ -59,6 +60,13 @@ router.get(
   auth,
   roleBaseAuth(["customer"]),
   asyncMiddleware(userController.fetchAllDealershipStaffs)
+);
+
+router.get(
+  "/dealership-for-staff",
+  auth,
+  roleBaseAuth(["staff"]),
+  qboAsyncMiddleware(userController.getDealershipsAssignedToStaff)
 );
 
 router.get(
@@ -156,6 +164,15 @@ router.put(
   admin,
   validateMiddleware(validateAssignDealer),
   asyncMiddleware(userController.assignOrRemoveDealerFromStaff)
+);
+
+router.put(
+  "/update-staff-earning-rates/:staffId",
+  validateObjectIdWithXArgMiddleware(["staffId"]),
+  auth,
+  roleBaseAuth(["admin", "gm"]),
+  validateMiddleware(addEarningRate),
+  asyncMiddleware(userController.updateStaffEarningRates)
 );
 
 router.put(

@@ -507,6 +507,23 @@ class UserService {
     );
   };
 
+  updateStaffEarningRates(staffId, earningRate) {
+    return User.findByIdAndUpdate(
+      staffId,
+      {
+        $addToSet: { "staffDetails.earningRates": earningRate },
+      },
+      { new: true }
+    ).select("-password");
+  }
+
+  isServiceRateAlreadyAdded(staffId, serviceId) {
+    return User.countDocuments({
+      "staffDetails.earningRates.serviceId": serviceId,
+      _id: staffId,
+    });
+  }
+
   getTotalAmountEarnedByStaffInASpecifiedTime(startDate, endDate, staffId) {
     const match = {
       $and: [{ role: "staff" }],
