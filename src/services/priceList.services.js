@@ -50,8 +50,8 @@ class PriceListService {
     return await PriceList.findOne({ serviceId }).populate(["serviceId"]);
   }
 
-  async getAllPriceLists() {
-    return await PriceList.find()
+  getAllPriceLists() {
+    return PriceList.find()
       .sort({ _id: -1 })
       .populate(["serviceId", "filmQualityId", "categoryId"]);
   }

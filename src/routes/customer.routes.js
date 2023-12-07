@@ -21,6 +21,13 @@ router.post(
   validateMiddleware(validate),
   qboAsyncMiddleware(customerController.createCustomer)
 );
+
+router.post(
+  "/get-customers-by-ids",
+  auth,
+  admin,
+  qboAsyncMiddleware(customerController.getCustomersByIds)
+);
 router.post(
   "/send-invitation-link",
   auth,

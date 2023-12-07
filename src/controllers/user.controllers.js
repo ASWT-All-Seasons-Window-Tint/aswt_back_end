@@ -503,6 +503,36 @@ class UserController {
     res.json({ message: "Password updated", success: true });
   }
 
+  async updateStaffEarningRates(req, res) {
+    const { staffId } = req.params;
+    const { earningRate, serviceId } = req.body;
+
+    if ([earningRate, serviceId].includes(undefined))
+      return badReqResponse(
+        res,
+        "None of earningRate nor serviceId parameter is allowed to be undefined."
+      );
+    const isServiceRateAlreadyAdded =
+      await userService.isServiceRateAlreadyAdded(staffId, serviceId);
+
+    if (isServiceRateAlreadyAdded > 0)
+      return badReqResponse(
+        res,
+        "An earning rate has already been added for this service"
+      );
+
+    const reqBody = {
+      earningRate,
+      serviceId,
+    };
+    const updatedStaff = await userService.updateStaffEarningRates(
+      staffId,
+      reqBody
+    );
+
+    res.send(successMessage(MESSAGES.UPDATED, updatedStaff));
+  }
+
   //Delete user account entirely from the database
   async deleteUserAccount(req, res) {
     let user = await userService.getUserById(req.params.id);

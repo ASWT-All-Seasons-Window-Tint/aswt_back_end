@@ -39,6 +39,19 @@ class CustomerService {
     return results;
   };
 
+  getOrSetCustomersOnCache = async (ids) => {
+    const qbo = await initializeQbUtils();
+
+    const results = await getOrSetCache(
+      `customers?Ids=${ids}`,
+      expires,
+      this.fetchCustomersByIds,
+      [qbo, ids]
+    );
+
+    return results;
+  };
+
   // Function to create a customer in QuickBooks
   createQuickBooksCustomer(qbo, customerData) {
     return new Promise((resolve, reject) => {
@@ -105,6 +118,26 @@ class CustomerService {
             field: "PrimaryEmailAddr",
             value: customerEmail,
             operator: "LIKE",
+          },
+        ],
+        (err, service) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(service.QueryResponse.Customer);
+          }
+        }
+      );
+    });
+  }
+  async fetchCustomersByIds(qbo, Ids) {
+    return new Promise((resolve, reject) => {
+      qbo.findCustomers(
+        [
+          {
+            field: "Id",
+            value: Ids,
+            operator: "IN",
           },
         ],
         (err, service) => {

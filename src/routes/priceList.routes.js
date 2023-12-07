@@ -10,6 +10,7 @@ const validateObjectId = require("../middleware/validateObjectId.middleware");
 const priceListController = require("../controllers/priceList.controllers");
 const companyMiddleware = require("../middleware/company.middleware");
 const validateObjectIdWithXArgMiddleware = require("../middleware/validateObjectIdWithXArg.middleware");
+const roleBaseAuthMiddleware = require("../middleware/roleBaseAuth.middleware.");
 
 // This is used for registering a new priceList.
 router.post(
@@ -20,10 +21,17 @@ router.post(
   asyncMiddleware(priceListController.createPriceList)
 );
 
-router.get("/", asyncMiddleware(priceListController.fetchAllPriceLists));
+router.get(
+  "/",
+  auth,
+  roleBaseAuthMiddleware(["gm", "admin", "manager"]),
+  asyncMiddleware(priceListController.fetchAllPriceLists)
+);
 
 router.get(
   "/:id",
+  auth,
+  roleBaseAuthMiddleware(["gm", "admin", "manager"]),
   validateObjectId,
   asyncMiddleware(priceListController.getPriceListById)
 );
