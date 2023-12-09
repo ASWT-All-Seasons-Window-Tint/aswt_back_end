@@ -1295,6 +1295,7 @@ class EntryService {
       customerEmail,
       isActive: true,
       numberOfVehicles,
+      entryDate: new Date(),
     });
 
     const invoiceNumber = await Entry.getNextInvoiceNumber();

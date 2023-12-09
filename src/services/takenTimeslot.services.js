@@ -1,3 +1,4 @@
+const { default: mongoose } = require("mongoose");
 const { TakenTimeslot } = require("../model/takenTimeslot.model");
 const { VALID_TIME_SLOTS } =
   require("../common/constants.common").FREE_TIME_SLOTS;
@@ -548,7 +549,12 @@ class TakenTimeslotService {
     ]);
   };
 
-  getUnavailableDatesInTheCalendarForAStaff(staffId, startDate, endDate) {
+  getUnavailableDatesInTheCalendarForAStaff(
+    staffId,
+    startDate,
+    endDate,
+    dealershipId
+  ) {
     return TakenTimeslot.aggregate([
       {
         $match: {
@@ -580,6 +586,14 @@ class TakenTimeslotService {
       {
         $match: {
           staffString: staffId,
+          $or: [
+            {
+              clearOutForDealershipId: new mongoose.Types.ObjectId(
+                dealershipId
+              ),
+            },
+            { isBooked: true },
+          ],
         },
       },
       {
@@ -598,13 +612,25 @@ class TakenTimeslotService {
     ]);
   }
 
-  getUnavailableDatesInTheCalendarForADealer(staffIds, startDate, endDate) {
+  getUnavailableDatesInTheCalendarForADealer(
+    staffIds,
+    startDate,
+    endDate,
+    dealershipId
+  ) {
     const numberOfStaffAssignedTodealer = staffIds.length;
 
     return TakenTimeslot.aggregate([
       {
         $match: {
-          forDealership: true,
+          $or: [
+            {
+              clearOutForDealershipId: new mongoose.Types.ObjectId(
+                dealershipId
+              ),
+            },
+            { isBooked: true },
+          ],
         },
       },
       {
@@ -718,8 +744,12 @@ class TakenTimeslotService {
     ]);
   }
 
-  getTakenTimeSlotsByDateAndStaffId({ date, staffId }) {
-    return TakenTimeslot.findOne({ date, staffId });
+  getTakenTimeSlotsByDateAndStaffId({
+    date,
+    staffId,
+    clearOutForDealershipId,
+  }) {
+    return TakenTimeslot.findOne({ date, staffId, clearOutForDealershipId });
   }
 
   getTakenTimeslotForStaff(updatedStaffTimeSlots) {
@@ -796,13 +826,20 @@ class TakenTimeslotService {
     };
   };
 
-  staffBlockOutsADate(staffId, willBeAvailableForOnlineBooking, date, session) {
+  staffBlockOutsADate(
+    staffId,
+    clearOutForDealershipId,
+    date,
+    isBooked,
+    session
+  ) {
     const takenTimeslot = new TakenTimeslot({
       staffId,
       date,
-      isAvailable: willBeAvailableForOnlineBooking ? true : undefined,
+      clearOutForDealershipId,
       forDealership: true,
       clearedOut: true,
+      isBooked,
     });
 
     return takenTimeslot.save(session ? { session } : undefined);

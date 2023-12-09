@@ -29,6 +29,14 @@ const takenTimeslotSchema = new mongoose.Schema(
       type: Boolean,
       default: undefined,
     },
+    clearOutForDealershipId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: User,
+    },
+    isBooked: {
+      type: Boolean,
+      default: undefined,
+    },
   },
   { toJSON: { virtuals: true } },
   { toObject: { virtuals: true } }
@@ -40,7 +48,7 @@ const TakenTimeslot = mongoose.model("TakenTimeslot", takenTimeslotSchema);
 
 function blockOut(user) {
   const schema = Joi.object({
-    willBeAvailableForOnlineBooking: Joi.boolean().required(),
+    dealershipId: Joi.objectId().required(),
   });
 
   return schema.validate(user);
