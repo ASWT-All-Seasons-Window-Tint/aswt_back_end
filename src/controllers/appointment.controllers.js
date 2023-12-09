@@ -281,8 +281,9 @@ class AppointmentController {
     const results = await mongoTransactionUtils(mongoSession, async () => {
       await takenTimeslotServices.staffBlockOutsADate(
         staffId,
-        false,
+        undefined,
         startDate,
+        true,
         mongoSession
       );
 

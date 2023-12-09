@@ -160,7 +160,6 @@ const entry = {
   },
   entryDate: {
     type: Date,
-    default: new Date(),
   },
   isFromAppointment: {
     type: Boolean,
