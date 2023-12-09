@@ -552,6 +552,42 @@ class UserController {
     res.send(successMessage(MESSAGES.UPDATED, updatedStaff));
   }
 
+  async updateEarningRateForSTaffBasedOnServiceId(req, res) {
+    const { staffId } = req.params;
+    const { earningRate, serviceId } = req.body;
+
+    const staffWithUpdatedRate = await userService.updateEarningRateForStaff(
+      staffId,
+      serviceId,
+      earningRate
+    );
+
+    if (!staffWithUpdatedRate)
+      return notFoundResponse(
+        res,
+        "Staff not found or does not have an earning rate for the specified service."
+      );
+
+    res.send(successMessage(MESSAGES.UPDATED, staffWithUpdatedRate));
+  }
+
+  async deleteEarningRateForSTaffBasedOnServiceId(req, res) {
+    const { staffId, serviceId } = req.params;
+
+    const staffWithUpdatedRate = await userService.deleteEarningRateForStaff(
+      staffId,
+      serviceId
+    );
+
+    if (!staffWithUpdatedRate)
+      return notFoundResponse(
+        res,
+        "Staff not found or does not have an earning rate for the specified service."
+      );
+
+    res.send(successMessage(MESSAGES.UPDATED, staffWithUpdatedRate));
+  }
+
   //Delete user account entirely from the database
   async deleteUserAccount(req, res) {
     let user = await userService.getUserById(req.params.id);

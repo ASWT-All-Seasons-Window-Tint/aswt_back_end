@@ -59,7 +59,12 @@ class EntryController {
   async addVin(req, res) {
     const { id: customerId } = req.params;
     const { carDetails } = req.body;
-    const vinsArray = carDetails.map((car) => car.vin);
+    const date = new Date();
+    const vinsArray = carDetails.map((car) => {
+      car.entryDate = date;
+
+      return car.vin;
+    });
 
     const hasDuplicates = entryService.hasDuplicateVins(vinsArray);
     if (hasDuplicates) return badReqResponse(res, "Duplicate VINs found.");

@@ -176,6 +176,23 @@ router.put(
 );
 
 router.put(
+  "/modify-earning-rate/:staffId",
+  validateObjectIdWithXArgMiddleware(["staffId"]),
+  auth,
+  roleBaseAuth(["admin", "gm"]),
+  validateMiddleware(addEarningRate),
+  asyncMiddleware(userController.updateEarningRateForSTaffBasedOnServiceId)
+);
+
+router.put(
+  "/delete-earning-rate/:staffId/:serviceId",
+  validateObjectIdWithXArgMiddleware(["staffId", "serviceId"]),
+  auth,
+  roleBaseAuth(["admin", "gm"]),
+  asyncMiddleware(userController.deleteEarningRateForSTaffBasedOnServiceId)
+);
+
+router.put(
   "/update-staff-permission-for-manager/:managerId",
   auth,
   admin,
