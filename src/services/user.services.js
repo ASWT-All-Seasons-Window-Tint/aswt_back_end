@@ -45,7 +45,9 @@ class UserService {
       _id: { $nin: userIds },
       role: { $in: this.staffRoles },
       isDeleted: undefined,
-    }).select("-password");
+    })
+      .select("-password")
+      .sort({ _id: -1 });
   };
 
   getStaffIdsAddedForManager(manager) {
@@ -132,11 +134,14 @@ class UserService {
         "lastName",
         "role",
       ])
-      .populate("staffDetails.earningRates.serviceId", ["name", "type"]);
+      .populate("staffDetails.earningRates.serviceId", ["name", "type"])
+      .sort({ _id: -1 });
   };
 
   query = (role, selectArg) =>
-    User.find({ role, isDeleted: undefined }).select(selectArg);
+    User.find({ role, isDeleted: undefined })
+      .select(selectArg)
+      .sort({ _id: -1 });
 
   getUsersByRole = async (role) => {
     if (role === "manager") {
@@ -146,7 +151,8 @@ class UserService {
           "firstName",
           "lastName",
         ])
-        .populate("departments");
+        .populate("departments")
+        .sort({ _id: -1 });
     }
 
     return role === "customer"
@@ -305,7 +311,8 @@ class UserService {
       isDeleted: undefined,
     })
       .select("-password")
-      .populate("departments");
+      .populate("departments")
+      .sort({ _id: -1 });
   }
 
   async getUserByRoleAndId(userId, role) {
@@ -337,11 +344,15 @@ class UserService {
       },
       role: "staff",
       isDeleted: undefined,
-    }).select("-password");
+    })
+      .select("-password")
+      .sort({ _id: -1 });
   }
 
   async getAllUsers() {
-    return await User.find({ isDeleted: undefined }).select("-password");
+    return await User.find({ isDeleted: undefined })
+      .select("-password")
+      .sort({ _id: -1 });
   }
 
   async addSignInLocation(email, signInLocations) {
