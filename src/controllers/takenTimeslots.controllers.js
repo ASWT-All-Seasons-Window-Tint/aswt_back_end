@@ -231,6 +231,18 @@ class TakenTimeslotControllers {
     return results;
   }
 
+  async getTakenTimeslotForDealerAndStaff(req, res) {
+    const { dealershipId, staffId } = req.params;
+
+    const takenTimeslots =
+      await takenTimeslotsServices.getTakenTimeslotForDealerAndStaff(
+        dealershipId,
+        staffId
+      );
+
+    return res.send(successMessage(MESSAGES.FETCHED, takenTimeslots));
+  }
+
   async getUnavailableDatesInTheCalendarForStaff(req, res) {
     const { startDate, endDate, staffId } = req.params;
     const { _id: customerId } = req.user;
