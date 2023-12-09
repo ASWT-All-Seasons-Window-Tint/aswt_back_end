@@ -221,7 +221,8 @@ class TakenTimeslotControllers {
       await takenTimeslotsServices.getUnavailableDatesInTheCalendarForADealer(
         staffIds,
         startDate,
-        endDate
+        endDate,
+        customerId
       );
 
     results.unavailableDatesInTheCalendar = unavailableDatesInTheCalendar;
@@ -246,7 +247,8 @@ class TakenTimeslotControllers {
       await takenTimeslotsServices.getUnavailableDatesInTheCalendarForAStaff(
         staffId,
         startDate,
-        endDate
+        endDate,
+        customerId
       );
 
     return res.send(
@@ -262,17 +264,26 @@ class TakenTimeslotControllers {
   }
 
   async staffBlockOutsADate(req, res) {
-    let { willBeAvailableForOnlineBooking } = req.body;
+    const { dealershipId } = req.body;
     const { date } = req.params;
     const { _id: staffId } = req.user;
 
     const takenTimeslotDate =
       takenTimeslotsServices.getTakenTimeSlotDateString(date);
 
+    const staffCount = await userService.isDealerAssignedToStaff(
+      dealershipId,
+      staffId
+    );
+
+    if (staffCount < 1)
+      return notFoundResponse(res, "This staff is not assigned to the dealer");
+
     const takenTimeslot =
       await takenTimeslotsServices.getTakenTimeSlotsByDateAndStaffId({
         date: takenTimeslotDate,
         staffId,
+        clearOutForDealershipId: dealershipId,
       });
 
     if (takenTimeslot)
@@ -281,12 +292,9 @@ class TakenTimeslotControllers {
         "You have either blockedout the date or there is appointment with this date"
       );
 
-    if (willBeAvailableForOnlineBooking === "false")
-      willBeAvailableForOnlineBooking = false;
-
     const blockedDate = await takenTimeslotsServices.staffBlockOutsADate(
       staffId,
-      willBeAvailableForOnlineBooking,
+      dealershipId,
       date
     );
 

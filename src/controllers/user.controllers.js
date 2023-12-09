@@ -229,9 +229,25 @@ class UserController {
     const dealershipIds = assignedDealerships.map(
       (dealership) => dealership.customerDetails.qbId
     );
+    const dealearshipDetails = assignedDealerships.map((dealership) => {
+      return {
+        qbId: dealership.customerDetails.qbId,
+        id: dealership._id,
+      };
+    });
 
     const { error, data: customers } =
       await customerServices.getOrSetCustomersOnCache(dealershipIds);
+
+    customers.forEach((customer) => {
+      const dealearshipDetail = dealearshipDetails.find(
+        (dealership) => dealership.qbId == customer.Id
+      );
+
+      if (dealearshipDetail) customer.DealershipId = dealearshipDetail.id;
+
+      return customer;
+    });
 
     if (error)
       return jsonResponse(res, 404, false, error.Fault.Error[0].Detail);
