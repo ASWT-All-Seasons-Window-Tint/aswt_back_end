@@ -518,6 +518,45 @@ class UserService {
     ).select("-password");
   }
 
+  updateEarningRateForStaff(staffId, serviceId, newEarningRate) {
+    return User.findOneAndUpdate(
+      {
+        _id: staffId,
+        role: "staff",
+        "staffDetails.earningRates.serviceId": serviceId,
+      },
+      {
+        $set: {
+          "staffDetails.earningRates.$[elem].earningRate": newEarningRate,
+        },
+      },
+      {
+        arrayFilters: [{ "elem.serviceId": serviceId }],
+        new: true, // To return the updated document
+      }
+    );
+  }
+
+  deleteEarningRateForStaff(staffId, serviceId) {
+    return User.findOneAndUpdate(
+      {
+        _id: staffId,
+        role: "staff",
+        "staffDetails.earningRates.serviceId": serviceId,
+      },
+      {
+        $pull: {
+          "staffDetails.earningRates": {
+            serviceId,
+          },
+        },
+      },
+      {
+        new: true, // To return the updated document
+      }
+    );
+  }
+
   isServiceRateAlreadyAdded(staffId, serviceId) {
     return User.countDocuments({
       "staffDetails.earningRates.serviceId": serviceId,
