@@ -42,6 +42,12 @@ router.post(
   validateMiddleware(validateRequestResetPassword),
   asyncMiddleware(userController.passwordResetRequest)
 );
+
+router.post(
+  "/request-reset/:web",
+  validateMiddleware(validateRequestResetPassword),
+  asyncMiddleware(userController.passwordResetRequest)
+);
 router.post(
   "/reset-password/:token",
   validateMiddleware(validateResetPassword),
