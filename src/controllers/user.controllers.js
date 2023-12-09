@@ -220,15 +220,19 @@ class UserController {
 
     let { assignedDealerships } = staff.staffDetails;
 
-    if (!assignedDealerships || assignedDealerships.length < 0)
+    if (!assignedDealerships || assignedDealerships.length < 1)
       return notFoundResponse(
         res,
         "There is no dealearship assigned to this staff"
       );
 
-    const dealershipIds = assignedDealerships.map(
-      (dealership) => dealership.customerDetails.qbId
-    );
+    const dealershipIds = assignedDealerships
+      .map((dealership) => dealership.customerDetails.qbId)
+      .filter((id) => id);
+
+    if (dealershipIds.length < 1)
+      return jsonResponse(res, 500, false, "Something failed");
+
     const dealearshipDetails = assignedDealerships.map((dealership) => {
       return {
         qbId: dealership.customerDetails.qbId,
@@ -373,6 +377,11 @@ class UserController {
 
   //get all users in the user collection/table
   async passwordResetRequest(req, res) {
+    const { web } = req.params;
+
+    if (web && (typeof web != "string" || web.length > 4))
+      return badReqResponse(res, "Invalid URL");
+
     const user = await userService.getUserByEmail(req.body.email);
     if (!user)
       return res.status(404).send({
@@ -388,8 +397,8 @@ class UserController {
     user.resetToken = token;
     await user.save();
 
-    const url = process.env.clientUrl;
-    const link = `${url}/?token=${token}`;
+    const url = web ? process.env.clientWebUrl : process.env.clientUrl;
+    const link = web ? `${url}/${token}` : `${url}/?token=${token}`;
     const { firstName, email: receiversEmail } = user;
 
     transporter.sendMail(

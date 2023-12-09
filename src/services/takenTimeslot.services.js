@@ -752,6 +752,13 @@ class TakenTimeslotService {
     return TakenTimeslot.findOne({ date, staffId, clearOutForDealershipId });
   }
 
+  getTakenTimeslotForDealerAndStaff(customerId, staffId) {
+    return TakenTimeslot.find({
+      clearOutForDealershipId: customerId,
+      staffId,
+    }).populate("clearOutForDealershipId", "firstName lastName");
+  }
+
   getTakenTimeslotForStaff(updatedStaffTimeSlots) {
     const numberOfStaffWithFreeTimeslots = updatedStaffTimeSlots.length;
 

@@ -86,6 +86,14 @@ router.post(
 );
 
 router.get(
+  "/get-blocked-out-dates-for-dealership/:staffId/:dealershipId",
+  validateObjectIdWithXargs(["staffId", "dealershipId"]),
+  auth,
+  roleBaseAuthMiddleware(["staff"]),
+  asyncMiddleware(takenTimeslotsControllers.getTakenTimeslotForDealerAndStaff)
+);
+
+router.get(
   "/get-unavailable-dates-for-dealer/start/:startDate/end/:endDate",
   auth,
   roleBaseAuthMiddleware(["customer"]),
