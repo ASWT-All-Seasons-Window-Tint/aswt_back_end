@@ -207,8 +207,13 @@ class AppointmentController {
   };
 
   async createAppointmentForDealership(req, res) {
-    const { qbId } = req.params;
+    const { qbId } = req.user.customerDetails;
     const { startTime, isSubscribed } = req.body;
+    const isUserDealershipStaff = req.user.role === "dealershipStaff";
+
+    const dealershipId = isUserDealershipStaff
+      ? req.user.customerDetails.customerId
+      : req.user._id;
 
     const { data: customer, error } =
       await customerService.getOrSetCustomerOnCache(qbId);
@@ -224,7 +229,7 @@ class AppointmentController {
 
     const { errorCode, errorMessage, unavailableDatesInTheCalendar, staffIds } =
       await takenTimeslotsControllers.generateTakenTimeslotsForDealership(
-        req.user._id,
+        dealershipId,
         startDate,
         startDate
       );
@@ -251,7 +256,10 @@ class AppointmentController {
 
     let staffId;
 
-    if (!availableStafsIdsForDealership) {
+    if (
+      !availableStafsIdsForDealership ||
+      availableStafsIdsForDealership.availableStaffIds < 1
+    ) {
       const endOfRange = staffIds.length;
       const index = generateRandomIntegerWithinARangeUtils(endOfRange);
 

@@ -69,6 +69,14 @@ router.get(
 );
 
 router.get(
+  "/dealership-staff/:dealershipId",
+  validateObjectIdWithXArgMiddleware(["dealershipId"]),
+  auth,
+  roleBaseAuth(["customer", "admin", "gm"]),
+  asyncMiddleware(userController.fetchAllDealershipStaffs)
+);
+
+router.get(
   "/dealership-for-staff",
   auth,
   roleBaseAuth(["staff"]),

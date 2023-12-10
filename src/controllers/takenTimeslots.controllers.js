@@ -186,7 +186,11 @@ class TakenTimeslotControllers {
   }
   getUnavailableDatesInTheCalendarForDealership = async (req, res) => {
     const { startDate, endDate } = req.params;
-    const { _id: customerId } = req.user;
+    const isUserDealershipStaff = req.user.role === "dealershipStaff";
+
+    const customerId = isUserDealershipStaff
+      ? req.user.customerDetails.customerId
+      : req.user._id;
 
     const { unavailableDatesInTheCalendar, errorCode, errorMessage } =
       await this.generateTakenTimeslotsForDealership(
@@ -245,7 +249,11 @@ class TakenTimeslotControllers {
 
   async getUnavailableDatesInTheCalendarForStaff(req, res) {
     const { startDate, endDate, staffId } = req.params;
-    const { _id: customerId } = req.user;
+    const isUserDealershipStaff = req.user.role === "dealershipStaff";
+
+    const customerId = isUserDealershipStaff
+      ? req.user.customerDetails.customerId
+      : req.user._id;
 
     const staffCount = await userService.isDealerAssignedToStaff(
       customerId,
