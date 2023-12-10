@@ -91,7 +91,7 @@ class UserService {
     const { body } = req;
     const staffRoles = ["staff", "porter"];
     if (staffRoles.includes(body.role)) propertiesToPick.push("staffDetails");
-    if (body.role === "customer") {
+    if (body.role === "customer" || req.user.role === "customer") {
       propertiesToPick.push("customerDetails");
 
       if (!body.password) req.body.password = customerDefaultPassword;
@@ -103,7 +103,7 @@ class UserService {
     user.avatarUrl = avatarUrl;
     user.avatarImgTag = `<img src=${avatarUrl} alt=${user._id}>`;
 
-    user.role = user.role.toLowerCase();
+    if (req.user.role !== "customer") user.role = user.role.toLowerCase();
     if (user.role === "staff" || user.role === "manager")
       user.departments = [...new Set(departments)];
 
@@ -111,7 +111,8 @@ class UserService {
 
     const token = user.generateAuthToken();
     if (staffRoles.includes(body.role)) propertiesToPick.push("staffDetails");
-    if (user.role === "customer") propertiesToPick.push("customerDetails");
+    if (["customer", "dealershipStaff"].includes(user.role))
+      propertiesToPick.push("customerDetails");
 
     user = _.pick(user, propertiesToPick);
     // It creates a token which is sent as a header to the client
@@ -358,6 +359,12 @@ class UserService {
     return await User.find({ isDeleted: undefined })
       .select("-password")
       .sort({ _id: -1 });
+  }
+
+  getDealershipStaffsByDealerId(dealershipId) {
+    return User.find({
+      "customerDetails.customerId": dealershipId,
+    });
   }
 
   async addSignInLocation(email, signInLocations) {
