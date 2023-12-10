@@ -135,6 +135,11 @@ class UserService {
         "role",
       ])
       .populate("staffDetails.earningRates.serviceId", ["name", "type"])
+      .populate("staffDetails.assignedDealerships", [
+        "firstName",
+        "lastName",
+        "email",
+      ])
       .sort({ _id: -1 });
   };
 
