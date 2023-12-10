@@ -234,6 +234,21 @@ class NotificationService {
         },
       },
       {
+        $lookup: {
+          from: "notifications",
+          localField: "_id",
+          foreignField: "_id",
+          pipeline: [
+            {
+              $project: {
+                isReadBy: 1,
+              },
+            },
+          ],
+          as: "notification",
+        },
+      },
+      {
         $project: {
           _id: 1,
           id: "$_id",
@@ -241,6 +256,18 @@ class NotificationService {
           type: 1,
           entryId: 1,
           notificationTime: 1,
+          isRead: {
+            $cond: [
+              {
+                $in: [
+                  new mongoose.Types.ObjectId(userId),
+                  { $first: "$notification.isReadBy" },
+                ],
+              },
+              true,
+              false,
+            ],
+          },
           body: {
             $cond: {
               if: { $eq: ["$title", NOTIFICATIONS.TITLES.TAKEN_TO_SHOP] },
