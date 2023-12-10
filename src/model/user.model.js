@@ -108,6 +108,10 @@ const customerDetailsSchema = new mongoose.Schema({
   companyName: {
     type: String,
   },
+  customerId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+  },
   qbId: {
     type: String,
   },
@@ -169,7 +173,7 @@ const userSchema = new mongoose.Schema(
     role: {
       type: String,
       required: true,
-      enum: [...validUserRoles, "customer"],
+      enum: [...validUserRoles, "customer", "dealershipStaff"],
     },
     departments: {
       type: [mongoose.Schema.Types.ObjectId],

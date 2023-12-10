@@ -74,10 +74,11 @@ class UserController {
     const reqRole = req.user.role;
 
     if (reqRole === "customer") {
-      req.body.role = "customer";
+      req.body.role = "dealershipStaff";
 
       req.body.isCustomer = true;
       req.body.customerDetails = req.user.customerDetails;
+      req.body.customerDetails.customerId = req.user._id;
 
       delete req.body.customerDetails.canCreate;
     }
@@ -148,6 +149,15 @@ class UserController {
       .header("access-control-expose-headers", "x-auth-token")
       // It determines what is sent back to the client
       .send(successMessage(MESSAGES.CREATED, userWithAvatar.user));
+  }
+
+  getDealershipStaffsByDealerId(req, res) {
+    const { dealershipId } = req.params;
+
+    const dealershipStaffs =
+      userService.getDealershipStaffsByDealerId(dealershipId);
+
+    return res.send(successMessage(MESSAGES.FETCHED, dealershipStaffs));
   }
 
   //get user from the database, using their email
@@ -336,8 +346,8 @@ class UserController {
   }
 
   async fetchAllDealershipStaffs(req, res) {
-    const { qbId } = req.user.customerDetails;
-    const users = await userService.findCustomersByQbId(qbId);
+    const { _id } = req.user;
+    const users = await userService.getDealershipStaffsByDealerId(_id);
 
     res.send(successMessage(MESSAGES.FETCHED, users));
   }

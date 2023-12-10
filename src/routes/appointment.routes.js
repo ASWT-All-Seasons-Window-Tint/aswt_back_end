@@ -74,7 +74,7 @@ router.post(
   auth,
   validateMiddleware(validateAppointmentForDealership),
   validateTimeslotsMiddleware,
-  roleBaseAuthMiddleware(["customer"]),
+  roleBaseAuthMiddleware(["customer", "dealershipStaff"]),
   asyncMiddleware(appointmentControllers.createAppointmentForDealership)
 );
 
@@ -96,7 +96,7 @@ router.get(
 router.get(
   "/get-unavailable-dates-for-dealer/start/:startDate/end/:endDate",
   auth,
-  roleBaseAuthMiddleware(["customer"]),
+  roleBaseAuthMiddleware(["customer", "dealershipStaff"]),
   validDateParamsMiddleware(30, true),
   asyncMiddleware(
     takenTimeslotsControllers.getUnavailableDatesInTheCalendarForDealership
@@ -107,7 +107,7 @@ router.get(
   "/get-unavailable-dates-for-dealer/start/:startDate/end/:endDate/:staffId",
   auth,
   validateObjectIdWithXargs(["staffId"]),
-  roleBaseAuthMiddleware(["customer"]),
+  roleBaseAuthMiddleware(["customer", "dealershipStaff"]),
   validDateParamsMiddleware(30, true),
   asyncMiddleware(
     takenTimeslotsControllers.getUnavailableDatesInTheCalendarForStaff
