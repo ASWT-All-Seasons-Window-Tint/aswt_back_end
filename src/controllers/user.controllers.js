@@ -21,6 +21,7 @@ const {
   forbiddenResponse,
 } = require("../common/messages.common");
 const serviceServices = require("../services/service.services");
+const { EMAIL } = require("../common/messages.common");
 
 class UserController {
   async assignOrRemoveDealerFromStaff(req, res) {
@@ -64,7 +65,8 @@ class UserController {
 
   //Create a new user
   async register(req, res, customer) {
-    const { departments, email, role, staffDetails } = req.body;
+    const { departments, email, role, firstName, lastName, password } =
+      req.body;
     const { createUserWithAvatar } = userService;
 
     if (req.body.departments)
@@ -142,6 +144,36 @@ class UserController {
       );
 
     const userWithAvatar = await createUserWithAvatar(req, user, departments);
+
+    const userFullName = customer
+      ? customer.DisplayName
+      : `${firstName} ${lastName}`;
+
+    const aswtDetails = JSON.parse(process.env.aswtDetails);
+    console.log(userWithAvatar.user.role);
+    const dealearshipRoles = ["customer", "dealershipStaff"];
+
+    const loginURL = dealearshipRoles.includes(userWithAvatar.user.role)
+      ? aswtDetails.dealershipLoginURL
+      : aswtDetails.clientLoginURL;
+
+    transporter.sendMail(
+      EMAIL.sendRegistrationEmail(
+        email,
+        loginURL,
+        password,
+        userFullName,
+        userService.staffRoles.includes(role)
+      ),
+      (error, info) => {
+        if (error) {
+          console.log(error);
+          return "Error occurred:", error;
+        } else {
+          console.log("Email sent successfully");
+        }
+      }
+    );
 
     if (customer) return res.send(successMessage(MESSAGES.CREATED, customer));
     res
@@ -482,6 +514,10 @@ class UserController {
       if (role === "staff") {
         const staffDetails = user.staffDetails ? user.staffDetails : {};
         staffDetails.earningRate = req.body.staffDetails.earningRate;
+
+        if (req.body.departments)
+          if (typeof req.body.departments[0] !== "string")
+            return jsonResponse(res, 400, false, "invalid ID");
 
         req.body.staffDetails = staffDetails;
       }

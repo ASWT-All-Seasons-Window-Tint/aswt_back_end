@@ -121,6 +121,66 @@ const EMAIL = {
     `,
     };
   },
+  sendRegistrationEmail: (
+    customerEmail,
+    loginURL,
+    password,
+    customerName,
+    isUserStaffOrPorter
+  ) => {
+    const aswtDetails = JSON.parse(process.env.aswtDetails);
+
+    return {
+      from: process.env.emailId,
+      to: customerEmail,
+      subject: isUserStaffOrPorter
+        ? "All Seasons Tint & Graphic Designs Mobile App Access Granted"
+        : "Account Credentials for  All Seasons Tint & Graphic Designs Dealer Access",
+      html: isUserStaffOrPorter
+        ? `<p>Dear ${customerName},</p>
+
+      <p>We are pleased to inform you that your All Seasons Tint & Graphic Designs Mobile App account has been
+          successfully created. Here are your login credentials:</p>
+  
+      <ul>
+          <li><strong>Username:</strong> ${customerEmail}</li>
+          <li><strong>Password:</strong> ${password}</li>
+      </ul>
+  
+      <p>You can download the mobile app from the App Store or Google Play Store. Upon login, you will be prompted to
+          change your password for security purposes.</p>
+  
+      <p>If you have any questions or require assistance, please do not hesitate to contact our support team at <a
+              href="mailto:${aswtDetails.supportEmail}">${aswtDetails.supportEmail}</a>.</p>
+  
+      <p>Thank you for being a valuable part of the All Seasons Tint team.</p>
+  
+      <p>Best regards,<br>
+          All Seasons Tint & Graphic Designs Support Team</p>`
+        : `
+      <p>Dear ${customerName},</p>
+
+      <p>We are pleased to inform you that your All Seasons Tint & Graphic Designs dealer account has been successfully
+          created. Below are your login credentials:</p>
+  
+      <ul>
+          <li><strong>Username:</strong> ${customerEmail}</li>
+          <li><strong>Password:</strong> ${password}</li>
+      </ul>
+  
+      <p>Please use the following URL to access your account: <a href="${loginURL}">${loginURL}</a></p>
+  
+      <p>We recommend changing your password upon first login for security purposes. If you encounter any issues or have
+          questions, feel free to contact our support team at <a href="mailto:${aswtDetails.supportEmail}">${aswtDetails.supportEmail}</a>.</p>
+  
+      <p>We appreciate your partnership with All Seasons Tint & Graphic Designs and look forward to a successful
+          collaboration.</p>
+  
+      <p>Best regards,<br>
+        All Seasons Tint & Graphic Designs Support Team</p>
+    `,
+    };
+  },
 };
 
 const SMS = {
