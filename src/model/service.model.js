@@ -93,11 +93,6 @@ function validateWithObj(service) {
     isFull: Joi.boolean(),
     type: Joi.string().valid("installation", "removal").required(),
     timeOfCompletion: Joi.number().min(0.25).max(9).required(),
-    defaultPrices: Joi.object({
-      suv: Joi.number().min(1).required(),
-      sedan: Joi.number().min(1).required(),
-      truck: Joi.number().min(1).required(),
-    }),
     filmQualityOrVehicleCategoryAmount: Joi.array()
       .items(
         Joi.object({

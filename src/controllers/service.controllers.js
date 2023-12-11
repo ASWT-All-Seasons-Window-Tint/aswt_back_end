@@ -107,12 +107,12 @@ class ServiceController {
 
     const qbId = serviceOnQb.Id;
 
-    defaultPrices = serviceService.defaultPricesInArray(defaultPrices);
+    // defaultPrices = serviceService.defaultPricesInArray(defaultPrices);
 
     let service = new Service({
       type,
       name,
-      defaultPrices,
+      // defaultPrices,
       qbId,
       timeOfCompletion,
       filmQualityOrVehicleCategoryAmount,
