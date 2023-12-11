@@ -6,15 +6,7 @@ const { Service } = require("./service.model");
 const { FilmQuality } = require("./filmQuality.model").filmQuality;
 const addVirtualIdUtils = require("../utils/addVirtualId.utils");
 const convertToInchesUtils = require("../utils/calculateSquareFeetutils");
-
-const validCarTypes = [
-  "2Or4DoorsCar",
-  "4DoorsSuv",
-  "6+DoorsSuv",
-  "MiniVan",
-  "TruckStd.Cab",
-  "Truck4Doors",
-];
+const { validCarTypes } = require("../common/constants.common");
 
 const tintShade = [
   {

@@ -74,7 +74,7 @@ const staffDetailsSchema = new mongoose.Schema({
       },
       description: {
         type: String,
-        minlength: 3,
+        minlength: 2,
         maxlength: 255,
       },
       coordinates: {
@@ -83,7 +83,7 @@ const staffDetailsSchema = new mongoose.Schema({
       },
       locationType: {
         type: String,
-        minlength: 3,
+        minlength: 2,
         maxlength: 255,
       },
     },

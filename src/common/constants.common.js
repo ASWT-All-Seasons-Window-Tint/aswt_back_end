@@ -29,6 +29,15 @@ const constants = {
       index: { expireAfterSeconds: 0 }, // 0 means documents expire immediately after 'expires' date
     },
   }),
+
+  validCarTypes: [
+    "2Or4DoorsCar",
+    "4DoorsSuv",
+    "6+DoorsSuv",
+    "MiniVan",
+    "TruckStd.Cab",
+    "Truck4Doors",
+  ],
   MESSAGES: {
     FETCHED: "Resource fetched successfully",
     UPDATED: "Resource updated successfully",
