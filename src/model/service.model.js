@@ -1,6 +1,9 @@
 const mongoose = require("mongoose");
 const Joi = require("joi");
+const { FilmQuality } = require("./filmQuality.model").filmQuality;
 const addVirtualidUtils = require("../utils/addVirtualId.utils");
+const { validCarTypes } = require("../common/constants.common");
+const { Category } = require("./category.model");
 
 const serviceSchema = new mongoose.Schema(
   {
@@ -36,6 +39,16 @@ const serviceSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    amount: { type: Number, min: 1, default: undefined },
+    filmQualityOrVehicleCategoryAmount: [
+      {
+        filmQualityId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: FilmQuality,
+        },
+        amount: { type: Number, min: 1 },
+      },
+    ],
     isFull: {
       type: Boolean,
       default: false,
@@ -72,7 +85,11 @@ function validate(service) {
 
 function validateWithObj(service) {
   const schema = Joi.object({
-    name: Joi.string().min(3).max(255).required(),
+    name: Joi.string()
+      .min(3)
+      .max(255)
+      .required()
+      .when("isFull", { is: true, then: Joi.valid(...validCarTypes) }),
     isFull: Joi.boolean(),
     type: Joi.string().valid("installation", "removal").required(),
     timeOfCompletion: Joi.number().min(0.25).max(9).required(),
@@ -80,6 +97,27 @@ function validateWithObj(service) {
       suv: Joi.number().min(1).required(),
       sedan: Joi.number().min(1).required(),
       truck: Joi.number().min(1).required(),
+    }),
+    filmQualityOrVehicleCategoryAmount: Joi.array()
+      .items(
+        Joi.object({
+          filmQualityId: Joi.objectId().when(Joi.ref("/type"), {
+            is: "installation",
+            then: Joi.required(),
+            otherwise: Joi.forbidden(),
+          }),
+          amount: Joi.number().min(1).max(99999).required(),
+        })
+      )
+      .when("type", {
+        is: "installation",
+        then: Joi.required(),
+        otherwise: Joi.forbidden(),
+      }),
+    amount: Joi.number().min(1).max(99999).when("type", {
+      is: "removal",
+      then: Joi.required(),
+      otherwise: Joi.forbidden(),
     }),
   });
 
