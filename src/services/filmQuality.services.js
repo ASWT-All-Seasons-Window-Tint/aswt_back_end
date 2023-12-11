@@ -22,6 +22,13 @@ class FilmQualityService {
     return missingIds;
   }
 
+  findFilmQualitiesNotInArray(filmQualityIds) {
+    return FilmQuality.find({
+      _id: { $nin: filmQualityIds },
+      type: "auto",
+    });
+  }
+
   async getFilmQualityByEntryIdAndStaffId(entryId, staffId) {
     return await FilmQuality.findOne({ entryId, staffId });
   }

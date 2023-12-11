@@ -5,11 +5,18 @@ const { MESSAGES } = require("../common/constants.common");
 const initializeQuickBooks = require("../utils/initializeQb.utils");
 const { getOrSetCache, updateCache } = require("../utils/getOrSetCache.utils");
 const errorChecker = require("../utils/paginationErrorChecker.utils");
+const { validCarTypes } = require("../common/constants.common");
 const {
   errorMessage,
   successMessage,
   jsonResponse,
+  badReqResponse,
+  notFoundResponse,
 } = require("../common/messages.common");
+const getArrayDifferenceUtils = require("../utils/getArrayDifference.utils");
+const filmQualityServices = require("../services/filmQuality.services");
+const categoryServices = require("../services/category.services");
+const convertToLowerCaseAndRemoveNonAlphanumericUtils = require("../utils/convertToLowerCaseAndRemoveNonAlphanumeric.utils");
 
 class ServiceController {
   async getStatus(req, res) {
@@ -18,25 +25,82 @@ class ServiceController {
 
   //Create a new service
   createService = async (req, res) => {
-    let { type, name, defaultPrices, timeOfCompletion } = req.body;
-    // const categoryNames = Object.keys(defaultPrices);
+    let {
+      type,
+      name,
+      defaultPrices,
+      timeOfCompletion,
+      isFull,
+      filmQualityOrVehicleCategoryAmount,
+      amount,
+      isResidential,
+    } = req.body;
 
-    // const [missingNames, categoriesMissing] = await Promise.all([
-    //   validateCategoryNames(categoryNames),
-    //   missingCategoryNames(categoryNames),
-    // ]);
+    if (type === "installation") {
+      const filmQualityIds = filmQualityOrVehicleCategoryAmount.map(
+        (price) => price.filmQualityId
+      );
 
-    // if (missingNames.length > 0)
-    //   return res.status(400).send({
-    //     message: `These categories: ${missingNames} are not recognize`,
-    //     success: false,
-    //   });
+      const [filmQualitiesNotInArray, missingIds] = await Promise.all([
+        filmQualityServices.findFilmQualitiesNotInArray(filmQualityIds),
+        filmQualityServices.validateFilmQualityIds(filmQualityIds),
+      ]);
 
-    // if (categoriesMissing.length > 0)
-    //   return res.status(400).send({
-    //     message: `You have not provided prices for: ${categoriesMissing}`,
-    //     success: false,
-    //   });
+      if (missingIds.length > 0)
+        return notFoundResponse(
+          res,
+          `FilmQualities with IDs: (${missingIds}) could not be found`
+        );
+
+      if (filmQualitiesNotInArray.length > 0) {
+        const filmQualityNames = filmQualitiesNotInArray.map(
+          (filmQuality) => filmQuality.name
+        );
+
+        return badReqResponse(
+          res,
+          `Amount is required for the following filmQualities: (${filmQualityNames.join(
+            ", "
+          )})`
+        );
+      }
+    }
+
+    if (isFull === "false") isFull = false;
+
+    // if (isFull) {
+    //   const categoryNames = filmQualityOrVehicleCategoryAmount.map(
+    //     (price) => price.category
+    //   );
+
+    //   const notAddedVehicleTypes = getArrayDifferenceUtils(
+    //     validCarTypes,
+    //     categoryNames
+    //   );
+
+    //   if (notAddedVehicleTypes.length > 0)
+    //     return badReqResponse(
+    //       res,
+    //       `Amount is needed for the following vehicle category (${notAddedVehicleTypes.join(
+    //         ", "
+    //       )})`
+    //     );
+
+    //   for (const priceBreakdown of filmQualityOrVehicleCategoryAmount) {
+    //     const categoryName = priceBreakdown.category;
+
+    //     const categoryNameWithoutSpecialCharacters =
+    //       convertToLowerCaseAndRemoveNonAlphanumericUtils(categoryName);
+
+    //     const category = await categoryServices.getCategoryByName(
+    //       categoryNameWithoutSpecialCharacters
+    //     );
+    //     if (!category) return res.status(404).send(errorMessage("category"));
+
+    //     priceBreakdown.categoryId = category._id;
+    //   }
+    // }
+
     const { serviceOnQb, error } = await this.createQbService(name);
     if (error)
       return jsonResponse(res, 400, false, error.Fault.Error[0].Detail);
@@ -51,6 +115,10 @@ class ServiceController {
       defaultPrices,
       qbId,
       timeOfCompletion,
+      filmQualityOrVehicleCategoryAmount,
+      amount,
+      isFull,
+      isResidential,
     });
 
     service = await serviceService.createService(service);

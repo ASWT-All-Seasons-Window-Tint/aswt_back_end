@@ -4,7 +4,10 @@ const { errorMessage } = require("../common/messages.common");
 class ServiceService {
   //Create new service
   async createService(service) {
-    return await service.save();
+    return (await service.save()).populate(
+      "filmQualityOrVehicleCategoryAmount.filmQualityId",
+      "name"
+    );
   }
 
   async getServiceById(serviceId, lean = { lean: false }) {
