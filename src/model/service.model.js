@@ -89,14 +89,32 @@ function validateWithObj(service) {
       .min(3)
       .max(255)
       .required()
-      .when("isFull", { is: true, then: Joi.valid(...validCarTypes) }),
+      .when("isFull", {
+        is: true,
+        then: Joi.valid(...validCarTypes),
+      }),
     isFull: Joi.boolean(),
     type: Joi.string().valid("installation", "removal").required(),
     timeOfCompletion: Joi.number().min(0.25).max(9).required(),
-    defaultPrices: Joi.object({
-      suv: Joi.number().min(1).required(),
-      sedan: Joi.number().min(1).required(),
-      truck: Joi.number().min(1).required(),
+    filmQualityOrVehicleCategoryAmount: Joi.array()
+      .items(
+        Joi.object({
+          filmQualityId: Joi.objectId().when(Joi.ref("/type"), {
+            is: "installation",
+            then: Joi.required(),
+            otherwise: Joi.forbidden(),
+          }),
+          amount: Joi.number().min(1).max(99999).required(),
+        })
+      )
+      .when("type", {
+        is: "installation",
+        then: Joi.required(),
+        otherwise: Joi.forbidden(),
+      }),
+    amount: Joi.number().min(1).max(99999).when("type", {
+      is: "removal",
+      then: Joi.required(),
     }),
     filmQualityOrVehicleCategoryAmount: Joi.array()
       .items(
