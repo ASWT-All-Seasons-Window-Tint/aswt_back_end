@@ -13,6 +13,7 @@ const {
   validatePatch,
   validateInvitationEmail,
 } = require("../model/customer.model");
+const roleBaseAuthMiddleware = require("../middleware/roleBaseAuth.middleware.");
 
 router.post(
   "/",
@@ -31,7 +32,7 @@ router.post(
 router.post(
   "/send-invitation-link",
   auth,
-  adminOrManager,
+  roleBaseAuthMiddleware(["customer"]),
   validateMiddleware(validateInvitationEmail),
   qboAsyncMiddleware(customerController.sendRegistrationLink)
 );
