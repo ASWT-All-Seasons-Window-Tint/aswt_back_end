@@ -1,5 +1,6 @@
 const { Service } = require("../model/service.model");
 const { errorMessage } = require("../common/messages.common");
+const { default: mongoose } = require("mongoose");
 
 class ServiceService {
   //Create new service
@@ -56,7 +57,40 @@ class ServiceService {
       ? await Service.find({ isResidential: undefined })
           .lean()
           .sort({ _id: -1 })
-      : await Service.find({ isResidential: undefined }).sort({ _id: -1 });
+          .populate("filmQualityOrVehicleCategoryAmount.filmQualityId", "name")
+      : await Service.find({ isResidential: undefined })
+          .sort({ _id: -1 })
+          .populate("filmQualityOrVehicleCategoryAmount.filmQualityId", "name");
+  }
+
+  getFilmQualityPriceForInstallation(serviceId, filmQualityId) {
+    return Service.aggregate([
+      {
+        $match: {
+          _id: new mongoose.Types.ObjectId(serviceId),
+        },
+      },
+      {
+        $unwind: {
+          path: "$filmQualityOrVehicleCategoryAmount",
+          includeArrayIndex: "string",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $match: {
+          "filmQualityOrVehicleCategoryAmount.filmQualityId":
+            new mongoose.Types.ObjectId(filmQualityId),
+        },
+      },
+      {
+        $project: {
+          name: 1,
+          filmQualityOrVehicleCategoryAmount: 1,
+          filmQualityPrice: "$filmQualityOrVehicleCategoryAmount.amount",
+        },
+      },
+    ]);
   }
 
   async getCustomerDealershipPrice(serviceId, customerId) {
@@ -126,7 +160,7 @@ class ServiceService {
 
     return new Promise((resolve, reject) => {
       qbo.findItems(
-        [{ field: "Name", value: `%${Name}%`, operator: "LIKE" }],
+        [{ field: "Name", value: Name, operator: "=" }],
         (err, service) => {
           if (err) {
             reject(err);
