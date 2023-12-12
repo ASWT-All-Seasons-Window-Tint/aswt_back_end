@@ -11,7 +11,13 @@ class BlacklistedTokenController {
   }
 
   //Create a new blacklistedToken
-  async addTokenToBlacklist(req, res) {
+  addTokenToBlacklist = async (req, res) => {
+    this.blackListAToken(req);
+
+    return res.send(logoutSuccess());
+  };
+
+  async blackListAToken(req) {
     const token = req.header("x-auth-token");
     const email = req.user.email;
 
@@ -23,8 +29,6 @@ class BlacklistedTokenController {
       blacklistedTokenService.createBlacklistedToken(blacklistedToken),
       userServices.signOutStaff(email),
     ]);
-
-    return res.send(logoutSuccess());
   }
 }
 

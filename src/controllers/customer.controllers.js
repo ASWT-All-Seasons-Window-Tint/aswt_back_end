@@ -257,9 +257,14 @@ class Customer {
   sendRegistrationLink(req, res) {
     const { email, name } = req.body;
 
-    req.user.isTemporal = true;
+    const dealershipToken = {
+      role: "temporal",
+      _id: req.user._id,
+      isTemporal: true,
+      customerDetails: req.user.customerDetails,
+    };
 
-    const token = jwt.sign(req.user, process.env.jwtPrivateKey);
+    const token = jwt.sign(dealershipToken, process.env.jwtPrivateKey);
 
     const aswtDetails = JSON.parse(process.env.aswtDetails);
 
