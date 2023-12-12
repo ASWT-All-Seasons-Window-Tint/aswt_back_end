@@ -67,6 +67,7 @@ class ServiceController {
     }
 
     if (isFull === "false") isFull = false;
+    if (type === "removal") name = `${name} (R)`;
 
     // if (isFull) {
     //   const categoryNames = filmQualityOrVehicleCategoryAmount.map(
@@ -100,12 +101,26 @@ class ServiceController {
     //     priceBreakdown.categoryId = category._id;
     //   }
     // }
+    const qbo = await initializeQuickBooks();
+    const expiryTimeInSecs = 1800;
 
-    const { serviceOnQb, error } = await this.createQbService(name);
-    if (error)
-      return jsonResponse(res, 400, false, error.Fault.Error[0].Detail);
+    const { data: qbService, error } = await getOrSetCache(
+      `services?name${name.toLowerCase()}`,
+      expiryTimeInSecs,
+      serviceService.fetchItemByName,
+      [qbo, name.toLowerCase()]
+    );
 
-    const qbId = serviceOnQb.Id;
+    let qbId;
+    if (error) {
+      const { serviceOnQb, error } = await this.createQbService(name);
+
+      if (error)
+        return jsonResponse(res, 400, false, error.Fault.Error[0].Detail);
+      qbId = serviceOnQb.Id;
+    } else {
+      qbId = qbService[0].Id;
+    }
 
     // defaultPrices = serviceService.defaultPricesInArray(defaultPrices);
 

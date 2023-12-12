@@ -18,6 +18,7 @@ const {
 } = require("../model/service.model");
 const validateObjectIdWithXArg = require("../middleware/validateObjectIdWithXArg.middleware");
 const validServiceTypeMiddleware = require("../middleware/validServiceType.middleware");
+const roleBaseAuthMiddleware = require("../middleware/roleBaseAuth.middleware.");
 
 router.post(
   "/",
@@ -61,7 +62,7 @@ router.get(
 
 router.put(
   "/:id",
-  [validateObjectId, auth, admin || manager, validateMiddleware(validatePatch)],
+  [validateObjectId, auth, adminOrManager, validateMiddleware(validatePatch)],
   asyncMiddleware(serviceController.updateService)
 );
 
@@ -79,7 +80,7 @@ router.put(
   "/update-dealership-price/service/:serviceId/customer/:customerId",
   [
     auth,
-    admin,
+    roleBaseAuthMiddleware(["admin", "gm"]),
     validateObjectIdWithXArg(["serviceId"]),
     validateMiddleware(validateUpdateDealershipPrice),
   ],
