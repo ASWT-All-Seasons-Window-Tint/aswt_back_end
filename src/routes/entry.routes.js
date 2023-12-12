@@ -19,6 +19,11 @@ const roleBaseAuth = require("../middleware/roleBaseAuth.middleware.");
 const addLocationTypeMiddleware = require("../middleware/addLocationType.middleware");
 const addWaitingListMiddleware = require("../middleware/addWaitingList.middleware");
 const roleBaseAuthMiddleware = require("../middleware/roleBaseAuth.middleware.");
+const { ALLOWED_USERS_FOR_MOBILE_APP } = require("../common/constants.common");
+
+const withoutStaff = ALLOWED_USERS_FOR_MOBILE_APP.filter(
+  (user) => user !== "staff"
+);
 
 const {
   validate,
@@ -37,25 +42,31 @@ router.post(
   asyncMiddleware(entryController.createEntry)
 );
 
-router.get("/", auth, asyncMiddleware(entryController.fetchAllEntries));
+router.get(
+  "/",
+  auth,
+  roleBaseAuth(["admin", "gm"]),
+  asyncMiddleware(entryController.fetchAllEntries)
+);
 
 router.get(
   "/vehicles-in-the-shop",
   auth,
-  admin,
+  roleBaseAuth(["admin", "gm"]),
   asyncMiddleware(entryController.getAllVehiclesInTheShop)
 );
 
 router.get(
   "/driving-speed",
   auth,
-  admin,
+  roleBaseAuth(["admin", "gm"]),
   asyncMiddleware(entryController.getDrivingSpeedForPorter)
 );
 
 router.get(
   "/:id",
   auth,
+  roleBaseAuth(["admin", "gm"]),
   validateObjectId,
   asyncMiddleware(entryController.getEntryById)
 );
@@ -63,7 +74,7 @@ router.get(
 router.get(
   "/invoice/sent-out-invoices",
   auth,
-  admin,
+  roleBaseAuth(["admin", "gm"]),
   asyncMiddleware(entryController.getSentInvoices)
 );
 
@@ -82,7 +93,7 @@ router.get(
 router.get(
   "/car-work-in-progress-duration/:vin",
   auth,
-  admin,
+  roleBaseAuth(["admin", "gm"]),
   asyncMiddleware(entryController.getCarThatIsStillInShopByVin)
 );
 
@@ -129,6 +140,7 @@ router.get(
 router.get(
   "/entry/:entryId/customer/:customerId/porterId/:porterId",
   auth,
+  roleBaseAuth(withoutStaff),
   validateObjectIdWithXArgMiddleware(["porterId", "entryId"]),
   addWaitingListMiddleware(true),
   qboAsyncMiddleware(entryController.getCarsDoneByStaffPerId)
@@ -137,6 +149,7 @@ router.get(
 router.get(
   "/customer/:customerId/staff/:staffId",
   auth,
+  roleBaseAuth(["admin", "gm", "staff"]),
   validateObjectIdWithXArgMiddleware(["staffId"]),
   qboAsyncMiddleware(entryController.getCarsDoneByStaffPerId)
 );
@@ -144,6 +157,7 @@ router.get(
 router.get(
   "/customer/:customerId/porter/:porterId",
   auth,
+  roleBaseAuth(withoutStaff),
   validateObjectIdWithXArgMiddleware(["porterId"]),
   addWaitingListMiddleware(true),
   qboAsyncMiddleware(entryController.getCarsDoneByStaffPerId)
@@ -152,6 +166,7 @@ router.get(
 router.get(
   "/pending-drop-off/:porterId",
   auth,
+  roleBaseAuth(withoutStaff),
   validateObjectIdWithXArgMiddleware(["porterId"]),
   addWaitingListMiddleware(false),
   qboAsyncMiddleware(entryController.getCarsDoneByStaffPerId)
@@ -167,6 +182,7 @@ router.get(
 router.get(
   "/staff/:staffId/date/:date",
   auth,
+  roleBaseAuth(["admin", "gm", "staff"]),
   validateDateParams(7),
   validateMonthYearParamsMiddleware,
   validateObjectIdWithXArgMiddleware(["staffId"]),
@@ -175,6 +191,7 @@ router.get(
 router.get(
   "/staff/:staffId/year/:year",
   auth,
+  roleBaseAuth(["admin", "gm", "staff"]),
   validateMonthYearParamsMiddleware,
   validateObjectIdWithXArgMiddleware(["staffId"]),
   asyncMiddleware(entryController.getCarsDoneByStaff)
@@ -183,6 +200,7 @@ router.get(
 router.get(
   "/staff/:staffId/month/:monthName/:year",
   auth,
+  roleBaseAuth(["admin", "gm", "staff"]),
   validateObjectIdWithXArgMiddleware(["staffId"]),
   validateMonthYearParamsMiddleware,
   asyncMiddleware(entryController.getCarsDoneByStaff)
@@ -191,6 +209,7 @@ router.get(
 router.get(
   "/porter/:porterId/date/:date",
   auth,
+  roleBaseAuth(withoutStaff),
   validateDateParams(7),
   validateMonthYearParamsMiddleware,
   validateObjectIdWithXArgMiddleware(["porterId"]),
@@ -199,6 +218,7 @@ router.get(
 router.get(
   "/porter/:porterId/year/:year",
   auth,
+  roleBaseAuth(withoutStaff),
   validateMonthYearParamsMiddleware,
   validateObjectIdWithXArgMiddleware(["porterId"]),
   asyncMiddleware(entryController.getCarsDoneByStaff)
@@ -207,6 +227,7 @@ router.get(
 router.get(
   "/porter/:porterId/month/:monthName/:year",
   auth,
+  roleBaseAuth(withoutStaff),
   validateObjectIdWithXArgMiddleware(["porterId"]),
   validateMonthYearParamsMiddleware,
   asyncMiddleware(entryController.getCarsDoneByStaff)
@@ -215,6 +236,7 @@ router.get(
 router.get(
   "/staff/:staffId",
   auth,
+  roleBaseAuth(["admin", "gm", "staff", "manager"]),
   validateObjectIdWithXArgMiddleware(["staffId"]),
   asyncMiddleware(entryController.getCarsDoneByStaff)
 );
@@ -222,6 +244,7 @@ router.get(
 router.get(
   "/porter/:porterId",
   auth,
+  roleBaseAuth(withoutStaff),
   validateObjectIdWithXArgMiddleware(["porterId"]),
   asyncMiddleware(entryController.getCarsDoneByStaffPerId)
 );
@@ -229,6 +252,7 @@ router.get(
 router.get(
   "/completed-trips/:porterId",
   auth,
+  roleBaseAuth(withoutStaff),
   validateObjectIdWithXArgMiddleware(["porterId"]),
   addWaitingListMiddleware("completed"),
   asyncMiddleware(entryController.getCarsDoneByStaffPerId)
@@ -239,6 +263,7 @@ router.put(
   [
     validateObjectId,
     auth,
+    roleBaseAuth(ALLOWED_USERS_FOR_MOBILE_APP),
     validateMiddleware(validateModifyCarDetails),
     validateServiceIdsMiddleware,
   ],
@@ -249,6 +274,7 @@ router.put(
   "/add/:locationType/location/:vin",
   [
     auth,
+    roleBaseAuth(withoutStaff),
     validateMiddleware(validateAddCarGeolocation),
     addLocationTypeMiddleware(),
   ],
@@ -268,7 +294,11 @@ router.put(
 
 router.put(
   "/add-car/:id",
-  [auth, validateMiddleware(validateAddInvoicePatch)],
+  [
+    auth,
+    roleBaseAuth(ALLOWED_USERS_FOR_MOBILE_APP),
+    validateMiddleware(validateAddInvoicePatch),
+  ],
   qboAsyncMiddleware(entryController.addInvoice)
 );
 
@@ -296,6 +326,7 @@ router.put(
 router.put(
   "/add-vin/:id",
   auth,
+  roleBaseAuth(["customer"]),
   validateMiddleware(validateAddVin),
   qboAsyncMiddleware(entryController.addVin)
 );
@@ -313,7 +344,7 @@ router.put(
 
 router.delete(
   "/:id",
-  [auth, admin, validateObjectId],
+  [auth, roleBaseAuth(["admin", "gm"]), validateObjectId],
   asyncMiddleware(entryController.deleteEntry)
 );
 module.exports = router;

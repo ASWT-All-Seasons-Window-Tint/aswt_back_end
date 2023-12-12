@@ -209,11 +209,18 @@ class Customer {
       Notes: completeNotes,
       CompanyName: req.body.CompanyName,
     };
+    const expiryTimeInSecs = 1800;
 
-    const createdCustomer = await customerService.createQuickBooksCustomer(
-      qbo,
-      customerData
+    const { data: customer, error } = await getOrSetCache(
+      `customers?name${DisplayName.toLowerCase()}`,
+      expiryTimeInSecs,
+      customerService.fetchCustomerByDisplayName,
+      [qbo, DisplayName.toLowerCase()]
     );
+
+    const createdCustomer = error
+      ? await customerService.createQuickBooksCustomer(qbo, customerData)
+      : customer[0];
     const id = createdCustomer.Id;
 
     const nameArray = DisplayName.split(" ");
@@ -251,13 +258,9 @@ class Customer {
 
     const emailIntro = process.env.emailIntro;
 
-    const token = jwt.sign(
-      { customerCanCreate: true },
-      process.env.jwtPrivateKey,
-      {
-        expiresIn: "1h",
-      }
-    );
+    const token = jwt.sign(req.user, process.env.jwtPrivateKey, {
+      expiresIn: "1h",
+    });
 
     const baseUrl = process.env.clientUrl;
     const subject = "Register your account";

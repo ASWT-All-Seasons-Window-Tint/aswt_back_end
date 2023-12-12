@@ -281,17 +281,18 @@ class ServiceController {
   async addDealershipPrice(req, res) {
     const { customerId, price } = req.body;
 
-    const [service, customerDealership] = await Promise.all([
-      serviceService.getServiceById(req.params.id),
-      serviceService.getServiceByCustomer(customerId, req.params.id),
-    ]);
+    const [service] =
+      await serviceService.getServiceAndIfDealershipHaveCustomPrice(
+        req.params.id,
+        customerId
+      );
 
     const { data: customer, error } =
       await customerService.getOrSetCustomerOnCache(customerId);
 
     if (!service) return res.status(404).send(errorMessage("service"));
     if (!customer) return res.status(404).send(errorMessage("customer"));
-    if (customerDealership)
+    if (service.doesDealershipHaveCustomPrice)
       return res.status(400).send({
         message: "The customer already have a dealership for this service",
         success: false,

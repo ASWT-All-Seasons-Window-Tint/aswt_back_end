@@ -58,6 +58,7 @@ const constants = {
       return `This ids: [${ids}] are not in the ${collection}`;
     },
   },
+  ALLOWED_USERS_FOR_MOBILE_APP: ["staff", "porter", "admin", "gm", "manager"],
   DATE: {
     now: new Date(),
     yesterday: new Date(new Date().getTime() - 24 * 60 * 60 * 1000),
