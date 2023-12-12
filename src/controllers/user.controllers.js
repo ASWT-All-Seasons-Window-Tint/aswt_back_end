@@ -22,6 +22,7 @@ const {
 } = require("../common/messages.common");
 const serviceServices = require("../services/service.services");
 const { EMAIL } = require("../common/messages.common");
+const blacklistedTokenControllers = require("./blacklistedToken.controllers");
 
 class UserController {
   async assignOrRemoveDealerFromStaff(req, res) {
@@ -73,7 +74,13 @@ class UserController {
       if (typeof req.body.departments[0] !== "string")
         return jsonResponse(res, 400, false, "invalid ID");
 
-    const reqRole = req.user.role;
+    let reqRole = req.user.role;
+    if (reqRole === "temporal") {
+      req.user.role = "customer";
+      reqRole = "customer";
+    }
+
+    console.log(req.user.role);
 
     if (reqRole === "customer") {
       req.body.role = "dealershipStaff";
@@ -150,7 +157,6 @@ class UserController {
       : `${firstName} ${lastName}`;
 
     const aswtDetails = JSON.parse(process.env.aswtDetails);
-    console.log(userWithAvatar.user.role);
     const dealearshipRoles = ["customer", "dealershipStaff"];
 
     const loginURL = dealearshipRoles.includes(userWithAvatar.user.role)
@@ -174,6 +180,10 @@ class UserController {
         }
       }
     );
+
+    if (reqRole === "customer" && req.user.isTemporal) {
+      await blacklistedTokenControllers.blackListAToken(req);
+    }
 
     if (customer) return res.send(successMessage(MESSAGES.CREATED, customer));
     res
