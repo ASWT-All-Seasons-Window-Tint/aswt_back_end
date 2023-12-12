@@ -151,11 +151,12 @@ class EntryController {
 
     let lineId = entryService.sumPriceBreakdownLength(entry);
 
-    const { price, priceBreakdown } = entryService.getPriceForService(
-      services,
+    const { price, priceBreakdown } = await entryService.getPriceForService(
+      carDetails.serviceIds,
       entry.customerId,
       category,
-      lineId
+      lineId,
+      req.body.carDetails.filmQualityId
     );
 
     const updateCarDetailsResult = entryService.updateCarDetails(

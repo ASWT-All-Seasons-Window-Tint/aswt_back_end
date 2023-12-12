@@ -39,6 +39,7 @@ router.put(
   validateObjectId,
   // auth is used to make authenticate a incentive.
   auth,
+  roleBaseAuth(["gm", "admin"]),
   validateMiddleware(validate),
   asyncMiddleware(incentiveController.updateIncentive)
 );

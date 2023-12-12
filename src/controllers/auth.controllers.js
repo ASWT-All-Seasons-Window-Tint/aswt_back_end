@@ -11,10 +11,15 @@ class AuthController {
     const { email, password } = req.body;
     const { staffRoles } = userService;
 
-    // if (!staffRoles.includes(req.user.role) && req.body.signInLocations)
-    //   return res
-    //     .status(400)
-    //     .send({ message: "Only a staff can sign in", success: false });
+    const allowedUsersForMobileApp = [...staffRoles, "admin", "gm", "manager"];
+
+    if (
+      !allowedUsersForMobileApp.includes(req.user.role) &&
+      req.body.signInLocations
+    )
+      return res
+        .status(400)
+        .send({ message: "Only a staff can sign in", success: false });
 
     let user = req.user;
     //checks if the password is valid

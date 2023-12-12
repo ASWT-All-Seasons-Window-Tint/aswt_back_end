@@ -322,6 +322,7 @@ function validateAddInvoicePatch(entry) {
       make: Joi.string().min(3).max(255).required(),
       model: Joi.string().min(1).max(255).required(),
       note: Joi.string().min(5).max(255),
+      filmQualityId: Joi.objectId().required(),
       geoLocation: Joi.object({
         description: Joi.string().min(1).max(255).required(),
         coordinates: Joi.object({

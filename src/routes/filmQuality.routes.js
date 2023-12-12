@@ -7,6 +7,7 @@ const router = express.Router();
 const asyncMiddleware = require("../middleware/async.middleware");
 const validateObjectId = require("../middleware/validateObjectId.middleware");
 const filmQualityController = require("../controllers/filmQuality.controllers");
+const roleBaseAuthMiddleware = require("../middleware/roleBaseAuth.middleware.");
 
 const { validate, validatePatch } = filmQuality;
 
@@ -14,6 +15,7 @@ const { validate, validatePatch } = filmQuality;
 router.post(
   "/",
   auth,
+  roleBaseAuthMiddleware(["gm", "admin"]),
   validateMiddleware(validate),
   asyncMiddleware(filmQualityController.createFilmQuality)
 );
@@ -35,6 +37,7 @@ router.put(
   validateObjectId,
   // auth is used to make authenticate a filmQuality.
   auth,
+  roleBaseAuthMiddleware(["gm", "admin"]),
   validateMiddleware(validatePatch),
   asyncMiddleware(filmQualityController.updateFilmQuality)
 );
