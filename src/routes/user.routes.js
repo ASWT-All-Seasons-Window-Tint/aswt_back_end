@@ -121,7 +121,7 @@ router.get(
 router.get(
   "/staff-assigned-to-dealership/:customerId",
   auth,
-  roleBaseAuth(["admin"]),
+  roleBaseAuth(["admin", "gm"]),
   asyncMiddleware(userController.fetchStaffsAssignedToDealership)
 );
 
@@ -152,6 +152,7 @@ router.get(
 router.get(
   "/role/:role",
   auth,
+  roleBaseAuth(["admin", "gm", "manager"]),
   validateroleMiddleware,
   asyncMiddleware(userController.getUsersByRole)
 );
@@ -175,7 +176,7 @@ router.put(
   "/update-staff-dealership/:staffId",
   validateObjectIdWithXArgMiddleware(["staffId"]),
   auth,
-  admin,
+  roleBaseAuthMiddleware(["gm", "admin"]),
   validateMiddleware(validateAssignDealer),
   asyncMiddleware(userController.assignOrRemoveDealerFromStaff)
 );

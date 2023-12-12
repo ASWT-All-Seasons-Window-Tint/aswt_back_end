@@ -110,6 +110,21 @@ class CustomerService {
     });
   }
 
+  async fetchCustomerByDisplayName(qbo, customerName) {
+    return new Promise((resolve, reject) => {
+      qbo.findCustomers(
+        [{ field: "DisplayName", value: customerName, operator: "=" }],
+        (err, service) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(service.QueryResponse.Customer);
+          }
+        }
+      );
+    });
+  }
+
   async fetchCustomerByEmail(qbo, customerEmail) {
     return new Promise((resolve, reject) => {
       qbo.findCustomers(

@@ -121,6 +121,38 @@ const EMAIL = {
     `,
     };
   },
+
+  invintationLinkBody: (
+    customerEmail,
+    dealershipName,
+    signUpLink,
+    dealershipStaffName
+  ) => {
+    const aswtDetails = JSON.parse(process.env.aswtDetails);
+
+    return {
+      from: process.env.emailId,
+      to: customerEmail,
+      subject: `Invitation to Access All Seasons Tint & Graphic Designs ${dealershipName} Account`,
+      html: `<p>Dear ${dealershipStaffName},</p>
+
+      <p>Congratulations! You have been invited to access the ${dealershipName} All Seasons Tint & Graphic Designs
+          dealership account. Your contribution is valued, and we look forward to your collaboration.</p>
+  
+      <p>To get started, please use the following URL to create your account and gain access:</p>
+  
+      <p><a href="${signUpLink}">${signUpLink}</a></p>
+  
+      <p>If you have any questions or encounter any issues during the process, feel free to reach out to our support team
+          at <a href="mailto:${aswtDetails.supportEmail}">${aswtDetails.supportEmail}</a>.</p>
+  
+      <p>Thank you for joining the All Seasons Tint community.</p>
+  
+      <p>Best regards,<br>
+          All Seasons Tint & Graphic Designs Support Team</p>`,
+    };
+  },
+
   sendRegistrationEmail: (
     customerEmail,
     loginURL,

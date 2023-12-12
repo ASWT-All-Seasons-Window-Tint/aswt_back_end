@@ -13,11 +13,12 @@ const {
   validatePatch,
   validateInvitationEmail,
 } = require("../model/customer.model");
+const roleBaseAuthMiddleware = require("../middleware/roleBaseAuth.middleware.");
 
 router.post(
   "/",
   auth,
-  admin,
+  adminOrManager,
   validateMiddleware(validate),
   qboAsyncMiddleware(customerController.createCustomer)
 );
@@ -25,13 +26,13 @@ router.post(
 router.post(
   "/get-customers-by-ids",
   auth,
-  admin,
+  adminOrManager,
   qboAsyncMiddleware(customerController.getCustomersByIds)
 );
 router.post(
   "/send-invitation-link",
   auth,
-  admin,
+  roleBaseAuthMiddleware(["customer"]),
   validateMiddleware(validateInvitationEmail),
   qboAsyncMiddleware(customerController.sendRegistrationLink)
 );
@@ -46,7 +47,7 @@ router.post(
 router.put(
   "/:id",
   auth,
-  admin,
+  adminOrManager,
   validateMiddleware(validatePatch),
   qboAsyncMiddleware(customerController.updateCustomerById)
 );
@@ -54,7 +55,7 @@ router.put(
 router.delete(
   "/:id",
   auth,
-  admin,
+  adminOrManager,
   qboAsyncMiddleware(customerController.deleteUserAccount)
 );
 

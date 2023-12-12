@@ -5,6 +5,7 @@ const { DATE, errorMessage } = require("../common/constants.common");
 const { getNewAccessToken } = require("../utils/getNewAccessToken.utils");
 const getWebhookDataUtils = require("../utils/getWebhookData.utils");
 const { pipeline } = require("../utils/entry.utils");
+const getArrayDifference = require("../utils/getArrayDifference.utils");
 const { carDetailsProperties, invoiceProperties, entryProperties } =
   require("../model/entry.model").joiValidator;
 
@@ -363,11 +364,9 @@ class EntryService {
 
     const serviceIds = carDetails.serviceIds;
     const vin = carDetails.vin;
-    const isEntryFromDealership = await this.getEntryByVin(
-      vin,
-      false,
-      undefined,
-      true
+    const isEntryFromDealership = await this.checkDuplicateEntry(
+      customerId,
+      vin
     );
 
     [results.services, results.entry] = await Promise.all([
@@ -447,53 +446,89 @@ class EntryService {
     return numberOfCarsAdded;
   }
 
-  getPriceForService = (services, customerId, category, lineId) => {
+  getPriceForService = async (
+    serviceIds,
+    customerId,
+    category,
+    lineId,
+    filmQualityId
+  ) => {
     const lowerCaseCategory = category.toLowerCase();
-    // To check if customer has a dealership price
-    const dealershipPrices = services.filter((service) =>
-      service.dealershipPrices.some(
-        (price) => price.customerId.toString() === customerId.toString()
-      )
-    );
-    const defaultPrices = services
-      .filter(
-        (service) => !dealershipPrices.some((dp) => dp._id === service._id) // Default prices for services without dealership
-      )
-      .map((service) => {
-        lineId++;
 
-        return {
-          dealership: false,
-          serviceName: service.name,
-          price: service.defaultPrices.find(
-            (p) => p.category === lowerCaseCategory
-          ).price,
-          serviceType: service.type,
-          serviceId: service._id,
-          qbId: service.qbId,
-          lineId,
-        };
-      });
+    const priceBreakdownDealership =
+      await serviceServices.getDealershipPriceBreakDown(
+        serviceIds,
+        customerId,
+        filmQualityId
+      );
+
+    const priceBreakdownDealershipServiceIds = priceBreakdownDealership.map(
+      (price) => price.serviceId
+    );
+
+    const remainingServiceIds =
+      priceBreakdownDealershipServiceIds.length > 0
+        ? getArrayDifference(
+            priceBreakdownDealership,
+            priceBreakdownDealershipServiceIds
+          )
+        : serviceIds;
+
+    const retailershipPriceBreakdown =
+      await serviceServices.getGeneralPriceBreakdown(
+        filmQualityId,
+        remainingServiceIds
+      );
+
+    // To check if customer has a dealership price
+    // const dealershipPrices = services.filter((service) =>
+    //   service.dealershipPrices.some(
+    //     (price) => price.customerId.toString() === customerId.toString()
+    //   )
+    // );
+    // const defaultPrices = services
+    //   .filter(
+    //     (service) => !dealershipPrices.some((dp) => dp._id === service._id) // Default prices for services without dealership
+    //   )
+    //   .map((service) => {
+    //     lineId++;
+
+    //     return {
+    //       dealership: false,
+    //       serviceName: service.name,
+    //       price: service.defaultPrices.find(
+    //         (p) => p.category === lowerCaseCategory
+    //       ).price,
+    //       serviceType: service.type,
+    //       serviceId: service._id,
+    //       qbId: service.qbId,
+    //       lineId,
+    //     };
+    //   });
+
+    // const priceBreakdown = [
+    //   ...dealershipPrices.map((service) => {
+    //     lineId++;
+
+    //     return {
+    //       dealership: true,
+    //       serviceName: service.name,
+    //       price: service.dealershipPrices.find(
+    //         (p) => p.customerId.toString() === customerId.toString()
+    //       ).price,
+    //       serviceType: service.type,
+    //       serviceId: service._id,
+    //       qbId: service.qbId,
+    //       lineId,
+    //     };
+    //   }),
+    //   ...defaultPrices,
+    // ];
 
     const priceBreakdown = [
-      ...dealershipPrices.map((service) => {
-        lineId++;
-
-        return {
-          dealership: true,
-          serviceName: service.name,
-          price: service.dealershipPrices.find(
-            (p) => p.customerId.toString() === customerId.toString()
-          ).price,
-          serviceType: service.type,
-          serviceId: service._id,
-          qbId: service.qbId,
-          lineId,
-        };
-      }),
-      ...defaultPrices,
+      ...priceBreakdownDealership,
+      ...retailershipPriceBreakdown,
     ];
-
     const price = this.calculateServicePriceDoneforCar(priceBreakdown);
 
     return { price, priceBreakdown, lowerCaseCategory };

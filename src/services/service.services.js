@@ -52,6 +52,194 @@ class ServiceService {
     return await Service.find({ type: caseInsensitiveType });
   }
 
+  getServiceAndIfDealershipHaveCustomPrice(serviceId, customerId) {
+    return Service.aggregate([
+      {
+        $match: {
+          _id: new mongoose.Types.ObjectId(serviceId),
+        },
+      },
+      {
+        $addFields: {
+          doesDealershipHaveCustomPrice: {
+            $gt: [
+              {
+                $size: {
+                  $filter: {
+                    input: "$dealershipPrices",
+                    cond: {
+                      $eq: ["$$this.customerId", customerId],
+                    },
+                  },
+                },
+              },
+              0,
+            ],
+          },
+        },
+      },
+    ]);
+  }
+
+  getDealershipPriceBreakDown(serviceIds, customerId, filmQualityId) {
+    return Service.aggregate([
+      {
+        $addFields: {
+          id: {
+            $toString: "$_id",
+          },
+          filmQualityId: {
+            $toObjectId: filmQualityId,
+          },
+        },
+      },
+      {
+        $unwind: {
+          path: "$dealershipPrices",
+          preserveNullAndEmptyArrays: false,
+        },
+      },
+      {
+        $lookup: {
+          from: "filmqualities",
+          localField: "filmQualityId",
+          foreignField: "_id",
+          as: "filmqualities",
+        },
+      },
+      {
+        $match: {
+          id: {
+            $in: serviceIds,
+          },
+          "dealershipPrices.customerId": customerId,
+        },
+      },
+      {
+        $addFields: {
+          dealershipPrice: "$dealershipPrices.price",
+          filmQualityName: {
+            $cond: [
+              {
+                $eq: ["$type", "installation"],
+              },
+              {
+                $first: "$filmqualities.name",
+              },
+              "$$REMOVE",
+            ],
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          serviceId: {
+            $toString: "$_id",
+          },
+          serviceName: "$name",
+          price: "$dealershipPrice",
+          filmQuality: "$filmQualityName",
+          serviceType: "$type",
+          qbId: "$qbId",
+          dealership: { $literal: true },
+        },
+      },
+    ]);
+  }
+
+  getGeneralPriceBreakdown(filmQualityId, serviceIds) {
+    return Service.aggregate([
+      {
+        $addFields: {
+          id: {
+            $toString: "$_id",
+          },
+          filmQualityId: {
+            $toObjectId: filmQualityId,
+          },
+        },
+      },
+      {
+        $unwind: {
+          path: "$filmQualityOrVehicleCategoryAmount",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $lookup: {
+          from: "filmqualities",
+          localField: "filmQualityId",
+          foreignField: "_id",
+          as: "filmqualities",
+        },
+      },
+      {
+        $match: {
+          $or: [
+            {
+              id: {
+                $in: serviceIds,
+              },
+              type: "removal",
+            },
+            {
+              $and: [
+                {
+                  id: {
+                    $in: serviceIds,
+                  },
+                },
+                {
+                  "filmQualityOrVehicleCategoryAmount.filmQualityId":
+                    new mongoose.Types.ObjectId(filmQualityId),
+                },
+              ],
+            },
+          ],
+        },
+      },
+      {
+        $addFields: {
+          dealershipPrice: "$dealershipPrices.price",
+          price: {
+            $cond: [
+              {
+                $eq: ["$type", "installation"],
+              },
+              "$filmQualityOrVehicleCategoryAmount.amount",
+              "$amount",
+            ],
+          },
+          filmQualityName: {
+            $cond: [
+              {
+                $eq: ["$type", "installation"],
+              },
+              {
+                $first: "$filmqualities.name",
+              },
+              "$$REMOVE",
+            ],
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          serviceId: {
+            $toString: "$_id",
+          },
+          serviceName: "$name",
+          price: "$price",
+          filmQuality: "$filmQualityName",
+          serviceType: "$type",
+          qbId: "$qbId",
+          dealership: { $literal: false },
+        },
+      },
+    ]);
+  }
   async getAllServices(lean = { lean: false }) {
     return lean.lean
       ? await Service.find({ isResidential: undefined })
@@ -170,6 +358,45 @@ class ServiceService {
         }
       );
     });
+  }
+
+  getDealershipPrice(serviceIds, customerId) {
+    return Service.aggregate([
+      {
+        $addFields: {
+          id: {
+            $toString: "$_id",
+          },
+        },
+      },
+      {
+        $unwind: {
+          path: "$dealershipPrices",
+          preserveNullAndEmptyArrays: false,
+        },
+      },
+      {
+        $match: {
+          id: {
+            $in: serviceIds,
+          },
+          "dealershipPrices.customerId": customerId,
+        },
+      },
+      {
+        $addFields: {
+          dealershipPrice: "$dealershipPrices.price",
+        },
+      },
+      {
+        $project: {
+          defaultPrices: 0,
+          filmQualityOrVehicleCategoryAmount: 0,
+          timeOfCompletion: 0,
+          id: 0,
+        },
+      },
+    ]);
   }
 
   async fetchItemsCount(qbo) {

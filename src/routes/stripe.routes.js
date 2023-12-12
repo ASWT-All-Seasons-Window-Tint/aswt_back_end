@@ -6,6 +6,7 @@ const asyncMiddleware = require("../middleware/async.middleware");
 const validateMiddleware = require("../middleware/validate.middleware");
 const authMiddleware = require("../middleware/auth.middleware");
 const adminMiddleware = require("../middleware/admin.middleware");
+const roleBaseAuthMiddleware = require("../middleware/roleBaseAuth.middleware.");
 
 router.post(
   "/appointment-checkout-session",
@@ -30,6 +31,7 @@ router.get(
 
 router.post(
   "/refund-appointment-money",
+  roleBaseAuthMiddleware(["receptionist", "admin", "gm"]),
   validateMiddleware(stripeControllers.validate),
   asyncMiddleware(stripeControllers.initiateRefund)
 );
