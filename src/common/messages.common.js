@@ -134,22 +134,50 @@ const EMAIL = {
       from: process.env.emailId,
       to: customerEmail,
       subject: `Invitation to Access All Seasons Tint & Graphic Designs ${dealershipName} Account`,
-      html: `<p>Dear ${dealershipStaffName},</p>
+      html: `<!DOCTYPE html>
+      <html lang="en">
+      
+      <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>[Dealer's Name] All Seasons Tint & Graphic Designs - Invitation</title>
+          <style>
+              .invitation-button {
+                  display: inline-block;
+                  padding: 10px 20px;
+                  font-size: 16px;
+                  text-align: center;
+                  text-decoration: none;
+                  cursor: pointer;
+                  background-color: #4CAF50;
+                  color: #ffffff;
+                  border: none;
+                  border-radius: 5px;
+              }
+          </style>
+      </head>
+      
+      <body>
+        <p>Dear ${dealershipStaffName},</p>
 
-      <p>Congratulations! You have been invited to access the ${dealershipName} All Seasons Tint & Graphic Designs
-          dealership account. Your contribution is valued, and we look forward to your collaboration.</p>
-  
-      <p>To get started, please use the following URL to create your account and gain access:</p>
-  
-      <p><a href="${signUpLink}">${signUpLink}</a></p>
-  
-      <p>If you have any questions or encounter any issues during the process, feel free to reach out to our support team
-          at <a href="mailto:${aswtDetails.supportEmail}">${aswtDetails.supportEmail}</a>.</p>
-  
-      <p>Thank you for joining the All Seasons Tint community.</p>
-  
-      <p>Best regards,<br>
-          All Seasons Tint & Graphic Designs Support Team</p>`,
+        <p>Congratulations! You have been invited to access the ${dealershipName} All Seasons Tint & Graphic Designs
+            dealership account. Your contribution is valued, and we look forward to your collaboration.</p>
+    
+            <p>To get started, please click the button below:</p>
+    
+        <a href="${signUpLink}" class="invitation-button">Accept Invitation</a>
+    
+        <p>If you have any questions or encounter any issues during the process, feel free to reach out to our support team
+            at <a href="mailto:${aswtDetails.supportEmail}">${aswtDetails.supportEmail}</a>.</p>
+    
+        <p>Thank you for joining the All Seasons Tint community.</p>
+    
+        <p>Best regards,<br>
+            All Seasons Tint & Graphic Designs Support Team</p>
+      </body>
+
+      </html>
+            `,
     };
   },
 
