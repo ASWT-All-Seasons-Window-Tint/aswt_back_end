@@ -16,6 +16,7 @@ const {
   jsonResponse,
   errorMessage,
   badReqResponse,
+  EMAIL,
 } = require("../common/messages.common");
 
 const expires = 1800;
@@ -256,37 +257,33 @@ class Customer {
   sendRegistrationLink(req, res) {
     const { email, name } = req.body;
 
-    const emailIntro = process.env.emailIntro;
+    req.user.isTemporal = true;
 
-    const token = jwt.sign(req.user, process.env.jwtPrivateKey, {
-      expiresIn: "1h",
-    });
+    const token = jwt.sign(req.user, process.env.jwtPrivateKey);
 
-    const baseUrl = process.env.clientUrl;
-    const subject = "Register your account";
-    const emailLink = (token) => `${baseUrl}/?token=${token}`;
-    const buttonInstructions = "Click this link to create your account:";
-    const buttonText = "Click Link to Register";
+    const aswtDetails = JSON.parse(process.env.aswtDetails);
+
+    const baseUrl = aswtDetails.invitationLink;
+    const invitationLink = `${baseUrl}/${token}`;
 
     transporter.sendMail(
-      mailOptions(
+      EMAIL.invintationLinkBody(
         email,
-        name,
-        token,
-        subject,
-        emailIntro,
-        emailLink,
-        buttonInstructions,
-        buttonText
+        req.user.firstName,
+        invitationLink,
+        name
       ),
       (error, info) => {
         if (error) {
+          console.log(error);
           return "Error occurred:", error;
         } else {
-          res.send({ message: "Email sent successfully", success: true });
+          console.log("Email sent successfully");
         }
       }
     );
+
+    jsonResponse(res, 200, true, "Email sent successfully");
   }
   //Delete user account entirely from the database
   async deleteUserAccount(req, res) {
