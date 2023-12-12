@@ -32,7 +32,7 @@ const {
 router.post(
   "/",
   auth,
-  roleBaseAuth(["admin", "customer", "gm", "manager"]),
+  roleBaseAuth(["admin", "customer", "temporal", "gm", "manager"]),
   addRoleMiddleware,
   validateMiddleware(validate),
   asyncMiddleware(userController.register)
