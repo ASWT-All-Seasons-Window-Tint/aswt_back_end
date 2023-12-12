@@ -97,6 +97,7 @@ function validateWithObj(service) {
       }),
     isFull: Joi.boolean(),
     type: Joi.string().valid("installation", "removal").required(),
+    customerTime: Joi.number().min(0.25).max(9).required(),
     timeOfCompletion: Joi.number().min(0.25).max(9).required(),
     filmQualityOrVehicleCategoryAmount: Joi.array()
       .items(
@@ -117,6 +118,7 @@ function validateWithObj(service) {
     amount: Joi.number().min(1).max(99999).when("type", {
       is: "removal",
       then: Joi.required(),
+      otherwise: Joi.forbidden(),
     }),
   });
 
