@@ -250,11 +250,23 @@ class AppointmentService {
         (serviceDetail) => serviceDetail.filmQualityId
       );
 
-      results.priceBreakdownArray =
+      const priceBreakdownArray =
         await serviceServices.getGeneralPriceBreakdown(
-          serviceDetail.filmQualityId,
+          serviceDetails,
           serviceIds
         );
+
+      const isFilmQualityRequired = priceBreakdownArray.some(
+        (result) => result.needsFilmQuality
+      );
+
+      if (isFilmQualityRequired) {
+        results.error.message =
+          "Film quality is required for installation services";
+        return results;
+      }
+
+      results.priceBreakdownArray = priceBreakdownArray;
 
       results.price = entryService.calculateServicePriceDoneforCar(
         results.priceBreakdownArray

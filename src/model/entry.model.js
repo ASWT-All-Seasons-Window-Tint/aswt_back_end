@@ -318,11 +318,17 @@ function validateAddInvoicePatch(entry) {
       vin: Joi.string().required(),
       year: Joi.number().min(1000).required(),
       colour: Joi.string().min(3),
-      serviceIds: Joi.array().items(Joi.objectId().required()),
+      serviceDetails: Joi.array()
+        .items(
+          Joi.object({
+            serviceId: Joi.objectId().required(),
+            filmQualityId: Joi.objectId(),
+          }).required()
+        )
+        .required(),
       make: Joi.string().min(3).max(255).required(),
       model: Joi.string().min(1).max(255).required(),
       note: Joi.string().min(5).max(255),
-      filmQualityId: Joi.objectId().required(),
       geoLocation: Joi.object({
         description: Joi.string().min(1).max(255).required(),
         coordinates: Joi.object({

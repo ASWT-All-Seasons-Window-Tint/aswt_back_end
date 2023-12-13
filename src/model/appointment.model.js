@@ -357,7 +357,7 @@ function validate(appointment) {
 function validateAppointmentForDealership(appointment) {
   const schema = Joi.object({
     startTime: Joi.date().required(),
-    isSubscribed: Joi.boolean().required(),
+    isSubscribed: Joi.boolean(),
   });
 
   return schema.validate(appointment);
