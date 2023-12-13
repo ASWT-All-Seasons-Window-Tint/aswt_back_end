@@ -94,8 +94,10 @@ class EntryController {
   addInvoice = async (req, res) => {
     const { id: customerId } = req.params;
     const { carDetails } = req.body;
-    const { category, serviceIds, vin } = carDetails;
+    const { category, serviceDetails, vin } = carDetails;
     const role = req.user.role;
+
+    const serviceIds = serviceDetails.map((service) => service.serviceId);
 
     const { data: customer, error } =
       await customerService.getOrSetCustomerOnCache(customerId);
@@ -151,13 +153,16 @@ class EntryController {
 
     let lineId = entryService.sumPriceBreakdownLength(entry);
 
-    const { price, priceBreakdown } = await entryService.getPriceForService(
-      carDetails.serviceIds,
-      entry.customerId,
-      category,
-      lineId,
-      req.body.carDetails.filmQualityId
-    );
+    const { price, priceBreakdown, checkErr } =
+      await entryService.getPriceForService(
+        carDetails.serviceIds,
+        entry.customerId,
+        category,
+        lineId,
+        serviceDetails
+      );
+
+    if (checkErr.message) return badReqResponse(res, checkErr.message);
 
     const updateCarDetailsResult = entryService.updateCarDetails(
       entry,
