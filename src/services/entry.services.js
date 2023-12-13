@@ -451,7 +451,7 @@ class EntryService {
     customerId,
     category,
     lineId,
-    filmQualityId
+    serviceDetails
   ) => {
     const lowerCaseCategory = category.toLowerCase();
 
@@ -459,7 +459,7 @@ class EntryService {
       await serviceServices.getDealershipPriceBreakDown(
         serviceIds,
         customerId,
-        filmQualityId
+        serviceDetails
       );
 
     const priceBreakdownDealershipServiceIds = priceBreakdownDealership.map(
@@ -468,15 +468,12 @@ class EntryService {
 
     const remainingServiceIds =
       priceBreakdownDealershipServiceIds.length > 0
-        ? getArrayDifference(
-            priceBreakdownDealership,
-            priceBreakdownDealershipServiceIds
-          )
+        ? getArrayDifference(serviceIds, priceBreakdownDealershipServiceIds)
         : serviceIds;
 
     const retailershipPriceBreakdown =
       await serviceServices.getGeneralPriceBreakdown(
-        filmQualityId,
+        serviceDetails,
         remainingServiceIds
       );
 
@@ -529,9 +526,21 @@ class EntryService {
       ...priceBreakdownDealership,
       ...retailershipPriceBreakdown,
     ];
+
+    const isFilmQualityRequired = priceBreakdown.some(
+      (result) => result.needsFilmQuality
+    );
+
+    const checkErr = {};
+
+    if (isFilmQualityRequired) {
+      checkErr.message = "Film quality is required for installation services";
+      return { checkErr };
+    }
+
     const price = this.calculateServicePriceDoneforCar(priceBreakdown);
 
-    return { price, priceBreakdown, lowerCaseCategory };
+    return { price, priceBreakdown, lowerCaseCategory, checkErr };
   };
 
   getCarBylineIdAndEntryId(entryId, lineId) {

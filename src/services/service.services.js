@@ -81,15 +81,25 @@ class ServiceService {
     ]);
   }
 
-  getDealershipPriceBreakDown(serviceIds, customerId, filmQualityId) {
+  getDealershipPriceBreakDown(serviceIds, customerId, serviceDetails) {
     return Service.aggregate([
       {
         $addFields: {
           id: {
             $toString: "$_id",
           },
-          filmQualityId: {
-            $toObjectId: filmQualityId,
+          serviceDetails: {
+            $map: {
+              input: serviceDetails,
+              in: {
+                serviceId: {
+                  $toObjectId: "$$this.serviceId",
+                },
+                filmQualityId: {
+                  $toObjectId: "$$this.filmQualityId",
+                },
+              },
+            },
           },
         },
       },
@@ -108,6 +118,33 @@ class ServiceService {
         },
       },
       {
+        $addFields: {
+          filmQualityId: {
+            $first: {
+              $map: {
+                input: {
+                  $filter: {
+                    input: "$serviceDetails",
+                    cond: {
+                      $eq: ["$$this.serviceId", "$_id"],
+                    },
+                  },
+                },
+                in: "$$this.filmQualityId",
+              },
+            },
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: "filmqualities",
+          localField: "filmQualityId",
+          foreignField: "_id",
+          as: "filmquality",
+        },
+      },
+      {
         $match: {
           id: {
             $in: serviceIds,
@@ -118,6 +155,7 @@ class ServiceService {
       {
         $addFields: {
           dealershipPrice: "$dealershipPrices.price",
+
           filmQualityName: {
             $cond: [
               {
@@ -137,9 +175,21 @@ class ServiceService {
           serviceId: {
             $toString: "$_id",
           },
+          needsFilmQuality: {
+            $and: [
+              {
+                $eq: ["$type", "installation"],
+              },
+              {
+                $eq: ["$filmQualityId", null],
+              },
+            ],
+          },
           serviceName: "$name",
           price: "$dealershipPrice",
-          filmQuality: "$filmQualityName",
+          filmQuality: {
+            $first: "$filmquality.name",
+          },
           serviceType: "$type",
           qbId: "$qbId",
           dealership: { $literal: true },
@@ -148,22 +198,52 @@ class ServiceService {
     ]);
   }
 
-  getGeneralPriceBreakdown(filmQualityId, serviceIds) {
-    return Service.aggregate([
+  getGeneralPriceBreakdown(serviceDetails, serviceIds) {
+    const agg = [
       {
         $addFields: {
           id: {
             $toString: "$_id",
           },
-          filmQualityId: {
-            $toObjectId: filmQualityId,
+          serviceDetails: {
+            $map: {
+              input: serviceDetails,
+              in: {
+                serviceId: {
+                  $toObjectId: "$$this.serviceId",
+                },
+                filmQualityId: {
+                  $toObjectId: "$$this.filmQualityId",
+                },
+              },
+            },
           },
         },
       },
       {
-        $unwind: {
-          path: "$filmQualityOrVehicleCategoryAmount",
-          preserveNullAndEmptyArrays: true,
+        $match: {
+          id: {
+            $in: serviceIds,
+          },
+        },
+      },
+      {
+        $addFields: {
+          filmQualityId: {
+            $first: {
+              $map: {
+                input: {
+                  $filter: {
+                    input: "$serviceDetails",
+                    cond: {
+                      $eq: ["$$this.serviceId", "$_id"],
+                    },
+                  },
+                },
+                in: "$$this.filmQualityId",
+              },
+            },
+          },
         },
       },
       {
@@ -171,74 +251,59 @@ class ServiceService {
           from: "filmqualities",
           localField: "filmQualityId",
           foreignField: "_id",
-          as: "filmqualities",
-        },
-      },
-      {
-        $match: {
-          $or: [
-            {
-              id: {
-                $in: serviceIds,
-              },
-              type: "removal",
-            },
-            {
-              $and: [
-                {
-                  id: {
-                    $in: serviceIds,
-                  },
-                },
-                {
-                  "filmQualityOrVehicleCategoryAmount.filmQualityId":
-                    new mongoose.Types.ObjectId(filmQualityId),
-                },
-              ],
-            },
-          ],
+          as: "filmquality",
         },
       },
       {
         $addFields: {
-          dealershipPrice: "$dealershipPrices.price",
-          price: {
-            $cond: [
+          needsFilmQuality: {
+            $and: [
               {
                 $eq: ["$type", "installation"],
               },
-              "$filmQualityOrVehicleCategoryAmount.amount",
-              "$amount",
+              {
+                $eq: ["$filmQualityId", null],
+              },
             ],
           },
-          filmQualityName: {
-            $cond: [
-              {
-                $eq: ["$type", "installation"],
+          installationPrice: {
+            $first: {
+              $filter: {
+                input: "$filmQualityOrVehicleCategoryAmount",
+                cond: {
+                  $eq: ["$$this.filmQualityId", "$filmQualityId"],
+                },
               },
-              {
-                $first: "$filmqualities.name",
-              },
-              "$$REMOVE",
-            ],
+            },
           },
         },
       },
       {
         $project: {
           _id: 0,
-          serviceId: {
-            $toString: "$_id",
-          },
+          serviceId: "$id",
           serviceName: "$name",
-          price: "$price",
-          filmQuality: "$filmQualityName",
+          price: {
+            $cond: [
+              {
+                $eq: ["$type", "installation"],
+              },
+              "$installationPrice.amount",
+              "$amount",
+            ],
+          },
+          dealership: { $literal: false },
+          filmQuality: {
+            $first: "$filmquality.name",
+          },
           serviceType: "$type",
           qbId: "$qbId",
-          dealership: { $literal: false },
+          needsFilmQuality: 1,
         },
       },
-    ]);
+    ];
+
+    return Service.aggregate(agg);
   }
 
   getInstallationService(serviceIds) {
