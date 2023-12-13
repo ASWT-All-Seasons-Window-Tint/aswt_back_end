@@ -583,7 +583,7 @@ class NotificationService {
             { $first: "$appointment.customerName" },
             ", for the date and time specified below:</p>",
             "<ul>",
-            "<li><strong>Date:</strong>",
+            "<li><strong>Date: </strong>",
             { $first: "$appointment.convertedDate" },
             "</li>",
             "<li><strong>Time:</strong> 9:00 AM CST</li>",
