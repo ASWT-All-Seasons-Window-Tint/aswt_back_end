@@ -215,6 +215,9 @@ const appointmentSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  customerAddress: {
+    type: String,
+  },
   staffId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: User,

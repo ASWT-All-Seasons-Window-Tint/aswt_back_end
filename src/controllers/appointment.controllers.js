@@ -24,6 +24,7 @@ const customerService = require("../services/customer.service");
 const mongoTransactionUtils = require("../utils/mongoTransaction.utils");
 const generateRandomIntegerWithinARangeUtils = require("../utils/generateRandomIntegerWithinARange.utils");
 const { default: mongoose } = require("mongoose");
+const notificationServices = require("../services/notification.services");
 
 const redisConnection = { url: process.env.redisUrl };
 const appointmentQueue = new Queue("reminders", redisConnection);
@@ -221,7 +222,7 @@ class AppointmentController {
     if (error)
       return jsonResponse(res, 404, false, error.Fault.Error[0].Detail);
 
-    const { customerEmail, customerName, customerNumber } =
+    const { customerEmail, customerName, customerNumber, customerAddress } =
       appointmentService.getCustomerDetails(customer);
 
     const startDate =
@@ -255,6 +256,7 @@ class AppointmentController {
       );
 
     let staffId;
+    let concernedStaffIds;
 
     if (
       !availableStafsIdsForDealership ||
@@ -262,12 +264,14 @@ class AppointmentController {
     ) {
       const endOfRange = staffIds.length;
       const index = generateRandomIntegerWithinARangeUtils(endOfRange);
+      concernedStaffIds = staffIds;
 
       staffId = staffIds[index];
     } else {
       const { availableStaffIds } = availableStafsIdsForDealership;
       const endOfRange = availableStaffIds.length;
       const index = generateRandomIntegerWithinARangeUtils(endOfRange);
+      concernedStaffIds = availableStaffIds;
 
       staffId = availableStaffIds[index];
     }
@@ -281,6 +285,7 @@ class AppointmentController {
       customerNumber,
       customerId: qbId,
       startTime,
+      customerAddress,
     };
 
     let appointment;
@@ -300,6 +305,15 @@ class AppointmentController {
         staffId,
         session: mongoSession,
       });
+
+      const body = {
+        title: `Your Upcoming Appointment with ${customerName}`,
+        concernedStaffIds,
+        type: `Dealership appointment`,
+        appointmentId: appointment._id,
+      };
+
+      await notificationServices.createNotification(body, mongoSession);
     });
 
     if (results) return jsonResponse(res, 500, false, "Something failed");

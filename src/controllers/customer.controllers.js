@@ -241,6 +241,8 @@ class Customer {
         accountNumber,
         alterNativeEmails,
         canCreate: true,
+        address: customerService.formatAddress(BillAddr),
+        mobileNumbe: PrimaryPhone.FreeFormNumber,
       },
     };
 

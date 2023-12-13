@@ -108,6 +108,8 @@ const customerDetailsSchema = new mongoose.Schema({
   companyName: {
     type: String,
   },
+  address: String,
+  mobileNumber: String,
   customerId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
