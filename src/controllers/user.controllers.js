@@ -80,8 +80,6 @@ class UserController {
       reqRole = "customer";
     }
 
-    console.log(req.user.role);
-
     if (reqRole === "customer") {
       req.body.role = "dealershipStaff";
 

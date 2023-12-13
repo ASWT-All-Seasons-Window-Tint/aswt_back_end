@@ -11,6 +11,7 @@ const filmQualityServices = require("./filmQuality.services");
 const { FilmQuality } = require("../model/filmQuality.model").filmQuality;
 const { transporter, mailOptions } = require("../utils/email.utils");
 const { EMAIL } = require("../common/messages.common");
+const customerService = require("./customer.service");
 
 class AppointmentService {
   //Create new appointment
@@ -475,8 +476,10 @@ class AppointmentService {
     const customerEmail = customer.PrimaryEmailAddr.Address;
     const customerName = customer.DisplayName;
     const customerNumber = customer.PrimaryPhone.FreeFormNumber;
+    const BillAddr = customer.BillAddr;
+    const customerAddress = customerService.formatAddress(BillAddr);
 
-    return { customerEmail, customerName, customerNumber };
+    return { customerEmail, customerName, customerNumber, customerAddress };
   }
 
   async updateAppointmentById(id, appointment) {

@@ -2,6 +2,7 @@ const { Notification } = require("../model/notification.model").notification;
 const mongoose = require("mongoose");
 const entryUtils = require("../utils/entry.utils");
 const { Service } = require("../model/service.model");
+const { days, validMonthNames, DATE } = require("../common/constants.common");
 const { NOTIFICATIONS } = require("../common/constants.common");
 
 class NotificationService {
@@ -100,6 +101,9 @@ class NotificationService {
           },
           carDetails: {
             $first: "$carDetails",
+          },
+          appointmentId: {
+            $first: "$appointmentId",
           },
         },
       },
@@ -235,6 +239,38 @@ class NotificationService {
       },
       {
         $lookup: {
+          from: "appointments",
+          localField: "appointmentId",
+          foreignField: "_id",
+          pipeline: [
+            {
+              $addFields: {
+                convertedDate: {
+                  $concat: [
+                    {
+                      $arrayElemAt: [
+                        validMonthNames,
+                        { $subtract: [{ $month: "$startTime" }, 1] },
+                      ],
+                    },
+                    " ",
+                    { $toString: { $dayOfMonth: "$startTime" } },
+                    ", ",
+                    {
+                      $toString: {
+                        $year: "$startTime",
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+          as: "appointment",
+        },
+      },
+      {
+        $lookup: {
           from: "notifications",
           localField: "_id",
           foreignField: "_id",
@@ -278,7 +314,13 @@ class NotificationService {
                     $eq: ["$title", NOTIFICATIONS.TITLES.VEHICLE_COMPLETED],
                   },
                   then: this.vehicleCompletedBody(),
-                  else: this.entryCompletedBody(),
+                  else: {
+                    $cond: {
+                      if: { $eq: ["$type", "Dealership appointment"] },
+                      then: this.appointmentBody(),
+                      else: this.entryCompletedBody(),
+                    },
+                  },
                 },
               },
             },
@@ -293,7 +335,13 @@ class NotificationService {
                     $eq: ["$title", NOTIFICATIONS.TITLES.VEHICLE_COMPLETED],
                   },
                   then: NOTIFICATIONS.DESCRIPTIONS.VEHICLE_COMPLETED,
-                  else: NOTIFICATIONS.DESCRIPTIONS.WAITING_LIST_COMPLETED,
+                  else: {
+                    $cond: {
+                      if: { $eq: ["$type", "Dealership appointment"] },
+                      then: this.appointmentDescription(),
+                      else: NOTIFICATIONS.DESCRIPTIONS.WAITING_LIST_COMPLETED,
+                    },
+                  },
                 },
               },
             },
@@ -514,6 +562,72 @@ class NotificationService {
           ],
         },
       },
+    };
+  }
+
+  appointmentBody() {
+    return {
+      $let: {
+        vars: this.bodyVars,
+        in: {
+          $concat: [
+            "<p>Dear",
+            " ",
+            "$$firstName",
+            " ",
+            "$$lastName",
+            ",",
+            "</p>",
+            "<p>I trust this message finds you well. We are pleased to inform you that a client has successfully booked an",
+            " appointment with our dealership, ",
+            { $first: "$appointment.customerName" },
+            ", for the date and time specified below:</p>",
+            "<ul>",
+            "<li><strong>Date:</strong>",
+            { $first: "$appointment.convertedDate" },
+            "</li>",
+            "<li><strong>Time:</strong> 9:00 AM CST</li>",
+            "</ul>",
+            "<p>Your expertise and assistance are crucial in ensuring a seamless and successful appointment experience for our",
+            " valued customer. Please proceed to ",
+            { $first: "$appointment.customerName" },
+            "'s store located at ",
+            { $first: "$appointment.customerAddress" },
+            " at least 15 minutes prior",
+            " to the scheduled appointment time.</p>",
+            "<p>Your responsibilities during the appointment include:</p>",
+            "<ol>",
+            "<li><strong>Warm Welcome:</strong> Greet the customer with a warm and friendly demeanor, introducing yourself",
+            " and affirming your readiness to assist.</li>",
+            "<li><strong>Appointment Verification:</strong> Confirm the customer's identity and the details of their",
+            " appointment. Cross-check the information with our system to ensure accuracy.</li>",
+            "<li><strong>Service Overview:</strong> Provide a brief overview of the services or tasks that will be performed",
+            " during the appointment. Address any queries or concerns the customer may have.</li>",
+            "<li><strong>Documentation:</strong> Ensure all necessary documents and materials are prepared and readily",
+            " available for the appointment.</li>",
+            "<li><strong>Professionalism:</strong> Maintain a professional and courteous attitude throughout the",
+            " appointment. Address any issues or challenges promptly and efficiently.</li>",
+            "</ol>",
+            "<p>Please make sure to represent ASWT in the best possible manner, and if you encounter any unexpected issues,",
+            " kindly report them to your immediate supervisor.</p>",
+            "<p>Thank you for your dedication to delivering exceptional customer service. We appreciate your commitment to",
+            " ensuring our customers have a positive experience with ASWT.</p>",
+            "<p>Best regards,<br>ASWT</p>",
+          ],
+        },
+      },
+    };
+  }
+
+  appointmentDescription() {
+    return {
+      $concat: [
+        "This is to inform you that an appointment has been successfully booked with Dealer ",
+        "(",
+        { $first: "$appointment.customerName" },
+        ")",
+        ". Your presence is required at the dealership store to facilitate the scheduled appointment. Please ensure that you are prepared and have all necessary materials for the appointment. Thank you for your prompt attention to this matter.",
+      ],
     };
   }
 
