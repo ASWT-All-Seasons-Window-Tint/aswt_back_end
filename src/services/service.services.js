@@ -240,6 +240,61 @@ class ServiceService {
       },
     ]);
   }
+
+  getInstallationService(serviceIds) {
+    return Service.aggregate([
+      {
+        $addFields: {
+          id: { $toString: "$_id" },
+        },
+      },
+      {
+        $match: {
+          type: "installation",
+          id: { $in: serviceIds },
+        },
+      },
+    ]);
+  }
+
+  updateServiceWithFilmQualityPrice(
+    serviceId,
+    updatedFilmQualityPrices,
+    otherServiceDetails
+  ) {
+    const update = {
+      $set: { ...otherServiceDetails },
+    };
+
+    const filter = {
+      _id: serviceId,
+    };
+
+    const options = {
+      new: true,
+    };
+
+    if (updatedFilmQualityPrices) {
+      filter.type = "installation";
+
+      const arrayFilters = updatedFilmQualityPrices.map(
+        (filmQualityPrice, index) => {
+          update.$set[
+            `filmQualityOrVehicleCategoryAmount.$[elem${index}].amount`
+          ] = filmQualityPrice.amount;
+
+          return {
+            [`elem${index}.filmQualityId`]: filmQualityPrice.filmQualityId,
+          };
+        }
+      );
+
+      options.arrayFilters = arrayFilters;
+    }
+
+    return Service.findOneAndUpdate(filter, update, options);
+  }
+
   async getAllServices(lean = { lean: false }) {
     return lean.lean
       ? await Service.find({ isResidential: undefined })
