@@ -23,6 +23,7 @@ const notificationSchema = new mongoose.Schema(
       type: Boolean,
       default: undefined,
     },
+    appointmentId: mongoose.Schema.Types.ObjectId,
     isReadBy: {
       type: [mongoose.Schema.Types.ObjectId],
       ref: User,

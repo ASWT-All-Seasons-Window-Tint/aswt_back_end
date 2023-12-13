@@ -256,6 +256,16 @@ class CustomerService {
     });
   }
 
+  formatAddress(address) {
+    // Destructure the properties of the address object
+    const { Line1, City, Country, PostalCode } = address;
+  
+    // Create a formatted string
+    const formattedAddress = `${Line1}, ${City}, ${Country} - ${PostalCode}`;
+  
+    return formattedAddress;
+  }
+
   extractJSONObject(inputString) {
     const validInputStringJson = inputString.replace(/'/g, '"');
 
