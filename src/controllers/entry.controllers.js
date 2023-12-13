@@ -458,7 +458,7 @@ class EntryController {
       return res.status(404).send(errorMessage("customer"));
 
     if (entryId) entries.id = entries._id;
-    if (customerId) {
+    if (customerId && req.user.role !== "customer") {
       if (Array.isArray(entries) && entries.length < 1) {
         entries = [
           {
