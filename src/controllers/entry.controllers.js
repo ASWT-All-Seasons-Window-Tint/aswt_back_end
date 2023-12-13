@@ -182,6 +182,8 @@ class EntryController {
     const mongoSession = await mongoose.startSession();
     const resultsError = {};
 
+    entryService.addLineId(entry);
+
     const results = await mongoTransactionUtils(mongoSession, async () => {
       if (staffId) {
         const [servicesWithoutEarningRateAndTotalEarnings] =
