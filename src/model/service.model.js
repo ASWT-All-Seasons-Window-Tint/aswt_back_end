@@ -41,6 +41,9 @@ const serviceSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    customerTime: {
+      type: Number,
+    },
     amount: { type: Number, min: 1, default: undefined },
     filmQualityOrVehicleCategoryAmount: [
       {
@@ -127,10 +130,16 @@ function validateWithObj(service) {
 
 function validatePatch(service) {
   const schema = Joi.object({
-    name: Joi.string().min(5).max(255),
     isFull: Joi.boolean(),
-    type: Joi.string().valid("installation", "removal"),
     timeOfCompletion: Joi.number().min(0.25).max(9),
+    customerTime: Joi.number().min(0.25).max(9),
+    filmQualityOrVehicleCategoryAmount: Joi.array().items(
+      Joi.object({
+        filmQualityId: Joi.objectId().required(),
+        amount: Joi.number().min(1).max(99999).required(),
+      })
+    ),
+    amount: Joi.number().min(1).max(99999),
   });
 
   return schema.validate(service);

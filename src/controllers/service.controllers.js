@@ -312,14 +312,17 @@ class ServiceController {
 
   //Update/edit service data
   async updateService(req, res) {
-    const service = await serviceService.getServiceById(req.params.id);
-    if (!service) return res.status(404).send(errorMessage("service"));
+    const { filmQualityOrVehicleCategoryAmount, ...otherServiceDetails } =
+      req.body;
 
-    let updatedService = req.body;
-    updatedService = await serviceService.updateServiceById(
-      req.params.id,
-      updatedService
-    );
+    const updatedService =
+      await serviceService.updateServiceWithFilmQualityPrice(
+        req.params.id,
+        filmQualityOrVehicleCategoryAmount,
+        otherServiceDetails
+      );
+
+    if (!updatedService) return res.status(404).send(errorMessage("service"));
 
     res.send(successMessage(MESSAGES.UPDATED, updatedService));
   }
