@@ -34,7 +34,11 @@ class ServiceController {
       filmQualityOrVehicleCategoryAmount,
       amount,
       isResidential,
+      customerTime,
     } = req.body;
+
+    const lowercaseName = convertToLowerCaseAndRemoveNonAlphanumericUtils(name);
+    const sunRoof = serviceService.containsSunroof(lowercaseName);
 
     if (type === "installation") {
       const filmQualityIds = filmQualityOrVehicleCategoryAmount.map(
@@ -134,6 +138,8 @@ class ServiceController {
       amount,
       isFull,
       isResidential,
+      sunRoof: sunRoof ? sunRoof : undefined,
+      customerTime,
     });
 
     service = await serviceService.createService(service);
@@ -379,10 +385,8 @@ class ServiceController {
 
   //Delete service account entirely from the database
   async deleteService(req, res) {
-    const service = await serviceService.getServiceById(req.params.id);
+    const service = await serviceService.deleteService(req.params.id);
     if (!service) return res.status(404).send(errorMessage("service"));
-
-    await serviceService.deleteService(req.params.id);
 
     res.send(successMessage(MESSAGES.DELETED, service));
   }

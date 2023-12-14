@@ -455,28 +455,6 @@ class EntryService {
   ) => {
     const lowerCaseCategory = category.toLowerCase();
 
-    const priceBreakdownDealership =
-      await serviceServices.getDealershipPriceBreakDown(
-        serviceIds,
-        customerId,
-        serviceDetails
-      );
-
-    const priceBreakdownDealershipServiceIds = priceBreakdownDealership.map(
-      (price) => price.serviceId
-    );
-
-    const remainingServiceIds =
-      priceBreakdownDealershipServiceIds.length > 0
-        ? getArrayDifference(serviceIds, priceBreakdownDealershipServiceIds)
-        : serviceIds;
-
-    const retailershipPriceBreakdown =
-      await serviceServices.getGeneralPriceBreakdown(
-        serviceDetails,
-        remainingServiceIds
-      );
-
     // To check if customer has a dealership price
     // const dealershipPrices = services.filter((service) =>
     //   service.dealershipPrices.some(
@@ -522,10 +500,11 @@ class EntryService {
     //   ...defaultPrices,
     // ];
 
-    const priceBreakdown = [
-      ...priceBreakdownDealership,
-      ...retailershipPriceBreakdown,
-    ];
+    const priceBreakdown = await serviceServices.getGeneralPriceBreakdown(
+      serviceDetails,
+      serviceIds,
+      customerId
+    );
 
     const isFilmQualityRequired = priceBreakdown.some(
       (result) => result.needsFilmQuality

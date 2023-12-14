@@ -58,6 +58,7 @@ const serviceSchema = new mongoose.Schema(
     },
     sunRoof: Boolean,
     isResidential: Boolean,
+    isDeleted: Boolean,
   },
   { toJSON: { virtuals: true } },
   { toObject: { virtuals: true } }
