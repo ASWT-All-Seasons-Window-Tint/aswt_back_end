@@ -13,13 +13,14 @@ class ServiceService {
 
   async getServiceById(serviceId, lean = { lean: false }) {
     return lean.lean
-      ? Service.findById(serviceId).lean()
-      : Service.findById(serviceId);
+      ? Service.findOne({ _id: serviceId, isDeleted: undefined }).lean()
+      : Service.findOne({ _id: serviceId, isDeleted: undefined });
   }
 
   async validateServiceIds(serviceIds) {
     const services = await Service.find({
       _id: { $in: serviceIds },
+      isDeleted: undefined,
     });
 
     const foundIds = services.map((d) => d._id.toString());
@@ -33,23 +34,35 @@ class ServiceService {
     return Service.find({
       _id: { $nin: serviceIds },
       isResidential: undefined,
+      isDeleted: undefined,
     });
   }
 
   async getServiceByName(name) {
     const caseInsensitiveName = new RegExp(name, "i");
 
-    return await Service.findOne({ name: caseInsensitiveName });
+    return await Service.findOne({
+      name: caseInsensitiveName,
+      isDeleted: undefined,
+    });
   }
 
+  containsSunroof = (text) => {
+    const pattern = /sunroof/i;
+    return pattern.test(text);
+  };
+
   async getSunRoofServices() {
-    return await Service.find({ sunRoof: true });
+    return await Service.find({ sunRoof: true, isDeleted: undefined });
   }
 
   async getServiceByType(type) {
     const caseInsensitiveType = new RegExp(type, "i");
 
-    return await Service.find({ type: caseInsensitiveType });
+    return await Service.find({
+      type: caseInsensitiveType,
+      isDeleted: undefined,
+    }).sort({ _id: -1 });
   }
 
   getServiceAndIfDealershipHaveCustomPrice(serviceId, customerId) {
@@ -107,14 +120,6 @@ class ServiceService {
         $unwind: {
           path: "$dealershipPrices",
           preserveNullAndEmptyArrays: false,
-        },
-      },
-      {
-        $lookup: {
-          from: "filmqualities",
-          localField: "filmQualityId",
-          foreignField: "_id",
-          as: "filmqualities",
         },
       },
       {
@@ -198,7 +203,7 @@ class ServiceService {
     ]);
   }
 
-  getGeneralPriceBreakdown(serviceDetails, serviceIds) {
+  getGeneralPriceBreakdown(serviceDetails, serviceIds, customerId) {
     const agg = [
       {
         $addFields: {
@@ -222,13 +227,27 @@ class ServiceService {
       },
       {
         $match: {
-          id: {
-            $in: serviceIds,
-          },
+          $or: [
+            {
+              id: {
+                $in: serviceIds,
+              },
+            },
+          ],
         },
       },
       {
         $addFields: {
+          dealershipPrice: {
+            $first: {
+              $filter: {
+                input: "$dealershipPrices",
+                cond: {
+                  $eq: ["$$this.customerId", customerId],
+                },
+              },
+            },
+          },
           filmQualityId: {
             $first: {
               $map: {
@@ -285,14 +304,20 @@ class ServiceService {
           serviceName: "$name",
           price: {
             $cond: [
+              "$dealershipPrice",
+              "$dealershipPrice.price",
               {
-                $eq: ["$type", "installation"],
+                $cond: [
+                  {
+                    $eq: ["$type", "installation"],
+                  },
+                  "$installationPrice.amount",
+                  "$amount",
+                ],
               },
-              "$installationPrice.amount",
-              "$amount",
             ],
           },
-          dealership: { $literal: false },
+          dealership: { $cond: ["$dealershipPrice", true, false] },
           filmQuality: {
             $first: "$filmquality.name",
           },
@@ -317,6 +342,7 @@ class ServiceService {
         $match: {
           type: "installation",
           id: { $in: serviceIds },
+          isDeleted: undefined,
         },
       },
     ]);
@@ -362,11 +388,11 @@ class ServiceService {
 
   async getAllServices(lean = { lean: false }) {
     return lean.lean
-      ? await Service.find({ isResidential: undefined })
+      ? await Service.find({ isResidential: undefined, isDeleted: undefined })
           .lean()
           .sort({ _id: -1 })
           .populate("filmQualityOrVehicleCategoryAmount.filmQualityId", "name")
-      : await Service.find({ isResidential: undefined })
+      : await Service.find({ isResidential: undefined, isDeleted: undefined })
           .sort({ _id: -1 })
           .populate("filmQualityOrVehicleCategoryAmount.filmQualityId", "name");
   }
@@ -405,6 +431,7 @@ class ServiceService {
     Service.findOne({
       _id: serviceId,
       "dealershipPrices.customerId": customerId,
+      isDeleted: undefined,
     });
   }
 
@@ -414,11 +441,13 @@ class ServiceService {
           _id: {
             $in: serviceIds,
           },
+          isDeleted: undefined,
         }).lean()
       : await Service.find({
           _id: {
             $in: serviceIds,
           },
+          isDeleted: undefined,
         });
   }
 
@@ -610,7 +639,10 @@ class ServiceService {
   }
 
   async deleteService(id) {
-    return await Service.findByIdAndRemove(id);
+    return await Service.findOneAndUpdate(
+      { _id: id, isDeleted: undefined },
+      { $set: { isDeleted: true } }
+    );
   }
 }
 
