@@ -93,10 +93,11 @@ router.get(
   asyncMiddleware(takenTimeslotsControllers.getTakenTimeslotForDealerAndStaff)
 );
 
-router.get(
+router.post(
   "/get-unavailable-dates-for-dealer/start/:startDate/end/:endDate",
   auth,
   roleBaseAuthMiddleware(["customer", "dealershipStaff"]),
+  validateMiddleware(unavailableTimeslots),
   validDateParamsMiddleware(30, true),
   asyncMiddleware(
     takenTimeslotsControllers.getUnavailableDatesInTheCalendarForDealership

@@ -186,21 +186,46 @@ class TakenTimeslotControllers {
   }
   getUnavailableDatesInTheCalendarForDealership = async (req, res) => {
     const { startDate, endDate } = req.params;
+    const { serviceIds } = req.body;
     const isUserDealershipStaff = req.user.role === "dealershipStaff";
 
     const customerId = isUserDealershipStaff
       ? req.user.customerDetails.customerId
       : req.user._id;
 
-    const { unavailableDatesInTheCalendar, errorCode, errorMessage } =
-      await this.generateTakenTimeslotsForDealership(
-        customerId,
-        startDate,
-        endDate
+    const [services] = await serviceServices.getTimeOfCompletionAndInvalids(
+      serviceIds
+    );
+
+    if (!services)
+      return notFoundResponse(
+        res,
+        `We can't find services for the provided serviceIds`
+      );
+    if (services.invalidIds.length > 0)
+      return notFoundResponse(
+        res`Services with IDs: [${services.invalidIds}] could not be found`
       );
 
-    if (errorCode || errorMessage)
-      return jsonResponse(res, errorCode, false, errorMessage);
+    const { timeOfCompletion } = services;
+
+    const staffIds = await userService.fetchStaffIdsAssignedToDealership(
+      customerId
+    );
+
+    console.log(staffIds);
+
+    if (staffIds.length < 1)
+      return notFoundResponse(res, "No staff is assigned to the dealer");
+
+    const unavailableDatesInTheCalendar =
+      await takenTimeslotsServices.getDealershipUnavailableDatesInTheCalendar(
+        startDate,
+        endDate,
+        timeOfCompletion,
+        staffIds,
+        customerId
+      );
 
     return res.send(
       successMessage(MESSAGES.FETCHED, unavailableDatesInTheCalendar)
