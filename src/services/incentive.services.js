@@ -33,7 +33,15 @@ class IncentiveService {
     endDate = new Date(endDate);
 
     return Incentive.findOne({
-      $or: [{ endTime: { $gte: startDate } }, { startTime: { $lt: endDate } }],
+      $and: [
+        {
+          $or: [
+            { startTime: { $gte: startDate } },
+            { endTime: { $gte: startDate } },
+          ],
+        },
+        { startTime: { $lte: endDate } },
+      ],
     });
   };
 
