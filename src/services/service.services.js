@@ -11,6 +11,38 @@ class ServiceService {
     );
   }
 
+  getTimeOfCompletionAndInvalids(serviceIds) {
+    return Service.aggregate([
+      {
+        $addFields: {
+          id: { $toString: "$_id" },
+        },
+      },
+      {
+        $match: {
+          id: {
+            $in: serviceIds,
+          },
+        },
+      },
+      {
+        $group: {
+          _id: "id",
+          timeOfCompletion: { $sum: "$timeOfCompletion" },
+          validIds: { $push: "$id" },
+        },
+      },
+      {
+        $project: {
+          timeOfCompletion: 1,
+          invalidIds: {
+            $setDifference: [serviceIds, "$validIds"],
+          },
+        },
+      },
+    ]);
+  }
+
   async getServiceById(serviceId, lean = { lean: false }) {
     return lean.lean
       ? Service.findOne({ _id: serviceId, isDeleted: undefined }).lean()
