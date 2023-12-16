@@ -106,14 +106,15 @@ class TakenTimeslotService {
     return commonTimeSlotsArray;
   }
 
-  getDealershipUnavailableDatesInTheCalendar = async (
+  getDealershipUnavailableDatesInTheCalendar = (
     startDate,
     endDate,
     timeOfCompletion,
-    numberOfStaffsAvailableForAppointment,
     assignedStaffs,
     dealershipId
   ) => {
+    const numberOfStaffsAvailableForAppointment = assignedStaffs.length;
+
     const agg = [
       {
         $addFields: {
@@ -128,10 +129,10 @@ class TakenTimeslotService {
           $or: [
             {
               forDealership: true,
-              staffIdString: { $in: assignedStaffs },
+              staffId: { $in: assignedStaffs },
             },
             {
-              staffIdString: { $in: assignedStaffs },
+              staffId: { $in: assignedStaffs },
               clearOutForDealershipId: new mongoose.Types.ObjectId(
                 dealershipId
               ),
@@ -190,7 +191,12 @@ class TakenTimeslotService {
               },
             },
           },
-          clearedOut: 1,
+          clearedOut: {
+            $filter: {
+              input: "$clearedOut",
+              cond: "$$this",
+            },
+          },
         },
       },
       {
@@ -505,7 +511,66 @@ class TakenTimeslotService {
           _id: 0,
           date: 1,
           dateTime: 1,
-          takenTime: 1,
+          takenTime: {
+            $map: {
+              input: "$takenTime",
+              in: {
+                $let: {
+                  vars: {
+                    hours: {
+                      $toString: {
+                        $cond: [
+                          { $lt: [{ $floor: "$$this" }, 10] },
+                          {
+                            $concat: ["0", { $toString: { $floor: "$$this" } }],
+                          },
+                          { $toString: { $floor: "$$this" } },
+                        ],
+                      },
+                    },
+                    decimalTime: "$$this",
+                  },
+                  in: {
+                    $let: {
+                      vars: {
+                        hours: "$$hours",
+                        minutes: {
+                          $round: {
+                            $multiply: [
+                              {
+                                $subtract: [
+                                  "$$decimalTime",
+                                  { $toLong: "$$hours" },
+                                ],
+                              },
+                              60,
+                            ],
+                          },
+                        },
+                      },
+                      in: {
+                        $let: {
+                          vars: {
+                            hours: { $toString: "$$hours" },
+                            minutes: {
+                              $cond: [
+                                { $lt: ["$$minutes", 10] },
+                                { $concat: ["0", { $toString: "$$minutes" }] },
+                                { $toString: "$$minutes" },
+                              ],
+                            },
+                          },
+                          in: {
+                            $concat: ["$$hours", ":", "$$minutes"],
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
           clearedOut: 1,
           isTaken: {
             $cond: [
@@ -560,9 +625,131 @@ class TakenTimeslotService {
     takenTimeslots,
     assignedStaffIds,
     dealershipId,
-    date
+    date,
+    timeOfCompletion
   ) {
     const agg = [
+      {
+        $addFields: {
+          timeslotsInDecimal: {
+            $map: {
+              input: {
+                $range: [
+                  36,
+                  {
+                    $multiply: [17.25, 4],
+                  },
+                ],
+              },
+              in: {
+                $divide: ["$$this", 4],
+              },
+            },
+          },
+        },
+      },
+      {
+        $addFields: {
+          unAvailableTimeslotsDueToCloseOfBus: {
+            $map: {
+              input: {
+                $let: {
+                  vars: {
+                    closingTime: {
+                      $add: [
+                        {
+                          $max: "$timeslotsInDecimal",
+                        },
+                        0.25,
+                      ],
+                    },
+                    latestTimeForTheJob: {
+                      $subtract: [
+                        {
+                          $max: "$timeslotsInDecimal",
+                        },
+                        timeOfCompletion,
+                      ],
+                    },
+                  },
+                  in: {
+                    $map: {
+                      input: {
+                        $range: [
+                          {
+                            $multiply: ["$$latestTimeForTheJob", 4],
+                          },
+                          {
+                            $multiply: ["$$closingTime", 4],
+                          },
+                        ],
+                      },
+                      in: {
+                        $divide: ["$$this", 4],
+                      },
+                    },
+                  },
+                },
+              },
+              in: {
+                $let: {
+                  vars: {
+                    hours: {
+                      $toString: {
+                        $cond: [
+                          { $lt: [{ $floor: "$$this" }, 10] },
+                          {
+                            $concat: ["0", { $toString: { $floor: "$$this" } }],
+                          },
+                          { $toString: { $floor: "$$this" } },
+                        ],
+                      },
+                    },
+                    decimalTime: "$$this",
+                  },
+                  in: {
+                    $let: {
+                      vars: {
+                        hours: "$$hours",
+                        minutes: {
+                          $round: {
+                            $multiply: [
+                              {
+                                $subtract: [
+                                  "$$decimalTime",
+                                  { $toLong: "$$hours" },
+                                ],
+                              },
+                              60,
+                            ],
+                          },
+                        },
+                      },
+                      in: {
+                        $let: {
+                          vars: {
+                            hours: { $toString: "$$hours" },
+                            minutes: {
+                              $cond: [
+                                { $lt: ["$$minutes", 10] },
+                                { $concat: ["0", { $toString: "$$minutes" }] },
+                                { $toString: "$$minutes" },
+                              ],
+                            },
+                          },
+                          in: {
+                            $concat: ["$$hours", ":", "$$minutes"],
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
       {
         $addFields: {
           staffIdString: {
@@ -574,7 +761,15 @@ class TakenTimeslotService {
                 $size: {
                   $ifNull: [
                     {
-                      $setIntersection: ["$timeslots", takenTimeslots],
+                      $setIntersection: [
+                        takenTimeslots,
+                        {
+                          $concatArrays: [
+                            "$timeslots",
+                            "$unAvailableTimeslotsDueToCloseOfBus",
+                          ],
+                        },
+                      ],
                     },
                     [],
                   ],

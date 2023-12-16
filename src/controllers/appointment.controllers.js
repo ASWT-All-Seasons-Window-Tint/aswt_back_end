@@ -234,7 +234,6 @@ class AppointmentController {
       );
 
     const { timeOfCompletion } = services;
-    console.log(timeOfCompletion);
 
     const {
       priceBreakdownArray,
@@ -346,6 +345,7 @@ class AppointmentController {
 
     let appointment;
     const mongoSession = await mongoose.startSession();
+    const sessionErr = {};
 
     const results = await mongoTransactionUtils(mongoSession, async () => {
       const timeslots = takenTimeslotServices.getTakenTimes(
@@ -358,7 +358,8 @@ class AppointmentController {
           timeslots,
           staffIds,
           dealershipId,
-          date
+          date,
+          timeOfCompletion
         );
 
       if (availableTimeSlots.length < 1) {
@@ -366,6 +367,16 @@ class AppointmentController {
           staffIds,
           concernedStaffIds
         );
+
+        const unavailableDueToCloseOfBusiness =
+          takenTimeslotServices.getUnvailableTimeDueToCloseOfBusiness(
+            timeOfCompletion
+          );
+
+        if (unavailableDueToCloseOfBusiness.includes(timeString)) {
+          sessionErr.error = true;
+          return badReqResponse(res, "The selected date is unavailable");
+        }
 
         await takenTimeslotServices.createTakenTimeslot(
           staffId,
@@ -378,8 +389,10 @@ class AppointmentController {
           (availableTimeSlot) => !availableTimeSlot.isAvailable
         );
 
-        if (isDateUnavailable)
+        if (isDateUnavailable) {
+          sessionErr.error = true;
           return badReqResponse(res, "The selected date is unavailable");
+        }
 
         const availableStaffTimeslots = availableTimeSlots.filter(
           (availableTimeSlot) => availableTimeSlot.isAvailable
@@ -413,6 +426,7 @@ class AppointmentController {
 
       await notificationServices.createNotification(body, mongoSession);
     });
+    if (sessionErr.error) return;
 
     if (results) return jsonResponse(res, 500, false, "Something failed");
 
