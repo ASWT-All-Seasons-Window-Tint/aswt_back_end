@@ -17,7 +17,7 @@ router.post(
   auth,
   roleBaseAuth(["admin", "gm"]),
   validateMiddleware(validate),
-  validDateParamsMiddleware(100, true),
+  validDateParamsMiddleware(100, "future"),
   asyncMiddleware(incentiveController.createIncentive)
 );
 
