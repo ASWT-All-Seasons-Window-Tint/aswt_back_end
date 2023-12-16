@@ -61,6 +61,11 @@ module.exports = (numberOfDaysAllowed, canStartDateBeFuture) => {
           return badReqResponse(res, "Start date should not be future date");
       }
 
+      if (canStartDateBeFuture === "future") {
+        if (parsedStartDate < currentDate)
+          return badReqResponse(res, "Start date should not be past  date");
+      }
+
       if (startDate > endDate)
         return badReqResponse(
           res,

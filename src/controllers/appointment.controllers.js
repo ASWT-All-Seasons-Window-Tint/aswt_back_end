@@ -6,6 +6,7 @@ const {
   jsonResponse,
   SMS,
   badReqResponse,
+  notFoundResponse,
 } = require("../common/messages.common");
 const { MESSAGES } = require("../common/constants.common");
 const freeTimeSlotServices = require("../services/freeTimeSlot.services");
@@ -25,6 +26,7 @@ const mongoTransactionUtils = require("../utils/mongoTransaction.utils");
 const generateRandomIntegerWithinARangeUtils = require("../utils/generateRandomIntegerWithinARange.utils");
 const { default: mongoose } = require("mongoose");
 const notificationServices = require("../services/notification.services");
+const userServices = require("../services/user.services");
 
 const redisConnection = { url: process.env.redisUrl };
 const appointmentQueue = new Queue("reminders", redisConnection);
@@ -207,10 +209,57 @@ class AppointmentController {
     return takenTimeSlotForStaff;
   };
 
-  async createAppointmentForDealership(req, res) {
+  createAppointmentForDealership = async (req, res) => {
     const { qbId } = req.user.customerDetails;
-    const { startTime, isSubscribed } = req.body;
+    const { startTime, isSubscribed, carDetails } = req.body;
+    const { serviceDetails } = carDetails;
     const isUserDealershipStaff = req.user.role === "dealershipStaff";
+
+    const serviceIds = serviceDetails.map(
+      (serviceDetail) => serviceDetail.serviceId
+    );
+
+    const [services] = await serviceServices.getTimeOfCompletionAndInvalids(
+      serviceIds
+    );
+
+    if (!services)
+      return notFoundResponse(
+        res,
+        `We can't find services for the provided serviceIds`
+      );
+    if (services.invalidIds.length > 0)
+      return notFoundResponse(
+        res`Services with IDs: [${services.invalidIds}] could not be found`
+      );
+
+    const { timeOfCompletion } = services;
+    console.log(timeOfCompletion);
+
+    const {
+      priceBreakdownArray,
+      error: breakdownErr,
+      price,
+    } = await appointmentService.getPriceBreakdown({
+      serviceDetails,
+      type: "auto",
+    });
+
+    if (breakdownErr.message) {
+      if (breakdownErr.code)
+        return jsonResponse(
+          res,
+          breakdownErr.code,
+          false,
+          breakdownErr.message
+        );
+
+      return badReqResponse(res, breakdownErr.message);
+    }
+
+    carDetails.priceBreakdown = priceBreakdownArray;
+    carDetails.price = price;
+    carDetails.category = carDetails.category;
 
     const dealershipId = isUserDealershipStaff
       ? req.user.customerDetails.customerId
@@ -227,54 +276,60 @@ class AppointmentController {
 
     const startDate =
       takenTimeslotServices.getTakenTimeSlotDateString(startTime);
+    const { formattedDate: date, formattedTime: timeString } =
+      freeTimeSlotServices.getFormattedDate(startTime);
 
-    const { errorCode, errorMessage, unavailableDatesInTheCalendar, staffIds } =
-      await takenTimeslotsControllers.generateTakenTimeslotsForDealership(
-        dealershipId,
-        startDate,
-        startDate
-      );
+    const staffIds = await userServices.fetchStaffIdsAssignedToDealership(
+      dealershipId
+    );
 
-    if (errorCode || errorMessage)
-      return jsonResponse(res, errorCode, false, errorMessage);
+    // const { errorCode, errorMessage, unavailableDatesInTheCalendar, staffIds } =
+    // await takenTimeslotsControllers.generateTakenTimeslotsForDealership(
+    //     dealershipId,
+    //     startDate,
+    //     startDate
+    //   );
 
-    if (unavailableDatesInTheCalendar.length > 0) {
-      for (const unavailableDate of unavailableDatesInTheCalendar) {
-        if (unavailableDate.isTaken) {
-          return badReqResponse(
-            res,
-            "All assigned staffs are engaged for the specied date"
-          );
-        }
-      }
-    }
+    // if (errorCode || errorMessage)
+    //   return jsonResponse(res, errorCode, false, errorMessage);
 
-    const [availableStafsIdsForDealership] =
-      await takenTimeslotServices.getAvailableStafsIdsForDealership(
-        startDate,
-        staffIds
-      );
+    // if (unavailableDatesInTheCalendar.length > 0) {
+    //   for (const unavailableDate of unavailableDatesInTheCalendar) {
+    //     if (unavailableDate.isTaken) {
+    //       return badReqResponse(
+    //         res,
+    //         "All assigned staffs are engaged for the specied date"
+    //       );
+    //     }
+    //   }
+    // }
+
+    // const [availableStafsIdsForDealership] =
+    //   await takenTimeslotServices.getAvailableStafsIdsForDealership(
+    //     startDate,
+    //     staffIds
+    //   );
 
     let staffId;
     let concernedStaffIds;
 
-    if (
-      !availableStafsIdsForDealership ||
-      availableStafsIdsForDealership.availableStaffIds < 1
-    ) {
-      const endOfRange = staffIds.length;
-      const index = generateRandomIntegerWithinARangeUtils(endOfRange);
-      concernedStaffIds = staffIds;
+    // if (
+    //   !availableStafsIdsForDealership ||
+    //   availableStafsIdsForDealership.availableStaffIds < 1
+    // ) {
+    //   const endOfRange = staffIds.length;
+    //   const index = generateRandomIntegerWithinARangeUtils(endOfRange);
+    //   concernedStaffIds = staffIds;
 
-      staffId = staffIds[index];
-    } else {
-      const { availableStaffIds } = availableStafsIdsForDealership;
-      const endOfRange = availableStaffIds.length;
-      const index = generateRandomIntegerWithinARangeUtils(endOfRange);
-      concernedStaffIds = availableStaffIds;
+    //   staffId = staffIds[index];
+    // } else {
+    //   const { availableStaffIds } = availableStafsIdsForDealership;
+    //   const endOfRange = availableStaffIds.length;
+    //   const index = generateRandomIntegerWithinARangeUtils(endOfRange);
+    //   concernedStaffIds = availableStaffIds;
 
-      staffId = availableStaffIds[index];
-    }
+    //   staffId = availableStaffIds[index];
+    // }
     const appointmentBody = {
       appointmentType: "dealership",
       isSubscribed,
@@ -286,19 +341,62 @@ class AppointmentController {
       customerId: qbId,
       startTime,
       customerAddress,
+      carDetails,
     };
 
     let appointment;
     const mongoSession = await mongoose.startSession();
 
     const results = await mongoTransactionUtils(mongoSession, async () => {
-      await takenTimeslotServices.staffBlockOutsADate(
-        staffId,
-        undefined,
-        startDate,
-        true,
-        mongoSession
+      const timeslots = takenTimeslotServices.getTakenTimes(
+        timeString,
+        timeOfCompletion
       );
+
+      const availableTimeSlots =
+        await takenTimeslotServices.getAvailabilityForEachStaff(
+          timeslots,
+          staffIds,
+          dealershipId,
+          date
+        );
+
+      if (availableTimeSlots.length < 1) {
+        staffId = this.getFreeStaffIdBasedOnTimeslots(
+          staffIds,
+          concernedStaffIds
+        );
+
+        await takenTimeslotServices.createTakenTimeslot(
+          staffId,
+          date,
+          timeslots,
+          true
+        );
+      } else {
+        const isDateUnavailable = availableTimeSlots.every(
+          (availableTimeSlot) => !availableTimeSlot.isAvailable
+        );
+
+        if (isDateUnavailable)
+          return badReqResponse(res, "The selected date is unavailable");
+
+        const availableStaffTimeslots = availableTimeSlots.filter(
+          (availableTimeSlot) => availableTimeSlot.isAvailable
+        );
+
+        const availableStaffTimeslot = this.getFreeStaffIdBasedOnTimeslots(
+          availableStaffTimeslots,
+          concernedStaffIds
+        );
+        const takenTimeslotId = availableStaffTimeslot._id;
+        staffId = availableStaffTimeslot.staffId;
+
+        await takenTimeslotServices.addTakenTimeslotsForStaff(
+          takenTimeslotId,
+          timeslots
+        );
+      }
 
       appointment = await appointmentService.createAppointment({
         body: appointmentBody,
@@ -319,6 +417,14 @@ class AppointmentController {
     if (results) return jsonResponse(res, 500, false, "Something failed");
 
     res.send(successMessage(MESSAGES.CREATED, appointment));
+  };
+
+  getFreeStaffIdBasedOnTimeslots(staffIdsArray, concernedStaffIds) {
+    const endOfRange = staffIdsArray.length;
+    const index = generateRandomIntegerWithinARangeUtils(endOfRange);
+    concernedStaffIds = staffIdsArray;
+
+    return staffIdsArray[index];
   }
 
   async createCustomerFromAppointmentDetails(req, res) {

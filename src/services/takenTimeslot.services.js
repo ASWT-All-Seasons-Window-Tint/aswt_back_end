@@ -28,11 +28,12 @@ class TakenTimeslotService {
     return true;
   }
 
-  async createTakenTimeslot(staffId, date, timeslots) {
+  async createTakenTimeslot(staffId, date, timeslots, forDealership) {
     const takenTimeslot = new TakenTimeslot({
       staffId,
       date,
       timeslots,
+      forDealership,
     });
 
     return await takenTimeslot.save();
@@ -103,6 +104,523 @@ class TakenTimeslotService {
     const commonTimeSlotsArray = [...commonTimeSlots];
 
     return commonTimeSlotsArray;
+  }
+
+  getDealershipUnavailableDatesInTheCalendar = async (
+    startDate,
+    endDate,
+    timeOfCompletion,
+    numberOfStaffsAvailableForAppointment,
+    assignedStaffs,
+    dealershipId
+  ) => {
+    const agg = [
+      {
+        $addFields: {
+          dateTime: {
+            $toDate: "$date",
+          },
+          staffIdString: { $toString: "$staffId" },
+        },
+      },
+      {
+        $match: {
+          $or: [
+            {
+              forDealership: true,
+              staffIdString: { $in: assignedStaffs },
+            },
+            {
+              staffIdString: { $in: assignedStaffs },
+              clearOutForDealershipId: new mongoose.Types.ObjectId(
+                dealershipId
+              ),
+            },
+          ],
+        },
+      },
+      {
+        $group: {
+          _id: "$date",
+          id: {
+            $first: "$id",
+          },
+          date: {
+            $first: "$date",
+          },
+          staffId: {
+            $first: "$staffId",
+          },
+          dateTime: {
+            $first: "$dateTime",
+          },
+          clearedOut: {
+            $push: "$clearedOut",
+          },
+          timeslots: {
+            $push: "$timeslots",
+          },
+          isAvailable: {
+            $push: "$isAvailable",
+          },
+        },
+      },
+      {
+        $project: {
+          _id: "$id",
+          id: 1,
+          staff: 1,
+          isAvailable: {
+            $ifNull: ["$isAvailable", []],
+          },
+          date: "$date",
+          dateTime: "$dateTime",
+          timeslots: {
+            $map: {
+              input: "$timeslots",
+              as: "timeslot",
+              in: {
+                $map: {
+                  input: "$$timeslot",
+                  as: "time",
+                  in: {
+                    $concat: ["$date", "T", "$$time"],
+                  },
+                },
+              },
+            },
+          },
+          clearedOut: 1,
+        },
+      },
+      {
+        $project: {
+          _id: "$id",
+          id: 1,
+          staff: 1,
+          date: "$date",
+          clearedOut: 1,
+          dateTime: "$dateTime",
+          timeslots: "$timeslots",
+          timeslotsAsDecimal: {
+            $map: {
+              input: {
+                $setIntersection: {
+                  $reduce: {
+                    input: {
+                      $range: [
+                        0,
+                        {
+                          $add: [
+                            { $size: "$isAvailable" },
+                            numberOfStaffsAvailableForAppointment - 1,
+                          ],
+                        },
+                      ],
+                    },
+                    initialValue: { $first: { $slice: ["$timeslots", 0, 1] } },
+                    in: {
+                      $setIntersection: [
+                        {
+                          $first: {
+                            $slice: ["$timeslots", { $add: ["$$this", 1] }, 1],
+                          },
+                        },
+                        "$$value",
+                      ],
+                    },
+                  },
+                },
+              },
+              as: "timeString",
+              in: {
+                $sum: [
+                  {
+                    $hour: {
+                      $toDate: "$$timeString",
+                    },
+                  },
+                  {
+                    $divide: [
+                      {
+                        $minute: {
+                          $toDate: "$$timeString",
+                        },
+                      },
+                      60,
+                    ],
+                  },
+                ],
+              },
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: "$id",
+          clearedOut: 1,
+          staff: 1,
+          date: "$date",
+          dateTime: "$dateTime",
+          timeslots: "$timeslots",
+          timeslotsInDecimal: {
+            $map: {
+              input: {
+                $range: [
+                  36,
+                  {
+                    $multiply: [17.25, 4],
+                  },
+                ],
+              },
+              in: {
+                $divide: ["$$this", 4],
+              },
+            },
+          },
+          takenTime: {
+            $let: {
+              vars: {
+                workingDuration: {
+                  $map: {
+                    input: {
+                      $range: [
+                        0,
+                        {
+                          $multiply: [timeOfCompletion + 0.25, 4],
+                        },
+                      ],
+                    },
+                    in: {
+                      $divide: ["$$this", 4],
+                    },
+                  },
+                },
+                timeslotsInDecimal: {
+                  $map: {
+                    input: {
+                      $range: [
+                        36,
+                        {
+                          $multiply: [17.25, 4],
+                        },
+                      ],
+                    },
+                    in: {
+                      $divide: ["$$this", 4],
+                    },
+                  },
+                },
+                unAvailableTimeSlot: [],
+                timeslotsAsDecimal: {
+                  $ifNull: ["$timeslotsAsDecimal", []],
+                },
+              },
+              in: {
+                $map: {
+                  input: "$$workingDuration",
+                  as: "time",
+                  in: {
+                    $map: {
+                      input: "$$timeslotsInDecimal",
+                      as: "timeslot",
+                      in: {
+                        $cond: [
+                          {
+                            $in: [
+                              {
+                                $add: ["$$timeslot", "$$time"],
+                              },
+                              "$$timeslotsAsDecimal",
+                            ],
+                          },
+                          {
+                            $first: {
+                              $concatArrays: [
+                                "$$unAvailableTimeSlot",
+                                ["$$timeslot"],
+                              ],
+                            },
+                          },
+                          null,
+                        ],
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: "$id",
+          date: "$date",
+          staffId: 1,
+          clearedOut: {
+            $gte: [
+              { $size: "$clearedOut" },
+              numberOfStaffsAvailableForAppointment,
+            ],
+          },
+          dateTime: "$dateTime",
+          timeslots: "$timeslots",
+          timeslotsInDecimal: {
+            $map: {
+              input: {
+                $range: [
+                  36,
+                  {
+                    $multiply: [17.25, 4],
+                  },
+                ],
+              },
+              in: {
+                $divide: ["$$this", 4],
+              },
+            },
+          },
+          takenTime: {
+            $concatArrays: [
+              {
+                $map: {
+                  input: "$takenTime",
+                  as: "takenTime",
+                  in: {
+                    $filter: {
+                      input: "$$takenTime",
+                      as: "eachTime",
+                      cond: {
+                        $ne: ["$$eachTime", null],
+                      },
+                    },
+                  },
+                },
+              },
+              {
+                $let: {
+                  vars: {
+                    closingTime: {
+                      $add: [
+                        {
+                          $max: "$timeslotsInDecimal",
+                        },
+                        0.25,
+                      ],
+                    },
+                    latestTimeForTheJob: {
+                      $subtract: [
+                        {
+                          $max: "$timeslotsInDecimal",
+                        },
+                        timeOfCompletion,
+                      ],
+                    },
+                  },
+                  in: {
+                    $map: {
+                      input: {
+                        $range: [
+                          {
+                            $multiply: ["$$latestTimeForTheJob", 4],
+                          },
+                          {
+                            $multiply: ["$$closingTime", 4],
+                          },
+                        ],
+                      },
+                      in: {
+                        $divide: ["$$this", 4],
+                      },
+                    },
+                  },
+                },
+              },
+            ],
+          },
+        },
+      },
+      {
+        $unwind: {
+          path: "$takenTime",
+          includeArrayIndex: "string",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $unwind: {
+          path: "$takenTime",
+          includeArrayIndex: "string",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $group: {
+          _id: "$date",
+          date: {
+            $first: "$date",
+          },
+          id: {
+            $first: "$id",
+          },
+          dateTime: {
+            $first: "$dateTime",
+          },
+          timeslots: {
+            $first: "$timeslots",
+          },
+          takenTime: {
+            $addToSet: "$takenTime",
+          },
+          clearedOut: {
+            $first: "$clearedOut",
+          },
+          timeslotsAsDecimal: {
+            $first: "$timeslotsAsDecimal",
+          },
+          timeslotsInDecimal: {
+            $first: "$timeslotsInDecimal",
+          },
+        },
+      },
+      {
+        $project: {
+          id: 1,
+          date: 1,
+          dateTime: 1,
+          timeslots: 1,
+          takenTime: 1,
+          timeslotsAsDecimal: 1,
+          timeslotsInDecimal: 1,
+          clearedOut: 1,
+          arraysAreEqual: {
+            $setEquals: ["$takenTime", "$timeslotsInDecimal"],
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          date: 1,
+          dateTime: 1,
+          takenTime: 1,
+          clearedOut: 1,
+          isTaken: {
+            $cond: [
+              {
+                $or: ["$clearedOut", "$arraysAreEqual"],
+              },
+              true,
+              false,
+            ],
+          },
+        },
+      },
+      {
+        $match: {
+          $and: [
+            {
+              dateTime: {
+                $gte: new Date(startDate),
+              },
+            },
+            {
+              dateTime: {
+                $lte: new Date(endDate),
+              },
+            },
+          ],
+        },
+      },
+      {
+        $sort: {
+          dateTime: 1,
+        },
+      },
+    ];
+
+    agg.forEach((a) => {
+      if (a.$project) {
+        a.$project.staffId = 1;
+      }
+
+      if (a.$group) {
+        a.$group.staffId = {
+          $first: "$staffId",
+        };
+      }
+    });
+
+    return TakenTimeslot.aggregate(agg);
+  };
+
+  getAvailabilityForEachStaff(
+    takenTimeslots,
+    assignedStaffIds,
+    dealershipId,
+    date
+  ) {
+    const agg = [
+      {
+        $addFields: {
+          staffIdString: {
+            $toString: "$staffId",
+          },
+          isAvailable: {
+            $eq: [
+              {
+                $size: {
+                  $ifNull: [
+                    {
+                      $setIntersection: ["$timeslots", takenTimeslots],
+                    },
+                    [],
+                  ],
+                },
+              },
+              0,
+            ],
+          },
+        },
+      },
+      {
+        $addFields: {
+          isAvailable: {
+            $cond: ["$clearOutForDealershipId", false, "$isAvailable"],
+          },
+        },
+      },
+      {
+        $match: {
+          $and: [
+            {
+              date,
+            },
+            {
+              $or: [
+                {
+                  staffId: {
+                    $in: assignedStaffIds,
+                  },
+                  clearOutForDealershipId: new mongoose.Types.ObjectId(
+                    dealershipId
+                  ),
+                },
+                {
+                  staffId: {
+                    $in: assignedStaffIds,
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      },
+    ];
+
+    return TakenTimeslot.aggregate(agg);
   }
 
   getTakenTimes(timeString, timeOfCompletion) {
@@ -838,14 +1356,15 @@ class TakenTimeslotService {
     clearOutForDealershipId,
     date,
     isBooked,
-    session
+    session,
+    clearedOut = true
   ) {
     const takenTimeslot = new TakenTimeslot({
       staffId,
       date,
       clearOutForDealershipId,
       forDealership: true,
-      clearedOut: true,
+      clearedOut,
       isBooked,
     });
 
@@ -906,6 +1425,12 @@ class TakenTimeslotService {
     // Sort the formatted time array
     return formattedTimeArray.sort();
   }
+
+  addTakenTimeslotsForStaff = async (id, timeslots) => {
+    return TakenTimeslot.findByIdAndUpdate(id, {
+      $push: { timeslots },
+    });
+  };
 
   updateTakenTimeslotsForStaff = async (
     takenTimeSlotForStaff,

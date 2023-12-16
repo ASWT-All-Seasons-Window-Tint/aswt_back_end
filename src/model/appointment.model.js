@@ -361,6 +361,30 @@ function validateAppointmentForDealership(appointment) {
   const schema = Joi.object({
     startTime: Joi.date().required(),
     isSubscribed: Joi.boolean(),
+    carDetails: Joi.object({
+      year: Joi.string().min(4).max(4).required(),
+      make: Joi.string().min(1).max(255).required(),
+      model: Joi.string().min(1).max(255).required(),
+      tintShade: Joi.array()
+        .items(
+          Joi.object({
+            tintArea: Joi.string().min(1).max(255).required(),
+            shade: Joi.string().min(1).max(255).required(),
+          }).required()
+        )
+        .required(),
+      category: Joi.string()
+        .min(1)
+        .valid(...validCarTypes),
+      serviceDetails: Joi.array()
+        .items(
+          Joi.object({
+            serviceId: Joi.objectId().required(),
+            filmQualityId: Joi.objectId(),
+          }).required()
+        )
+        .required(),
+    }).required(),
   });
 
   return schema.validate(appointment);
