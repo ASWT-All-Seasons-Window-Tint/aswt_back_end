@@ -213,8 +213,6 @@ class TakenTimeslotControllers {
       customerId
     );
 
-    console.log(staffIds);
-
     if (staffIds.length < 1)
       return notFoundResponse(res, "No staff is assigned to the dealer");
 
