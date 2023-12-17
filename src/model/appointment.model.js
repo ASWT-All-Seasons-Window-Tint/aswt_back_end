@@ -140,7 +140,7 @@ const carDetailsSchema = new mongoose.Schema({
     minlength: 4,
     maxlength: 256,
   },
-  notes: {
+  note: {
     type: String,
     minlength: 4,
     maxlength: 256,
@@ -373,7 +373,7 @@ function validateAppointmentForDealership(appointment) {
     isSubscribed: Joi.boolean(),
     carDetails: Joi.object({
       vin: Joi.string().min(4).max(64),
-      notes: Joi.string().min(4).max(255),
+      note: Joi.string().min(4).max(255),
       year: Joi.string().min(4).max(4).required(),
       make: Joi.string().min(1).max(255).required(),
       model: Joi.string().min(1).max(255).required(),
