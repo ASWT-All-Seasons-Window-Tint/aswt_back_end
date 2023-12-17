@@ -387,6 +387,23 @@ class AppointmentController {
           timeslots,
           true
         );
+      } else if (availableTimeSlots.length < staffIds.length) {
+        const takenStaffIds = availableTimeSlots.map((time) => time.staffId);
+        const availableStaffIds = staffIds.filter(
+          (staffId) => !takenStaffIds.includes(staffId)
+        );
+
+        staffId = this.getFreeStaffIdBasedOnTimeslots(
+          availableStaffIds,
+          concernedStaffIds
+        );
+
+        await takenTimeslotServices.createTakenTimeslot(
+          staffId,
+          date,
+          timeslots,
+          true
+        );
       } else {
         const isDateUnavailable = availableTimeSlots.every(
           (availableTimeSlot) => !availableTimeSlot.isAvailable
