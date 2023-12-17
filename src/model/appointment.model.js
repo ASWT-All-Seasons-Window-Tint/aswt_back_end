@@ -140,7 +140,7 @@ const carDetailsSchema = new mongoose.Schema({
     minlength: 4,
     maxlength: 256,
   },
-  notes: {
+  note: {
     type: String,
     minlength: 4,
     maxlength: 256,
