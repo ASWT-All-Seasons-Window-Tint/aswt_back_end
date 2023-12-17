@@ -755,6 +755,9 @@ class TakenTimeslotService {
           staffIdString: {
             $toString: "$staffId",
           },
+          clearOutForDealershipId: {
+            $eq: ["$clearOutForDealershipId", { $toObjectId: dealershipId }],
+          },
           isAvailable: {
             $eq: [
               {
