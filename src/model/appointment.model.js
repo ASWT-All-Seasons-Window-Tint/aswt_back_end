@@ -135,6 +135,16 @@ const carDetailsSchema = new mongoose.Schema({
     minlength: 4,
     maxlength: 4,
   },
+  vin: {
+    type: String,
+    minlength: 4,
+    maxlength: 256,
+  },
+  notes: {
+    type: String,
+    minlength: 4,
+    maxlength: 256,
+  },
   tintShade,
   make: {
     type: String,
@@ -362,17 +372,17 @@ function validateAppointmentForDealership(appointment) {
     startTime: Joi.date().required(),
     isSubscribed: Joi.boolean(),
     carDetails: Joi.object({
+      vin: Joi.string().min(4).max(64),
+      notes: Joi.string().min(4).max(255),
       year: Joi.string().min(4).max(4).required(),
       make: Joi.string().min(1).max(255).required(),
       model: Joi.string().min(1).max(255).required(),
-      tintShade: Joi.array()
-        .items(
-          Joi.object({
-            tintArea: Joi.string().min(1).max(255).required(),
-            shade: Joi.string().min(1).max(255).required(),
-          }).required()
-        )
-        .required(),
+      tintShade: Joi.array().items(
+        Joi.object({
+          tintArea: Joi.string().min(1).max(255).required(),
+          shade: Joi.string().min(1).max(255).required(),
+        }).required()
+      ),
       category: Joi.string()
         .min(1)
         .valid(...validCarTypes),
