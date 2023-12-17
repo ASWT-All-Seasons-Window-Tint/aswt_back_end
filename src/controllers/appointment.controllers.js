@@ -235,14 +235,21 @@ class AppointmentController {
 
     const { timeOfCompletion } = services;
 
-    const {
+    const dealershipId = isUserDealershipStaff
+      ? req.user.customerDetails.customerId
+      : req.user._id;
+
+    let {
       priceBreakdownArray,
       error: breakdownErr,
       price,
     } = await appointmentService.getPriceBreakdown({
       serviceDetails,
       type: "auto",
+      dealershipId: qbId,
     });
+
+    if (price != NaN) price = 0;
 
     if (breakdownErr.message) {
       if (breakdownErr.code)
@@ -259,10 +266,6 @@ class AppointmentController {
     carDetails.priceBreakdown = priceBreakdownArray;
     carDetails.price = price;
     carDetails.category = carDetails.category;
-
-    const dealershipId = isUserDealershipStaff
-      ? req.user.customerDetails.customerId
-      : req.user._id;
 
     const { data: customer, error } =
       await customerService.getOrSetCustomerOnCache(qbId);

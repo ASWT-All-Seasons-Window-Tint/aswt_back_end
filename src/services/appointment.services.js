@@ -240,6 +240,7 @@ class AppointmentService {
     categoryName,
     type,
     residentialDetails,
+    dealershipId,
   }) {
     const results = {};
 
@@ -254,14 +255,15 @@ class AppointmentService {
       const priceBreakdownArray =
         await serviceServices.getGeneralPriceBreakdown(
           serviceDetails,
-          serviceIds
+          serviceIds,
+          dealershipId
         );
 
       const isFilmQualityRequired = priceBreakdownArray.some(
         (result) => result.needsFilmQuality
       );
 
-      if (isFilmQualityRequired) {
+      if (isFilmQualityRequired && !dealershipId) {
         results.error.message =
           "Film quality is required for installation services";
         return results;
