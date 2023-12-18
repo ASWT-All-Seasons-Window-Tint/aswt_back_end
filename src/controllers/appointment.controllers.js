@@ -387,49 +387,46 @@ class AppointmentController {
           return badReqResponse(res, "The selected date is unavailable");
         }
 
-        await takenTimeslotServices.createTakenTimeslot(
-          staffId,
-          date,
-          timeslots,
-          true
-        );
-      } else if (availableTimeSlots.length < staffIds.length) {
-        const takenStaffIds = availableTimeSlots.map((time) => time.staffId);
-        const availableStaffIds = staffIds.filter(
-          (staffId) => !takenStaffIds.includes(staffId)
-        );
+        try {
+          await takenTimeslotServices.createTakenTimeslot(
+            staffId,
+            date,
+            timeslots,
+            true
+          );
+        } catch (error) {
+          if (error.code === 11000 && error.name === "MongoServerError") {
+            console.log(error.name);
 
-        staffId = this.getFreeStaffIdBasedOnTimeslots(availableStaffIds);
+            const availableTimeSlots =
+              await takenTimeslotServices.getAvailabilityForEachStaff(
+                timeslots,
+                staffIds,
+                dealershipId,
+                date,
+                timeOfCompletion
+              );
 
-        await takenTimeslotServices.createTakenTimeslot(
-          staffId,
-          date,
-          timeslots,
-          true
-        );
-      } else {
-        const isDateUnavailable = availableTimeSlots.every(
-          (availableTimeSlot) => !availableTimeSlot.isAvailable
-        );
-
-        if (isDateUnavailable) {
-          sessionErr.error = true;
-          return badReqResponse(res, "The selected date is unavailable");
+            await this.updateStaffTakenTime(
+              availableTimeSlots,
+              staffIds,
+              sessionErr,
+              staffId,
+              res
+            );
+          } else {
+            sessionErr.error = true;
+            console.log(error);
+            return jsonResponse(res, 500, false, "Something failed");
+          }
         }
-
-        const availableStaffTimeslots = availableTimeSlots.filter(
-          (availableTimeSlot) => availableTimeSlot.isAvailable
-        );
-
-        const availableStaffTimeslot = this.getFreeStaffIdBasedOnTimeslots(
-          availableStaffTimeslots
-        );
-        const takenTimeslotId = availableStaffTimeslot._id;
-        staffId = availableStaffTimeslot.staffId;
-
-        await takenTimeslotServices.addTakenTimeslotsForStaff(
-          takenTimeslotId,
-          timeslots
+      } else {
+        await this.updateStaffTakenTime(
+          availableTimeSlots,
+          staffIds,
+          sessionErr,
+          staffId,
+          res
         );
       }
 
@@ -453,6 +450,54 @@ class AppointmentController {
     if (results) return jsonResponse(res, 500, false, "Something failed");
 
     res.send(successMessage(MESSAGES.CREATED, appointment));
+  };
+
+  updateStaffTakenTime = async (
+    availableTimeSlots,
+    staffIds,
+    sessionErr,
+    staffId,
+    res
+  ) => {
+    if (availableTimeSlots.length < staffIds.length) {
+      const takenStaffIds = availableTimeSlots.map((time) => time.staffId);
+      const availableStaffIds = staffIds.filter(
+        (staffId) => !takenStaffIds.includes(staffId)
+      );
+
+      staffId = this.getFreeStaffIdBasedOnTimeslots(availableStaffIds);
+
+      await takenTimeslotServices.createTakenTimeslot(
+        staffId,
+        date,
+        timeslots,
+        true
+      );
+    } else {
+      const isDateUnavailable = availableTimeSlots.every(
+        (availableTimeSlot) => !availableTimeSlot.isAvailable
+      );
+
+      if (isDateUnavailable) {
+        sessionErr.error = true;
+        return badReqResponse(res, "The selected date is unavailable");
+      }
+
+      const availableStaffTimeslots = availableTimeSlots.filter(
+        (availableTimeSlot) => availableTimeSlot.isAvailable
+      );
+
+      const availableStaffTimeslot = this.getFreeStaffIdBasedOnTimeslots(
+        availableStaffTimeslots
+      );
+      const takenTimeslotId = availableStaffTimeslot._id;
+      staffId = availableStaffTimeslot.staffId;
+
+      await takenTimeslotServices.addTakenTimeslotsForStaff(
+        takenTimeslotId,
+        timeslots
+      );
+    }
   };
 
   getFreeStaffIdBasedOnTimeslots(staffIdsArray) {

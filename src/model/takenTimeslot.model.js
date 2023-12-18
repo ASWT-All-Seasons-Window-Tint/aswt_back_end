@@ -44,6 +44,8 @@ const takenTimeslotSchema = new mongoose.Schema(
 
 addVirtualIdUtils(takenTimeslotSchema);
 
+takenTimeslotSchema.index({ staffId: 1, date: 1 }, { unique: true });
+
 const TakenTimeslot = mongoose.model("TakenTimeslot", takenTimeslotSchema);
 
 function blockOut(user) {
