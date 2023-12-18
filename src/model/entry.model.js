@@ -23,7 +23,7 @@ const carDetails = [
     isDroppedOff: {
       type: Boolean,
     },
-    vin: { type: String, required: true },
+    vin: { type: String },
     year: { type: Number },
     make: {
       type: String,
