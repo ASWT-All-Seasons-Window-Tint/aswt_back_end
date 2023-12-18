@@ -843,6 +843,8 @@ class EntryController {
 
     const mongoSession = await mongoose.startSession();
 
+    const resultsError = {};
+
     const results = await mongoTransactionUtils(mongoSession, async () => {
       const [servicesWithoutEarningRateAndTotalEarnings] =
         await userService.getServicesWithoutEarningRateAndTotalEarnings(
