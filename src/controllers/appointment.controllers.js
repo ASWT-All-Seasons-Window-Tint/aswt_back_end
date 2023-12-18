@@ -27,6 +27,8 @@ const generateRandomIntegerWithinARangeUtils = require("../utils/generateRandomI
 const { default: mongoose } = require("mongoose");
 const notificationServices = require("../services/notification.services");
 const userServices = require("../services/user.services");
+const entryServices = require("../services/entry.services");
+const { carDetailsProperties } = require("../model/entry.model").joiValidator;
 
 const redisConnection = { url: process.env.redisUrl };
 const appointmentQueue = new Queue("reminders", redisConnection);
@@ -350,6 +352,27 @@ class AppointmentController {
     const sessionErr = {};
 
     const results = await mongoTransactionUtils(mongoSession, async () => {
+      const entry = await entryServices.createNewEntry(customer);
+
+      const carDetail = {};
+      for (const property of carDetailsProperties) {
+        if (property === "serviceIds") {
+          carDetail[property] = serviceIds;
+        } else {
+          carDetail[property] = carDetails[property];
+        }
+      }
+
+      entry.invoice.carDetails = [carDetail];
+
+      entry.numberOfCarsAdded = 1;
+      entry.isFromAppointment = true;
+      entry.invoice.totalPrice = price;
+
+      const updatedEntry = await entry.save();
+
+      const carId = updatedEntry.invoice.carDetails[0]._id;
+
       const timeslots = takenTimeslotServices.getTakenTimes(
         timeString,
         timeOfCompletion
@@ -449,6 +472,8 @@ class AppointmentController {
         concernedStaffIds,
         type: `Dealership appointment`,
         appointmentId: appointment._id,
+        carId,
+        entryId: entry._id,
       };
 
       await notificationServices.createNotification(body, mongoSession);
