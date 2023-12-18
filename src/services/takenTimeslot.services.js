@@ -1569,6 +1569,34 @@ class TakenTimeslotService {
     return takenTimeslot.save(session ? { session } : undefined);
   }
 
+  getAvailableDealershipStaffIds(dealershipId, staffIds, date) {
+    const agg = [
+      {
+        $match: {
+          date,
+          clearOutForDealershipId: new mongoose.Types.ObjectId(dealershipId),
+        },
+      },
+      {
+        $group: {
+          _id: "$date",
+          staffIds: {
+            $push: "$staffId",
+          },
+        },
+      },
+      {
+        $project: {
+          availableStaffIds: {
+            $setDifference: [staffIds, "$staffIds"],
+          },
+        },
+      },
+    ];
+
+    return TakenTimeslot.aggregate(agg);
+  }
+
   getTakenTimeSlotDateString(inputDate) {
     inputDate = new Date(inputDate);
 

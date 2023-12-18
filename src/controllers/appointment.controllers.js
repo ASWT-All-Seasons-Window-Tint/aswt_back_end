@@ -313,7 +313,6 @@ class AppointmentController {
     //   );
 
     let staffId;
-    let concernedStaffIds;
 
     // if (
     //   !availableStafsIdsForDealership ||
@@ -355,6 +354,16 @@ class AppointmentController {
         timeString,
         timeOfCompletion
       );
+      const [availableDealershipStaffIds] =
+        await takenTimeslotServices.getAvailableDealershipStaffIds(
+          dealershipId,
+          staffIds,
+          date
+        );
+
+      const concernedStaffIds = !availableDealershipStaffIds
+        ? staffIds
+        : availableDealershipStaffIds.availableStaffIds;
 
       const availableTimeSlots =
         await takenTimeslotServices.getAvailabilityForEachStaff(
@@ -366,10 +375,7 @@ class AppointmentController {
         );
 
       if (availableTimeSlots.length < 1) {
-        staffId = this.getFreeStaffIdBasedOnTimeslots(
-          staffIds,
-          concernedStaffIds
-        );
+        staffId = this.getFreeStaffIdBasedOnTimeslots(staffIds);
 
         const unavailableDueToCloseOfBusiness =
           takenTimeslotServices.getUnvailableTimeDueToCloseOfBusiness(
@@ -393,10 +399,7 @@ class AppointmentController {
           (staffId) => !takenStaffIds.includes(staffId)
         );
 
-        staffId = this.getFreeStaffIdBasedOnTimeslots(
-          availableStaffIds,
-          concernedStaffIds
-        );
+        staffId = this.getFreeStaffIdBasedOnTimeslots(availableStaffIds);
 
         await takenTimeslotServices.createTakenTimeslot(
           staffId,
@@ -419,8 +422,7 @@ class AppointmentController {
         );
 
         const availableStaffTimeslot = this.getFreeStaffIdBasedOnTimeslots(
-          availableStaffTimeslots,
-          concernedStaffIds
+          availableStaffTimeslots
         );
         const takenTimeslotId = availableStaffTimeslot._id;
         staffId = availableStaffTimeslot.staffId;
@@ -453,10 +455,9 @@ class AppointmentController {
     res.send(successMessage(MESSAGES.CREATED, appointment));
   };
 
-  getFreeStaffIdBasedOnTimeslots(staffIdsArray, concernedStaffIds) {
+  getFreeStaffIdBasedOnTimeslots(staffIdsArray) {
     const endOfRange = staffIdsArray.length;
     const index = generateRandomIntegerWithinARangeUtils(endOfRange);
-    concernedStaffIds = staffIdsArray;
 
     return staffIdsArray[index];
   }
