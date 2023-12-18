@@ -270,6 +270,76 @@ class NotificationService {
                 },
               },
             },
+            {
+              $addFields: {
+                // Extract the time components
+                hours: { $hour: "$startTime" },
+                minutes: { $minute: "$startTime" },
+                seconds: { $second: "$startTime" },
+                // Determine AM or PM
+                ampm: {
+                  $cond: {
+                    if: { $gte: ["$hours", 12] },
+                    then: "PM",
+                    else: "AM",
+                  },
+                },
+                // Adjust hours for 12-hour format
+              },
+            },
+            {
+              $addFields: {
+                minutes: {
+                  $cond: [
+                    { $gt: ["$minutes", 10] },
+                    { $toString: "$minutes" },
+                    { $concat: ["0", { $toString: "$minutes" }] },
+                  ],
+                },
+                ampm: {
+                  $cond: {
+                    if: { $gte: ["$hours", 12] },
+                    then: "PM",
+                    else: "AM",
+                  },
+                },
+                hours12: {
+                  $cond: {
+                    if: { $eq: ["$hours", 0] },
+                    then: 12,
+                    else: {
+                      $cond: {
+                        if: { $lte: ["$hours", 12] },
+                        then: "$hours",
+                        else: { $subtract: ["$hours", 12] },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            {
+              $addFields: {
+                timeOfApp: {
+                  $concat: [
+                    { $toString: "$hours12" },
+                    ":",
+                    "$minutes",
+                    " ",
+                    "$ampm",
+                  ],
+                },
+              },
+            },
+            {
+              $project: {
+                hours: 0,
+                minutes: 0,
+                ampm: 0,
+                seconds: 0,
+                hours12: 0,
+              },
+            },
           ],
           as: "appointment",
         },
@@ -571,6 +641,7 @@ class NotificationService {
   }
 
   appointmentBody() {
+    const startTime = { $first: "$appointment.startTime" };
     const priceBreakdownArr = {
       $first: "$appointment.carDetails.priceBreakdown",
     };
@@ -598,7 +669,9 @@ class NotificationService {
             "<li><strong>Date: </strong>",
             { $first: "$appointment.convertedDate" },
             "</li>",
-            "<li><strong>Time:</strong> 9:00 AM CST</li>",
+            "<li><strong>Time:</strong> ",
+            { $first: "$appointment.timeOfApp" },
+            "</li>",
             "<li><strong>Service Details: </strong> ",
             "(",
             {

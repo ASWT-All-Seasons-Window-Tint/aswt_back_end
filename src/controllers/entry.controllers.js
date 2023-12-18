@@ -791,20 +791,6 @@ class EntryController {
     const waitingList = carWithVin.waitingList;
     const isServiceIdsEmpty = carWithVin.serviceIds.length < 1;
 
-    let lineId = entryService.sumPriceBreakdownLength(entry);
-
-    const { priceBreakdown: newPriceBreakdown } = !entry.isFromAppointment
-      ? entryService.getPriceForService(
-          [service],
-          entry.customerId,
-          carWithVin.category,
-          lineId
-        )
-      : { priceBreakdown: [] };
-
-    const priceBreakdown = carWithVin.priceBreakdown;
-    carWithVin.priceBreakdown = [...priceBreakdown, ...newPriceBreakdown];
-
     if (isCompleted || isServiceIdsEmpty) {
       if (req.params.vin && !waitingList)
         return jsonResponse(
@@ -816,6 +802,32 @@ class EntryController {
 
       return jsonResponse(res, 403, false, "This car has been marked as done");
     }
+
+    const serviceDetails = carWithVin.serviceDetails
+      ? carWithVin.serviceDetails
+      : carWithVin.serviceIds.map((serviceId) => {
+          return {
+            serviceId,
+          };
+        });
+
+    let lineId = entryService.sumPriceBreakdownLength(entry);
+
+    const { priceBreakdown: newPriceBreakdown, checkErr } =
+      !entry.isFromAppointment
+        ? await entryService.getPriceForService(
+            [service],
+            entry.customerId,
+            carWithVin.category,
+            lineId,
+            serviceDetails
+          )
+        : { priceBreakdown: [], checkErr: {} };
+
+    if (checkErr.message) return badReqResponse(res, checkErr.message);
+
+    const priceBreakdown = carWithVin.priceBreakdown;
+    carWithVin.priceBreakdown = [...priceBreakdown, ...newPriceBreakdown];
 
     const updatedCarWithVIn = await entryService.updateServicesDoneOnCar(
       carWithVin,
