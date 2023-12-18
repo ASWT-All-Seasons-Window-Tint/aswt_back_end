@@ -17,7 +17,12 @@ class NotificationService {
 
   //Create new notification
   async createNotification(notificationBody, session) {
-    const notification = new Notification({ ...notificationBody });
+    const date = new Date();
+    console.log(date);
+    const notification = new Notification({
+      ...notificationBody,
+      notificationTime: date,
+    });
 
     return notification.save(session ? { session } : undefined);
   }
@@ -566,6 +571,13 @@ class NotificationService {
   }
 
   appointmentBody() {
+    const priceBreakdownArr = {
+      $first: "$appointment.carDetails.priceBreakdown",
+    };
+    const priceBreakdownArrLength = { $size: priceBreakdownArr };
+    const currentIndex = { $indexOfArray: [priceBreakdownArr, "$$this"] };
+    const nextIndexNumber = { $add: [currentIndex, 2] };
+
     return {
       $let: {
         vars: this.bodyVars,
@@ -587,6 +599,29 @@ class NotificationService {
             { $first: "$appointment.convertedDate" },
             "</li>",
             "<li><strong>Time:</strong> 9:00 AM CST</li>",
+            "<li><strong>Service Details: </strong> ",
+            "(",
+            {
+              $reduce: {
+                input: priceBreakdownArr,
+                initialValue: "",
+                in: {
+                  $concat: [
+                    "$$value",
+                    "$$this.serviceName",
+                    {
+                      $cond: [
+                        { $lte: [nextIndexNumber, priceBreakdownArrLength] },
+                        ", ",
+                        "",
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+            ")",
+            "</li>",
             "</ul>",
             "<p>Your expertise and assistance are crucial in ensuring a seamless and successful appointment experience for our",
             " valued customer. Please proceed to ",

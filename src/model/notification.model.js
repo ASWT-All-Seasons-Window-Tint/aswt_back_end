@@ -30,7 +30,6 @@ const notificationSchema = new mongoose.Schema(
     },
     notificationTime: {
       type: Date,
-      default: new Date(),
     },
     title: {
       type: String,
