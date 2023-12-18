@@ -414,7 +414,9 @@ class AppointmentController {
               staffId,
               res,
               date,
-              timeslots
+              timeslots,
+              dealershipId,
+              timeOfCompletion
             );
           } else {
             sessionErr.error = true;
@@ -430,7 +432,9 @@ class AppointmentController {
           staffId,
           res,
           date,
-          timeslots
+          timeslots,
+          dealershipId,
+          timeOfCompletion
         );
       }
 
@@ -463,7 +467,9 @@ class AppointmentController {
     staffId,
     res,
     date,
-    timeslots
+    timeslots,
+    dealershipId,
+    timeOfCompletion
   ) => {
     if (availableTimeSlots.length < staffIds.length) {
       const takenStaffIds = availableTimeSlots.map((time) => time.staffId);
@@ -473,12 +479,41 @@ class AppointmentController {
 
       staffId = this.getFreeStaffIdBasedOnTimeslots(availableStaffIds);
 
-      await takenTimeslotServices.createTakenTimeslot(
-        staffId,
-        date,
-        timeslots,
-        true
-      );
+      try {
+        await takenTimeslotServices.createTakenTimeslot(
+          staffId,
+          date,
+          timeslots,
+          true
+        );
+      } catch (error) {
+        if (error.code === 11000 && error.name === "MongoServerError") {
+          console.log(error.name);
+
+          const availableTimeSlots =
+            await takenTimeslotServices.getAvailabilityForEachStaff(
+              timeslots,
+              staffIds,
+              dealershipId,
+              date,
+              timeOfCompletion
+            );
+
+          await this.updateStaffTakenTime(
+            availableTimeSlots,
+            staffIds,
+            sessionErr,
+            staffId,
+            res,
+            date,
+            timeslots
+          );
+        } else {
+          sessionErr.error = true;
+          console.log(error);
+          return jsonResponse(res, 500, false, "Something failed");
+        }
+      }
     } else {
       const isDateUnavailable = availableTimeSlots.every(
         (availableTimeSlot) => !availableTimeSlot.isAvailable
