@@ -416,6 +416,7 @@ class AppointmentController {
             );
           } else {
             sessionErr.error = true;
+            console.log(error);
             return jsonResponse(res, 500, false, "Something failed");
           }
         }
