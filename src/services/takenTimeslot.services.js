@@ -1679,15 +1679,47 @@ class TakenTimeslotService {
         updatedTakenTimeSlots
       );
 
-      const newTimeslots = await this.createTakenTimeslot(
-        staffId,
+      try {
+        const newTimeslots = await this.createTakenTimeslot(
+          staffId,
+          date,
+          sortedUpdatedTakenTimeslots
+        );
+
+        return newTimeslots;
+      } catch (error) {
+        if (error.code === 11000 && error.name === "MongoServerError") {
+          const result = await this.updateTakenTimeslot(
+            staffTakenTimeslots,
+            date,
+            timeslots,
+            takenTimes
+          );
+
+          return result;
+        } else {
+          console.log(error);
+          throw error;
+        }
+      }
+    } else {
+      const result = await this.updateTakenTimeslot(
+        staffTakenTimeslots,
         date,
-        sortedUpdatedTakenTimeslots
+        timeslots,
+        takenTimes
       );
 
-      return newTimeslots;
+      return result;
     }
+  };
 
+  updateTakenTimeslot = async (
+    staffTakenTimeslots,
+    date,
+    timeslots,
+    takenTimes
+  ) => {
     timeslots = staffTakenTimeslots.timeslots;
 
     const updatedTakenTimeSlots = [...new Set([...timeslots, ...takenTimes])];

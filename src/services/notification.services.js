@@ -18,7 +18,7 @@ class NotificationService {
   //Create new notification
   async createNotification(notificationBody, session) {
     const date = new Date();
-    console.log(date);
+
     const notification = new Notification({
       ...notificationBody,
       notificationTime: date,
