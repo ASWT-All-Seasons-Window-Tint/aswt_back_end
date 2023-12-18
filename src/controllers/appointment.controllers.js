@@ -531,7 +531,9 @@ class AppointmentController {
             staffId,
             res,
             date,
-            timeslots
+            timeslots,
+            dealershipId,
+            timeOfCompletion
           );
         } else {
           sessionErr.error = true;
