@@ -412,7 +412,8 @@ class AppointmentController {
               staffIds,
               sessionErr,
               staffId,
-              res
+              res,
+              date
             );
           } else {
             sessionErr.error = true;
@@ -426,7 +427,8 @@ class AppointmentController {
           staffIds,
           sessionErr,
           staffId,
-          res
+          res,
+          date
         );
       }
 
@@ -457,7 +459,8 @@ class AppointmentController {
     staffIds,
     sessionErr,
     staffId,
-    res
+    res,
+    date
   ) => {
     if (availableTimeSlots.length < staffIds.length) {
       const takenStaffIds = availableTimeSlots.map((time) => time.staffId);
