@@ -934,7 +934,9 @@ class EntryController {
           const { statusCode, message } =
             await invoiceControllers.updateInvoiceById(undefined, entry);
 
-          if (statusCode) return jsonResponse(res, statusCode, false, message);
+          resultsError.message = message;
+          resultsError.code = statusCode;
+          return resultsError;
         }
 
         await notificationService.createNotification(body, mongoSession);
@@ -957,6 +959,9 @@ class EntryController {
 
       await entryService.updateEntryById(entryId, entry, mongoSession);
     });
+    if (resultsError.message)
+      return jsonResponse(res, resultsError.code, false, resultsError.message);
+
     if (results) return jsonResponse(res, 500, false, "Something failed");
 
     carWithVin.price = undefined;
