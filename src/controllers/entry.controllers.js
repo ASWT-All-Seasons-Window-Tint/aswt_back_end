@@ -865,7 +865,7 @@ class EntryController {
       if (servicesWithoutEarningRate.length > 0) {
         resultsError.message = `You do not have a rate for the following services (${servicesWithoutEarningRate.join(
           ", "
-        )}`;
+        )})`;
         resultsError.code = 400;
         return resultsError;
       }
