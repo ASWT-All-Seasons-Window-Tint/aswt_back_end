@@ -931,12 +931,15 @@ class EntryController {
         if (entry.isFromAppointment) {
           entryService.addLineId(entry);
 
-          const { statusCode, message } =
-            await invoiceControllers.updateInvoiceById(undefined, entry);
+          if (entry.invoice.sent) {
+            const { statusCode, message } =
+              await invoiceControllers.updateInvoiceById(undefined, entry);
 
-          resultsError.message = message;
-          resultsError.code = statusCode;
-          return resultsError;
+            resultsError.message = message;
+            resultsError.code = statusCode;
+
+            if (statusCode) return resultsError;
+          }
         }
 
         await notificationService.createNotification(body, mongoSession);
