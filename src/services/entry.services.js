@@ -1450,6 +1450,52 @@ class EntryService {
     if (req.body.note) carDoneByStaff["note"] = req.body.note;
   }
 
+  isVehicleServiceAdded(vin) {
+    return Entry.aggregate([
+      {
+        $unwind: {
+          path: "$invoice.carDetails",
+          preserveNullAndEmptyArrays: false,
+        },
+      },
+      {
+        $addFields: {
+          isServicesAdded: {
+            $let: {
+              vars: {
+                services: {
+                  $cond: [
+                    {
+                      $gt: [
+                        {
+                          $size: {
+                            $ifNull: ["$invoice.carDetails.servicesDone", []],
+                          },
+                        },
+                        0,
+                      ],
+                    },
+                    "$invoice.carDetails.servicesDone",
+                    "$invoice.carDetails.serviceIds",
+                  ],
+                },
+              },
+              in: {
+                $gt: [{ $size: { $ifNull: ["$$services", []] } }, 0],
+              },
+            },
+          },
+        },
+      },
+      {
+        $match: {
+          "invoice.carDetails.vin": vin,
+          isServicesAdded: true,
+        },
+      },
+    ]);
+  }
+
   async checkDuplicateEntry(customerId, vin) {
     return await Entry.findOne({
       $and: [
@@ -1457,7 +1503,7 @@ class EntryService {
         { isFromDealership: true },
         { "invoice.carDetails.vin": vin },
       ],
-    });
+    }).sort({ _id: -1 });
   }
 
   checkDuplicateEntryForMultipleVins(customerId, vinsArray) {
