@@ -24,6 +24,10 @@ const badReqResponse = (res, message) => {
   return res.status(400).send({ message, success: false });
 };
 
+const serverErrResponse = (res) => {
+  return res.status(500).send({ message: "Something failed", success: false });
+};
+
 const forbiddenResponse = (res, message) => {
   return res.status(403).send({ message, success: false });
 };
@@ -278,4 +282,5 @@ exports.logoutSuccess = logoutSuccess;
 exports.jsonResponse = jsonResponse;
 exports.badReqResponse = badReqResponse;
 exports.forbiddenResponse = forbiddenResponse;
+exports.serverErrResponse = serverErrResponse;
 exports.notFoundResponse = notFoundResponse;

@@ -16,6 +16,7 @@ const {
   notFoundResponse,
   badReqResponse,
   forbiddenResponse,
+  serverErrResponse,
 } = require("../common/messages.common");
 const { default: mongoose } = require("mongoose");
 const mongoTransactionUtils = require("../utils/mongoTransaction.utils");
@@ -23,7 +24,7 @@ const entryServices = require("../services/entry.services");
 const invoiceControllers = require("./invoice.controllers");
 
 const redisConnection = { url: process.env.redisUrl };
-const entryQueue = new Queue("reminders", redisConnection);
+const entryQueue = new Queue("auto-send-invoice", redisConnection);
 
 class EntryController {
   async getStatus(req, res) {
@@ -164,6 +165,9 @@ class EntryController {
 
     if (checkErr.message) return badReqResponse(res, checkErr.message);
 
+    const checkDealershipPrice = this.checkDealershipPrice(res, priceBreakdown);
+    if (checkDealershipPrice) return;
+
     const updateCarDetailsResult = entryService.updateCarDetails(
       entry,
       carDetails,
@@ -205,7 +209,7 @@ class EntryController {
         if (servicesWithoutEarningRate.length > 0) {
           resultsError.message = `You do not have a rate for the following services (${servicesWithoutEarningRate.join(
             ", "
-          )}`;
+          )})`;
           resultsError.code = 400;
           return resultsError;
         }
@@ -268,6 +272,26 @@ class EntryController {
 
     res.send(successMessage(MESSAGES.UPDATED, carDetails));
   };
+
+  checkDealershipPrice(res, priceBreakdown) {
+    if (priceBreakdown.length < 1) return serverErrResponse(res);
+
+    const servicesWithoutDealershipPrice = priceBreakdown.filter(
+      (price) => !price.dealership
+    );
+    if (servicesWithoutDealershipPrice.length > 0) {
+      const serviceNames = servicesWithoutDealershipPrice.map(
+        (service) => service.serviceName
+      );
+
+      return notFoundResponse(
+        res,
+        `There is no dealership price for these services: (${serviceNames.join(
+          ", "
+        )})`
+      );
+    }
+  }
 
   getDelay() {
     const currentDate = new Date();
@@ -814,20 +838,36 @@ class EntryController {
     let lineId = entryService.sumPriceBreakdownLength(entry);
 
     const { priceBreakdown: newPriceBreakdown, checkErr } =
-      !entry.isFromAppointment
-        ? await entryService.getPriceForService(
-            [service],
+      entry.isFromAppointment && !entry.isFromDealership
+        ? { priceBreakdown: [], checkErr: {} }
+        : await entryService.getPriceForService(
+            [serviceId],
             entry.customerId,
             carWithVin.category,
             lineId,
             serviceDetails
-          )
-        : { priceBreakdown: [], checkErr: {} };
+          );
+
+    const priceBreakdown = carWithVin.priceBreakdown;
+    const totalPriceBreakdown = [...priceBreakdown, ...newPriceBreakdown];
+
+    if (entry.isFromDealership) {
+      const checkDealershipPrice = this.checkDealershipPrice(
+        res,
+        newPriceBreakdown
+      );
+      if (checkDealershipPrice) return;
+
+      carWithVin.price =
+        entryService.calculateServicePriceDoneforCar(totalPriceBreakdown);
+
+      const totalPrice = entryService.getTotalprice(entry.invoice);
+      entry.invoice.totalPrice = totalPrice;
+    }
 
     if (checkErr.message) return badReqResponse(res, checkErr.message);
 
-    const priceBreakdown = carWithVin.priceBreakdown;
-    carWithVin.priceBreakdown = [...priceBreakdown, ...newPriceBreakdown];
+    carWithVin.priceBreakdown = totalPriceBreakdown;
 
     const updatedCarWithVIn = await entryService.updateServicesDoneOnCar(
       carWithVin,
@@ -935,10 +975,12 @@ class EntryController {
             const { statusCode, message } =
               await invoiceControllers.updateInvoiceById(undefined, entry);
 
-            resultsError.message = message;
-            resultsError.code = statusCode;
+            if (message && statusCode) {
+              resultsError.message = message;
+              resultsError.code = statusCode;
 
-            if (statusCode) return resultsError;
+              throw new Error(message);
+            }
           }
         }
 
