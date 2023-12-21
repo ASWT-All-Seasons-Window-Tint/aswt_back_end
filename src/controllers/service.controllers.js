@@ -35,6 +35,7 @@ class ServiceController {
       amount,
       isResidential,
       customerTime,
+      isForDealership,
     } = req.body;
 
     const lowercaseName = convertToLowerCaseAndRemoveNonAlphanumericUtils(name);
@@ -71,6 +72,7 @@ class ServiceController {
     }
 
     if (isFull === "false") isFull = false;
+    if (isForDealership === "false") isForDealership = false;
     if (type === "removal") name = `${name} (R)`;
 
     // if (isFull) {
@@ -105,6 +107,13 @@ class ServiceController {
     //     priceBreakdown.categoryId = category._id;
     //   }
     // }
+
+    if (isForDealership) {
+      type = "dealership";
+      timeOfCompletion = 1;
+      customerTime = 1;
+    }
+
     const qbo = await initializeQuickBooks();
     const expiryTimeInSecs = 1800;
 
@@ -140,6 +149,7 @@ class ServiceController {
       isResidential,
       sunRoof: sunRoof ? sunRoof : undefined,
       customerTime,
+      isForDealership,
     });
 
     service = await serviceService.createService(service);

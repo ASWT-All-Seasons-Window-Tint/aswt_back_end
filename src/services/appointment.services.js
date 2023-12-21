@@ -67,6 +67,14 @@ class AppointmentService {
     };
   }
 
+  addTaxLine(taxInCent, invoiceReqBody) {
+    if (taxInCent > 0) {
+      const taxAmount = taxInCent / 100;
+
+      invoiceReqBody.TxnTaxDetail = { TotalTax: taxAmount };
+    }
+  }
+
   sendEmailQuotaion(
     receiversEmail,
     firstName,

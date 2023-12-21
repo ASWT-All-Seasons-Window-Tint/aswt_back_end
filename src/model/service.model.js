@@ -58,6 +58,7 @@ const serviceSchema = new mongoose.Schema(
     },
     sunRoof: Boolean,
     isResidential: Boolean,
+    isForDealership: Boolean,
     isDeleted: Boolean,
   },
   { toJSON: { virtuals: true } },
@@ -98,9 +99,32 @@ function validateWithObj(service) {
         then: Joi.valid(...validCarTypes),
       }),
     isFull: Joi.boolean(),
-    type: Joi.string().valid("installation", "removal").required(),
-    customerTime: Joi.number().min(0.25).max(9).required(),
-    timeOfCompletion: Joi.number().min(0.25).max(9).required(),
+    isForDealership: Joi.boolean(),
+    type: Joi.string()
+      .valid("installation", "removal")
+      .when("isForDealership", {
+        is: true,
+        then: Joi.forbidden(),
+        otherwise: Joi.required(),
+      }),
+    customerTime: Joi.number()
+      .min(0.25)
+      .max(9)
+      .required()
+      .when("isForDealership", {
+        is: true,
+        then: Joi.forbidden(),
+        otherwise: Joi.required(),
+      }),
+    timeOfCompletion: Joi.number()
+      .min(0.25)
+      .max(9)
+      .required()
+      .when("isForDealership", {
+        is: true,
+        then: Joi.forbidden(),
+        otherwise: Joi.required(),
+      }),
     filmQualityOrVehicleCategoryAmount: Joi.array()
       .items(
         Joi.object({

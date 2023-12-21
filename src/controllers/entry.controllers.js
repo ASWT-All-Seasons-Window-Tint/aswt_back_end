@@ -134,7 +134,7 @@ class EntryController {
 
     let [[isCarServiceAdded], carExist, { services, entry }, missingIds] =
       await Promise.all([
-        entryService.getCarsDoneByStaff(...filterArguments),
+        entryService.isVehicleServiceAdded(vin),
         entryService.checkDuplicateEntry(customerId, vin),
         entryService.getServiceAndEntry(carDetails, customerId, customer),
         serviceService.validateServiceIds(serviceIds),
