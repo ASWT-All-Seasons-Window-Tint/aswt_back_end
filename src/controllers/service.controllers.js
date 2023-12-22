@@ -110,8 +110,6 @@ class ServiceController {
 
     if (isForDealership) {
       type = "dealership";
-      timeOfCompletion = 1;
-      customerTime = 1;
     }
 
     const qbo = await initializeQuickBooks();
