@@ -331,6 +331,18 @@ class ServiceController {
     const { filmQualityOrVehicleCategoryAmount, ...otherServiceDetails } =
       req.body;
 
+    const service = await serviceService.getServiceById(req.params.id);
+    if (!service) return res.status(404).send(errorMessage("service"));
+
+    if (service.type === "dealership") {
+      if (filmQualityOrVehicleCategoryAmount) {
+        return badReqResponse(
+          res,
+          "Film quality or vehicle category amount not allowed for dealership services"
+        );
+      }
+    }
+
     const updatedService =
       await serviceService.updateServiceWithFilmQualityPrice(
         req.params.id,
