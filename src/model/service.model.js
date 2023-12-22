@@ -5,8 +5,6 @@ const addVirtualidUtils = require("../utils/addVirtualId.utils");
 const { validCarTypes } = require("../common/constants.common");
 const { Category } = require("./category.model");
 
-const validServiceNamesForFullRemoval = validCarTypes.map((a) => `${a} (R)`);
-
 const serviceSchema = new mongoose.Schema(
   {
     type: {
@@ -111,6 +109,27 @@ function validateWithObj(service) {
       }),
     customerTime: Joi.number().min(0.25).max(9).required(),
     timeOfCompletion: Joi.number().min(0.25).max(9).required(),
+    filmQualityOrVehicleCategoryAmount: Joi.array()
+      .items(
+        Joi.object({
+          filmQualityId: Joi.objectId().when(Joi.ref("/type"), {
+            is: "installation",
+            then: Joi.required(),
+            otherwise: Joi.forbidden(),
+          }),
+          amount: Joi.number().min(1).max(99999).required(),
+        })
+      )
+      .when("type", {
+        is: "installation",
+        then: Joi.required(),
+        otherwise: Joi.forbidden(),
+      }),
+    amount: Joi.number().min(1).max(99999).when("type", {
+      is: "removal",
+      then: Joi.required(),
+      otherwise: Joi.forbidden(),
+    }),
     filmQualityOrVehicleCategoryAmount: Joi.array()
       .items(
         Joi.object({
