@@ -107,24 +107,8 @@ function validateWithObj(service) {
         then: Joi.forbidden(),
         otherwise: Joi.required(),
       }),
-    customerTime: Joi.number()
-      .min(0.25)
-      .max(9)
-      .required()
-      .when("isForDealership", {
-        is: true,
-        then: Joi.forbidden(),
-        otherwise: Joi.required(),
-      }),
-    timeOfCompletion: Joi.number()
-      .min(0.25)
-      .max(9)
-      .required()
-      .when("isForDealership", {
-        is: true,
-        then: Joi.forbidden(),
-        otherwise: Joi.required(),
-      }),
+    customerTime: Joi.number().min(0.25).max(9).required(),
+    timeOfCompletion: Joi.number().min(0.25).max(9).required(),
     filmQualityOrVehicleCategoryAmount: Joi.array()
       .items(
         Joi.object({

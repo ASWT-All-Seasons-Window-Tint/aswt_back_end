@@ -21,7 +21,7 @@ module.exports = async function (req, res, next) {
 
   if (isTokenBlacklisted)
     return res
-      .status(400)
+      .status(401)
       .send({ success: false, message: "Invalid Web Token" });
 
   try {
@@ -33,7 +33,7 @@ module.exports = async function (req, res, next) {
 
     if (!user)
       return res
-        .status(400)
+        .status(401)
         .send({ success: false, message: "Invalid Web Token" });
     next();
   } catch (ex) {

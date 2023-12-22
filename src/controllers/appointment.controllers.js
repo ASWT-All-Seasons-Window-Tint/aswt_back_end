@@ -217,6 +217,13 @@ class AppointmentController {
     const { serviceDetails } = carDetails;
     const isUserDealershipStaff = req.user.role === "dealershipStaff";
 
+    if (carDetails.vin) {
+      const [isVehicleServiceAdded] = await entryServices.isVehicleServiceAdded(
+        carDetails.vin
+      );
+      if (isVehicleServiceAdded) return badReqResponse(res, "Duplicate entry");
+    }
+
     const serviceIds = serviceDetails.map(
       (serviceDetail) => serviceDetail.serviceId
     );
@@ -232,7 +239,8 @@ class AppointmentController {
       );
     if (services.invalidIds.length > 0)
       return notFoundResponse(
-        res`Services with IDs: [${services.invalidIds}] could not be found`
+        res,
+        `Services with IDs: [${services.invalidIds}] could not be found`
       );
 
     const { timeOfCompletion } = services;
@@ -240,34 +248,6 @@ class AppointmentController {
     const dealershipId = isUserDealershipStaff
       ? req.user.customerDetails.customerId
       : req.user._id;
-
-    let {
-      priceBreakdownArray,
-      error: breakdownErr,
-      price,
-    } = await appointmentService.getPriceBreakdown({
-      serviceDetails,
-      type: "auto",
-      dealershipId: qbId,
-    });
-
-    if (price != NaN) price = 0;
-
-    if (breakdownErr.message) {
-      if (breakdownErr.code)
-        return jsonResponse(
-          res,
-          breakdownErr.code,
-          false,
-          breakdownErr.message
-        );
-
-      return badReqResponse(res, breakdownErr.message);
-    }
-
-    carDetails.priceBreakdown = priceBreakdownArray;
-    carDetails.price = price;
-    carDetails.category = carDetails.category;
 
     const { data: customer, error } =
       await customerService.getOrSetCustomerOnCache(qbId);
@@ -367,9 +347,10 @@ class AppointmentController {
 
       entry.numberOfCarsAdded = 1;
       entry.isFromAppointment = true;
-      entry.invoice.totalPrice = price;
+      entry.isFromDealership = true;
+      entry.invoice.totalPrice = 0;
 
-      const updatedEntry = await entry.save();
+      const updatedEntry = await entry.save({ session: mongoSession });
 
       const carId = updatedEntry.invoice.carDetails[0]._id;
 
@@ -407,7 +388,8 @@ class AppointmentController {
 
         if (unavailableDueToCloseOfBusiness.includes(timeString)) {
           sessionErr.error = true;
-          return badReqResponse(res, "The selected date is unavailable");
+          badReqResponse(res, "The selected date is unavailable");
+          throw new Error("The selected date is unavailable");
         }
 
         try {
@@ -444,7 +426,8 @@ class AppointmentController {
           } else {
             sessionErr.error = true;
             console.log(error);
-            return jsonResponse(res, 500, false, "Something failed");
+            jsonResponse(res, 500, false, "Something failed");
+            throw new Error("Something failed");
           }
         }
       } else {
@@ -538,7 +521,8 @@ class AppointmentController {
         } else {
           sessionErr.error = true;
           console.log(error);
-          return jsonResponse(res, 500, false, "Something failed");
+          jsonResponse(res, 500, false, "Something failed");
+          throw new Error("Something failed");
         }
       }
     } else {
@@ -548,7 +532,8 @@ class AppointmentController {
 
       if (isDateUnavailable) {
         sessionErr.error = true;
-        return badReqResponse(res, "The selected date is unavailable");
+        badReqResponse(res, "The selected date is unavailable");
+        throw new Error("The selected date is unavailable");
       }
 
       const availableStaffTimeslots = availableTimeSlots.filter(

@@ -15,7 +15,9 @@ module.exports = async function () {
     getLatestToken,
     [RefreshToken]
   );
-  const refreshToken = refreshTokenData.token;
+  const refreshToken = refreshTokenData.data.token;
+  let sandbox = env.sandbox;
+  if (sandbox == "false") sandbox = false;
 
   return new QuickBooks(
     env.clientId,
@@ -23,7 +25,7 @@ module.exports = async function () {
     accessToken,
     false,
     env.realmId,
-    true,
+    !!sandbox,
     false,
     null,
     "2.0",
