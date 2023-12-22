@@ -31,12 +31,13 @@ const constants = {
   }),
 
   validCarTypes: [
-    "2Or4DoorsCar",
+    "2Or4DoorsSedan",
     "4DoorsSuv",
     "6+DoorsSuv",
     "MiniVan",
     "TruckStd.Cab",
     "Truck4Doors",
+    "Tesla",
   ],
   MESSAGES: {
     FETCHED: "Resource fetched successfully",
