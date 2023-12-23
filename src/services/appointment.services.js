@@ -96,7 +96,7 @@ class AppointmentService {
     const link = `${url}/${appointmentId}`;
     const customerNeeds = autoAppointmentType ? "vehicle" : "home";
 
-    transporter.sendMail(
+    transporter(true).sendMail(
       EMAIL.mailOptions(
         receiversEmail,
         customerNeeds,

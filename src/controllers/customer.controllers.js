@@ -273,7 +273,7 @@ class Customer {
     const baseUrl = aswtDetails.invitationLink;
     const invitationLink = `${baseUrl}/${token}`;
 
-    transporter.sendMail(
+    transporter(true).sendMail(
       EMAIL.invintationLinkBody(
         email,
         req.user.firstName,

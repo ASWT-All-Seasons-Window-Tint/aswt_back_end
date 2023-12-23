@@ -190,12 +190,14 @@ const EMAIL = {
     loginURL,
     password,
     customerName,
-    isUserStaffOrPorter
+    isUserStaffOrPorter,
+    isDealership
   ) => {
     const aswtDetails = JSON.parse(process.env.aswtDetails);
+    const { emailId, emailIdSupport } = process.env;
 
     return {
-      from: process.env.emailId,
+      from: isDealership ? emailId : emailIdSupport,
       to: customerEmail,
       subject: isUserStaffOrPorter
         ? "All Seasons Tint & Graphic Designs Mobile App Access Granted"

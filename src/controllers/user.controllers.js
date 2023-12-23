@@ -156,18 +156,21 @@ class UserController {
 
     const aswtDetails = JSON.parse(process.env.aswtDetails);
     const dealearshipRoles = ["customer", "dealershipStaff"];
+    const userRole = userWithAvatar.user.role;
+    const isDealership = dealearshipRoles.includes(userRole);
 
     const loginURL = dealearshipRoles.includes(userWithAvatar.user.role)
       ? aswtDetails.dealershipLoginURL
       : aswtDetails.clientLoginURL;
 
-    transporter.sendMail(
+    transporter(isDealership).sendMail(
       EMAIL.sendRegistrationEmail(
         email,
         loginURL,
         password,
         userFullName,
-        userService.staffRoles.includes(role)
+        userService.staffRoles.includes(role),
+        isDealership
       ),
       (error, info) => {
         if (error) {
@@ -451,11 +454,12 @@ class UserController {
     const link = web ? `${url}/${token}` : `${url}/?token=${token}`;
     const { firstName, email: receiversEmail } = user;
 
-    transporter.sendMail(
+    transporter(web).sendMail(
       mailOptions({
         receiversEmail,
         firstName,
         link,
+        isDealership: web,
       }),
       (error, info) => {
         if (error) {
