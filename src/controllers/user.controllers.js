@@ -459,6 +459,7 @@ class UserController {
       }),
       (error, info) => {
         if (error) {
+          console.log(error);
           return "Error occurred:", error;
         } else {
           console.log("Email sent successfully");
