@@ -2,17 +2,20 @@ require("dotenv").config();
 var Mailgen = require("mailgen");
 const nodemailer = require("nodemailer");
 
-const { emailPass, emailId, emailHost } = process.env;
+const { emailPass, emailId, emailHost, emailIdSupport, emailPassSupport } =
+  process.env;
 
-const transporter = nodemailer.createTransport({
-  host: emailHost, // SMTP server host
-  port: 465,
-  secure: true,
-  auth: {
-    user: emailId,
-    pass: emailPass,
-  },
-});
+const transporter = (isCustomer) => {
+  return nodemailer.createTransport({
+    host: emailHost, // SMTP server host
+    port: 465,
+    secure: true,
+    auth: {
+      user: isCustomer ? emailId : emailIdSupport,
+      pass: isCustomer ? emailPass : emailPassSupport,
+    },
+  });
+};
 
 // Configure mailgen by setting a theme and your product info
 const mailGenerator = new Mailgen({
@@ -40,9 +43,10 @@ const mailOptions = ({
   link,
   buttonInstructions = instructions,
   buttonText = text,
+  isDealership,
 }) => {
   return {
-    from: emailId,
+    from: isDealership ? emailId : emailIdSupport,
     to: receiversEmail,
     subject,
     html: mailGenerator.generate({
