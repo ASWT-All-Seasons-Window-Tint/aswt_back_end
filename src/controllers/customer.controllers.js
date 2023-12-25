@@ -131,7 +131,7 @@ class Customer {
 
     const { Id, SyncToken } = customer;
 
-    const { password, ...reqBody } = req.body;
+    const { password, Notes, ...reqBody } = req.body;
 
     const updatedCustomer = await customerService.updateCustomerById(
       qbo,
