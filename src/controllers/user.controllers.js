@@ -161,11 +161,13 @@ class UserController {
       ? aswtDetails.dealershipLoginURL
       : aswtDetails.clientLoginURL;
 
+    const { customerDefaultPassword } = process.env;
+
     transporter(isDealership).sendMail(
       EMAIL.sendRegistrationEmail(
         email,
         loginURL,
-        password,
+        password ? password : customerDefaultPassword,
         userFullName,
         userService.staffRoles.includes(role),
         isDealership
