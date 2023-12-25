@@ -38,8 +38,15 @@ class ServiceController {
       isForDealership,
     } = req.body;
 
+    name = name.replace(/\s+/g, " ").trim();
+    if (type === "removal") name = `${name} (R)`;
+
     const lowercaseName = convertToLowerCaseAndRemoveNonAlphanumericUtils(name);
     const sunRoof = serviceService.containsSunroof(lowercaseName);
+    const doesServiceNameExist = await serviceService.getServiceByName(name);
+
+    if (doesServiceNameExist)
+      return badReqResponse(res, "Service already exist with name");
 
     if (type === "installation") {
       const filmQualityIds = filmQualityOrVehicleCategoryAmount.map(
@@ -73,7 +80,6 @@ class ServiceController {
 
     if (isFull === "false") isFull = false;
     if (isForDealership === "false") isForDealership = false;
-    if (type === "removal") name = `${name} (R)`;
 
     // if (isFull) {
     //   const categoryNames = filmQualityOrVehicleCategoryAmount.map(

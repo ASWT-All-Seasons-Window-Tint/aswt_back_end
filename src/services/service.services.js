@@ -73,8 +73,8 @@ class ServiceService {
   async getServiceByName(name) {
     const caseInsensitiveName = new RegExp(name, "i");
 
-    return await Service.findOne({
-      name: caseInsensitiveName,
+    return Service.findOne({
+      name: { $regex: caseInsensitiveName },
       isDeleted: undefined,
     });
   }
