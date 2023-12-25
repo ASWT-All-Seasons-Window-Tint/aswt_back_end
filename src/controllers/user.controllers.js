@@ -55,8 +55,6 @@ class UserController {
   async fetchStaffsAssignedToDealership(req, res) {
     const { customerId } = req.params;
 
-    console.log(customerId);
-
     const staffs = await userService.fetchStaffsAssignedToDealership(
       customerId ? customerId : req.user._id
     );

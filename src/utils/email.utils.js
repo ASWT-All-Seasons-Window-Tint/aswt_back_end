@@ -8,8 +8,8 @@ const { emailPass, emailId, emailHost, emailIdSupport, emailPassSupport } =
 const transporter = (isCustomer) => {
   return nodemailer.createTransport({
     host: emailHost, // SMTP server host
-    port: 465,
-    secure: true,
+    port: 587,
+    secure: false,
     auth: {
       user: isCustomer ? emailId : emailIdSupport,
       pass: isCustomer ? emailPass : emailPassSupport,

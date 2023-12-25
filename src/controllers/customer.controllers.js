@@ -117,7 +117,7 @@ class Customer {
     return customers;
   }
 
-  async updateCustomerById(req, res) {
+  async updateCustomerById(req, res, fromCreated) {
     const { DisplayName, PrimaryEmailAddr } = req.body;
 
     const id = req.params.id;
@@ -131,12 +131,20 @@ class Customer {
 
     const { Id, SyncToken } = customer;
 
+    const { password, ...reqBody } = req.body;
+
     const updatedCustomer = await customerService.updateCustomerById(
       qbo,
       Id,
-      req.body,
+      reqBody,
       SyncToken
     );
+
+    if (fromCreated) {
+      updateCache(`customers?Id=${id}`, expires, updatedCustomer);
+
+      return updatedCustomer;
+    }
 
     let firstName, lastName;
 
@@ -165,10 +173,16 @@ class Customer {
     return res.send(successMessage(MESSAGES.FETCHED, updatedCustomer));
   }
 
-  async createCustomer(req, res) {
+  createCustomer = async (req, res) => {
     const qbo = await initializeQbUtils();
     const { DisplayName, PrimaryEmailAddr, PrimaryPhone, BillAddr, Notes } =
       req.body;
+
+    const isUserInDb = await userServices.getUserByEmail(
+      PrimaryEmailAddr.Address
+    );
+
+    if (isUserInDb) return jsonResponse(res, 400, false, MESSAGES.USER_EXISTS);
 
     let alterNativeEmails;
     let completeNotes;
@@ -219,9 +233,18 @@ class Customer {
       [qbo, DisplayName.toLowerCase()]
     );
 
+    let updatedCustomer;
+
+    if (!error) {
+      req.params.id = customer[0].Id;
+
+      updatedCustomer = await this.updateCustomerById(req, res, true);
+      if (updatedCustomer.statusCode) return;
+    }
+
     const createdCustomer = error
       ? await customerService.createQuickBooksCustomer(qbo, customerData)
-      : customer[0];
+      : updatedCustomer;
     const id = createdCustomer.Id;
 
     const nameArray = DisplayName.split(" ");
@@ -254,7 +277,7 @@ class Customer {
 
     await register(req, res, createdCustomer);
     // Send a success response
-  }
+  };
 
   sendRegistrationLink(req, res) {
     const { email, name } = req.body;
