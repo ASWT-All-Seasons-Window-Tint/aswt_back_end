@@ -11,6 +11,9 @@ module.exports = function (mongoDBInvoice, type) {
     AllowOnlineACHPayment: true,
     TxnDate: new Date().toISOString().split("T")[0], // Current date
     DueDate: new Date().toISOString().split("T")[0], // Same as TxnDate by default
+    BillEmail: {
+      Address: mongoDBInvoice.customerEmail,
+    },
     // Add other fields as needed
   };
 

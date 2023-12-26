@@ -295,7 +295,10 @@ class EntryController {
 
   getDelay() {
     const currentDate = new Date();
-    const next24Hours = new Date(currentDate.getTime() + 24 * 60 * 60 * 1000);
+
+    // Set the next 24 hours to 11:59 PM CST
+    const next24Hours = new Date();
+    next24Hours.setHours(23, 59, 0, 0); // Set hours to 23 (11 PM), minutes to 59, seconds to 0, and milliseconds to 0
 
     const delay = next24Hours.getTime() - currentDate.getTime();
 
@@ -654,7 +657,6 @@ class EntryController {
         staffEntries.map((entry) => (entry.id = entry._id));
     }
 
-
     if (Array.isArray(staffEntries) && staffEntries.length < 1) {
       staffEntries =
         req.params.waitingList === undefined
@@ -669,7 +671,7 @@ class EntryController {
             ]
           : [];
     }
-    
+
     res.send(successMessage(MESSAGES.FETCHED, staffEntries));
   }
 
