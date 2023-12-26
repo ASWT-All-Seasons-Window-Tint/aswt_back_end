@@ -78,6 +78,21 @@ class InvoiceService {
     return results;
   };
 
+  async getUnpaidInvoices(qbo) {
+    return new Promise((resolve, reject) => {
+      qbo.findInvoices(
+        [{ field: "Balance", value: "0", operator: ">" }],
+        (err, invoice) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(invoice.QueryResponse.Invoice);
+          }
+        }
+      );
+    });
+  }
+
   sendInvoicePdf(qbo, invoiceId, emailAddr) {
     return new Promise((resolve, reject) => {
       qbo.sendInvoicePdf(invoiceId, emailAddr, (sendErr, sendResponse) => {

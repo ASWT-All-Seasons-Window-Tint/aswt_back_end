@@ -26,8 +26,8 @@ class CustomerService {
     });
   }
 
-  getOrSetCustomerOnCache = async (id) => {
-    const qbo = await initializeQbUtils();
+  getOrSetCustomerOnCache = async (id, qbo) => {
+    if (!qbo) qbo = await initializeQbUtils();
 
     const results = await getOrSetCache(
       `customers?Id=${id}`,
@@ -259,10 +259,10 @@ class CustomerService {
   formatAddress(address) {
     // Destructure the properties of the address object
     const { Line1, City, Country, PostalCode } = address;
-  
+
     // Create a formatted string
     const formattedAddress = `${Line1}, ${City}, ${Country} - ${PostalCode}`;
-  
+
     return formattedAddress;
   }
 

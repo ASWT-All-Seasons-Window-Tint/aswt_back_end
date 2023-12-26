@@ -12,11 +12,12 @@ const convertEntryQbInvoiceReqBody = require("../utils/convertDbInvoiceToQbInvoi
 const initializeQbUtils = require("../utils/initializeQb.utils");
 const userServices = require("../services/user.services");
 const serviceServices = require("../services/service.services");
-const { updateCache } = require("../utils/getOrSetCache.utils");
+const { updateCache, getOrSetCache } = require("../utils/getOrSetCache.utils");
 const entryControllers = require("./entry.controllers");
 const estimateServices = require("../services/estimate.services");
 const getEstimatePdfUtils = require("../utils/getEstimatePdf.utils");
 const entryServices = require("../services/entry.services");
+const customerService = require("../services/customer.service");
 
 class DepartmentController {
   async createEstimate(appointment, appointmentType) {
@@ -129,8 +130,88 @@ class DepartmentController {
     );
   };
 
-  async sendInvoiceWithoutCreating(entry) {
-    const qbo = await initializeQbUtils();
+  sendUpaidInvoices = async (req, res) => {
+    let qbInvoices;
+    const sentInvoiceIds = [];
+    const errorInvoiceId = [];
+    try {
+      const qbo = await initializeQbUtils();
+      const { data: invoices } = await getOrSetCache(
+        `invoices`,
+        1800,
+        invoiceService.getUnpaidInvoices,
+        [qbo]
+      );
+
+      await this.sendMultipleInvoices(invoices, qbo, sentInvoiceIds);
+    } catch (error) {
+      if (error.Fault) {
+        if (error.Fault.Error) error.Fault.Error.map((err) => console.log(err));
+      } else {
+        console.log(error);
+      }
+    }
+
+    return res.send(successMessage("Invoices successfully sent", true));
+  };
+
+  sendMultipleInvoices = async (invoices, qbo, sentInvoiceIds) => {
+    let customerEmail;
+    for (const invoice of invoices) {
+      if (!invoice.BillEmail) {
+        try {
+          const { data: customer, error } =
+            await customerService.getOrSetCustomerOnCache(
+              invoice.CustomerRef.value,
+              qbo
+            );
+
+          customerEmail = customer.PrimaryEmailAddr
+            ? customer.PrimaryEmailAddr.Address
+            : "";
+        } catch (error) {
+          if (error.Fault) {
+            if (error.Fault.Error)
+              error.Fault.Error.map((err) => console.log(err));
+          } else {
+            console.log(error);
+          }
+        }
+      }
+
+      const entry = {
+        customerEmail: invoice.BillEmail
+          ? invoice.BillEmail.Address
+          : customerEmail,
+        customerId: invoice.CustomerRef.value,
+        invoice: {
+          qbId: invoice.Id,
+        },
+      };
+
+      try {
+        await this.sendInvoiceWithoutCreating(entry, qbo);
+      } catch (error) {
+        if (error.code === 2050) {
+          sentInvoiceIds.push(invoice.Id);
+
+          invoices = invoices.filter(
+            (invoice) => !sentInvoiceIds.includes(invoice.Id)
+          );
+          if (invoices.length > 0)
+            await this.sendMultipleInvoices(invoices, qbo, sentInvoiceIds);
+        }
+      }
+
+      sentInvoiceIds.push(invoice.Id);
+
+      console.log(`Sent invoice ${invoice.Id}: ${invoice.DocNumber}`);
+    }
+  };
+
+  async sendInvoiceWithoutCreating(entry, qbo) {
+    if (!qbo) qbo = await initializeQbUtils();
+
     let { customerEmail, customerId } = entry;
     const invoiceId = entry.invoice.qbId;
 
@@ -142,9 +223,31 @@ class DepartmentController {
       if (alterNativeEmails.length > 0)
         for (const email of alterNativeEmails)
           if (newEmail !== email) customerEmail += `, ${email}`;
+
+      while (customerEmail.length > 100) {
+        let emailArray = customerEmail.split(", ");
+
+        // Remove the last email
+        emailArray.pop();
+
+        // Join the array back into a string
+        customerEmail = emailArray.join(", ");
+      }
     }
 
     return invoiceService.sendInvoicePdf(qbo, invoiceId, customerEmail);
+  }
+
+  async getUnpaidInvoices(req, res) {
+    const qbo = await initializeQbUtils();
+    const { data: invoices } = await getOrSetCache(
+      `invoices`,
+      1800,
+      invoiceService.getUnpaidInvoices,
+      [qbo]
+    );
+
+    return res.send(successMessage(MESSAGES.FETCHED, invoices));
   }
 
   async updateInvoiceById(price, entry, lineId) {
