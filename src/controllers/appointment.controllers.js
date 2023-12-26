@@ -66,6 +66,10 @@ class AppointmentController {
       const { serviceIds, filmQualityIds } =
         appointmentService.getServiceIdsAndfilmQualityIds(serviceDetails); //Auto
 
+      for (const serviceId of serviceIds)
+        if (typeof serviceId !== "string")
+          return badReqResponse(res, `${serviceId} is an invalid ID`);
+
       const [services, missingIds] = await Promise.all([
         serviceServices.getMultipleServices(serviceIds, true),
         serviceServices.validateServiceIds(serviceIds),
