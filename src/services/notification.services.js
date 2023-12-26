@@ -340,6 +340,14 @@ class NotificationService {
                 hours12: 0,
               },
             },
+            {
+              $lookup: {
+                from: "services",
+                localField: "carDetails.serviceDetails.serviceId",
+                foreignField: "_id",
+                as: "appointmentServices",
+              },
+            },
           ],
           as: "appointment",
         },
@@ -643,7 +651,7 @@ class NotificationService {
   appointmentBody() {
     const startTime = { $first: "$appointment.startTime" };
     const priceBreakdownArr = {
-      $first: "$appointment.carDetails.priceBreakdown",
+      $first: "$appointment.appointmentServices",
     };
     const priceBreakdownArrLength = { $size: priceBreakdownArr };
     const currentIndex = { $indexOfArray: [priceBreakdownArr, "$$this"] };
@@ -681,7 +689,7 @@ class NotificationService {
                 in: {
                   $concat: [
                     "$$value",
-                    "$$this.serviceName",
+                    "$$this.name",
                     {
                       $cond: [
                         { $lte: [nextIndexNumber, priceBreakdownArrLength] },
