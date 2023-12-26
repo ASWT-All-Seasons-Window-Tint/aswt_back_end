@@ -453,7 +453,7 @@ class EntryService {
     lineId,
     serviceDetails
   ) => {
-    const lowerCaseCategory = category.toLowerCase();
+    const lowerCaseCategory = category ? category.toLowerCase() : category;
 
     // To check if customer has a dealership price
     // const dealershipPrices = services.filter((service) =>

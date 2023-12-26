@@ -35,6 +35,7 @@ class UserController {
       customerId,
       "customer"
     );
+    p;
     if (!customer)
       return notFoundResponse(
         res,
