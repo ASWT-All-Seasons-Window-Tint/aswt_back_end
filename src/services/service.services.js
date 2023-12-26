@@ -529,7 +529,10 @@ class ServiceService {
 
     return new Promise((resolve, reject) => {
       qbo.findItems(
-        [{ field: "Name", value: Name, operator: "=" }],
+        [
+          { field: "Name", value: Name, operator: "=" },
+          { field: "Type", value: "Service", operator: "=" },
+        ],
         (err, service) => {
           if (err) {
             reject(err);

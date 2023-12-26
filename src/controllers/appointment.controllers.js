@@ -153,11 +153,11 @@ class AppointmentController {
         body: req.body,
         staffId: takenTimeSlotForStaff.staffId,
       });
+    } else {
+      appointment = await appointmentService.createAppointment({
+        body: req.body,
+      });
     }
-
-    appointment = await appointmentService.createAppointment({
-      body: req.body,
-    });
 
     appointmentService.sendEmailQuotaion(
       customerEmail,
