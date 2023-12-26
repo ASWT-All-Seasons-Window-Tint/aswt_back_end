@@ -210,7 +210,7 @@ router.put(
 router.put(
   "/update-staff-permission-for-manager/:managerId",
   auth,
-  admin,
+  roleBaseAuth(["admin", "gm"]),
   validateObjectIdWithXArgMiddleware(["managerId"]),
   validateMiddleware(user.updateManagerPermission),
   asyncMiddleware(userController.updateStaffLocationsVisibleToManager)
