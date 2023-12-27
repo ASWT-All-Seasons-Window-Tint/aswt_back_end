@@ -45,7 +45,7 @@ router.post(
 router.get(
   "/",
   auth,
-  roleBaseAuth(["admin", "gm"]),
+  roleBaseAuth(["admin", "gm", "receptionist"]),
   asyncMiddleware(entryController.fetchAllEntries)
 );
 
