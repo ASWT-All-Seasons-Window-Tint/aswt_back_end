@@ -704,16 +704,6 @@ class EntryController {
       );
     }
 
-    if (staffEntries && staffEntries.length < 1) {
-      staffEntries = _.cloneDeep(entries);
-      staffEntries.map((staffEntry) => {
-        {
-          delete staffEntry.invoice.totalPrice;
-          staffEntry.invoice.carDetails = [];
-        }
-      });
-    }
-
     staffEntries.map((entry) => (entry.id = entry._id));
 
     res.send(successMessage(MESSAGES.FETCHED, staffEntries));
