@@ -11,8 +11,12 @@ require("./startup/routes.startup")(app);
 require("./startup/database.startup")();
 require("./startup/validation.startup")();
 
-startAutoSendInvoiceQueue();
-startScheduleSmsQueue();
+try {
+  startAutoSendInvoiceQueue();
+  startScheduleSmsQueue();
+} catch (error) {
+  console.log(error);
+}
 startScheduledJob();
 // intializes port with the PORT environment variable if it exists, if not it assigns 3000 to it
 const port = process.env.PORT || 3000;
