@@ -131,12 +131,25 @@ class Customer {
 
     const { Id, SyncToken } = customer;
 
-    const { password, Notes, ...reqBody } = req.body;
+    let bodyToUpdate;
+
+    if (!fromCreated) {
+      const { password, Notes, ...reqBody } = req.body;
+      bodyToUpdate = reqBody;
+    } else {
+      if (!customer.BillAddr) {
+        const { password, Notes, BillAddr, ...reqBody } = req.body;
+        bodyToUpdate = reqBody;
+      } else {
+        const { password, Notes, ...reqBody } = req.body;
+        bodyToUpdate = reqBody;
+      }
+    }
 
     const updatedCustomer = await customerService.updateCustomerById(
       qbo,
       Id,
-      reqBody,
+      bodyToUpdate,
       SyncToken
     );
 
