@@ -33,10 +33,10 @@ async function autoSendInvoiceWorker(job) {
 }
 
 module.exports = {
-  startScheduleSmsQueue: function () {
-    exportQueue().process(scheduleSmsWorker);
+  startScheduleSmsQueue: async function () {
+    await exportQueue().process(scheduleSmsWorker);
   },
-  startAutoSendInvoiceQueue: function () {
-    exportEntryQueue().process(autoSendInvoiceWorker);
+  startAutoSendInvoiceQueue: async function () {
+    await exportEntryQueue().process(autoSendInvoiceWorker);
   },
 };
