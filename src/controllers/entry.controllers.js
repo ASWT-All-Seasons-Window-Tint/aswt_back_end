@@ -22,6 +22,8 @@ const { default: mongoose } = require("mongoose");
 const mongoTransactionUtils = require("../utils/mongoTransaction.utils");
 const entryServices = require("../services/entry.services");
 const invoiceControllers = require("./invoice.controllers");
+const userServices = require("../services/user.services");
+const axiosRequestUtils = require("../utils/axiosRequest.utils");
 
 const redisConnection = { url: process.env.redisUrl };
 const entryQueue = new Queue("auto-send-invoice", redisConnection);
@@ -90,6 +92,22 @@ class EntryController {
     entry = await entryService.addCarDetail(entry._id, carDetails);
 
     res.send(successMessage(MESSAGES.CREATED, entry));
+  }
+
+  async scheduleInvoice(req, res) {
+    const { entryId } = req.body;
+    const delay = this.getDelay();
+
+    entryQueue.add(
+      {
+        entryId,
+      },
+      {
+        delay,
+      }
+    );
+
+    res.send(successMessage(MESSAGES.CREATED, true));
   }
 
   addInvoice = async (req, res) => {
@@ -233,16 +251,9 @@ class EntryController {
       const id = entry._id;
 
       if (!entry.invoice.isAutoSentScheduled) {
-        const delay = this.getDelay();
+        const token = await userServices.getToken();
 
-        entryQueue.add(
-          {
-            entryId: entry._id,
-          },
-          {
-            delay,
-          }
-        );
+        await axiosRequestUtils(token, entry._id);
 
         entry.invoice.isAutoSentScheduled = true;
       }

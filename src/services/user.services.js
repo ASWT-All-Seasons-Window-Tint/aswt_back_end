@@ -561,6 +561,14 @@ class UserService {
     );
   }
 
+  async getToken() {
+    const user = await User.findOne({ isAdmin: true });
+
+    const token = user.generateAuthToken();
+
+    return token;
+  }
+
   deleteEarningRateForStaff(staffId, serviceId) {
     return User.findOneAndUpdate(
       {
