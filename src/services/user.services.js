@@ -767,12 +767,20 @@ class UserService {
   //   }
   //   return propertiesToPick;
   // }
-  async softDeleteUser(id) {
+  softDeleteUser = async (id) => {
     const user = await User.findById(id);
+    const randomString = this.generateUniqueTicketId();
 
     user.isDeleted = true;
+    user.email = `${user.email}-${randomString} (deleted)`;
 
     return await user.save();
+  };
+
+  generateUniqueTicketId() {
+    const timestamp = Date.now().toString(36);
+    const randomComponent = Math.random().toString(36).substr(2, 5);
+    return `${timestamp.toUpperCase()}${randomComponent.toUpperCase()}`;
   }
 
   staffRoles = ["staff", "porter"];

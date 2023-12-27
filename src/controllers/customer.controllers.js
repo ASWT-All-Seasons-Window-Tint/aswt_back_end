@@ -215,13 +215,19 @@ class Customer {
 
       completeNotes = JSON.stringify(alternativeEmailsObject);
     }
+
+    const { Address } = PrimaryEmailAddr;
+
+    PrimaryEmailAddr.Address = `${
+      PrimaryEmailAddr.Address
+    }, ${alterNativeEmails.join(", ")}`;
     // Create the customer in QuickBooks
     const customerData = {
       DisplayName: DisplayName,
       PrimaryEmailAddr: PrimaryEmailAddr,
       PrimaryPhone: PrimaryPhone,
       BillAddr: BillAddr,
-      Notes: completeNotes,
+      Notes: accountNumber,
       CompanyName: req.body.CompanyName,
     };
     const expiryTimeInSecs = 1800;
@@ -256,7 +262,7 @@ class Customer {
       ...req.body,
       firstName,
       lastName,
-      email: PrimaryEmailAddr.Address,
+      email: Address,
       role: "customer",
       customerDetails: {
         qbId: id,
