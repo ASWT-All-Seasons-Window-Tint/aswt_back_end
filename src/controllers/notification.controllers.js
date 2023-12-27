@@ -57,8 +57,19 @@ class NotificationController {
   async getLatestNotificationForStaff(req, res) {
     const { userId } = req.params;
 
-    const latestNotificationsForStaff =
-      await notificationService.getLatestNotificationForStaff(userId);
+    const user = await userServices.getUserById(userId);
+
+    if (!user)
+      return notFoundResponse(res, "Can't find user with the given ID");
+
+    const isUserStaff = user.role === "staff";
+
+    const [latestNotificationsForStaff] =
+      await notificationService.getAllNotificationsForUser({
+        userId,
+        vehicleQueue: false,
+        isUserStaff,
+      });
 
     if (!latestNotificationsForStaff)
       return jsonResponse(res, 404, false, "No notification yet for the user");
