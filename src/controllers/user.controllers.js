@@ -91,34 +91,6 @@ class UserController {
     if (role === "staff") {
       req.body.staffDetails = {};
       req.body.staffDetails.earningRates = [];
-
-      // const serviceIds = [
-      //   ...new Set(
-      //     staffDetails.earningRates.map((earningRate) => earningRate.serviceId)
-      //   ),
-      // ];
-
-      // const [servicesNotInArray, missingIds] = await Promise.all([
-      //   serviceServices.findServicesNotInArray(serviceIds),
-      //   serviceServices.validateServiceIds(serviceIds),
-      // ]);
-
-      // if (missingIds.length > 0)
-      //   return notFoundResponse(
-      //     res,
-      //     `Services with IDs: (${missingIds}) could not be found`
-      //   );
-
-      // if (servicesNotInArray.length > 0) {
-      //   const serviceNames = servicesNotInArray.map((service) => service.name);
-
-      //   return badReqResponse(
-      //     res,
-      //     `Earning rate is required for the following services: (${serviceNames.join(
-      //       ", "
-      //     )})`
-      //   );
-      // }
     }
 
     const forbiddenRoles = {
