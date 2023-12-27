@@ -298,7 +298,7 @@ class EntryController {
 
     // Set the next 24 hours to 11:59 PM CST
     const next24Hours = new Date();
-    next24Hours.setHours(12, 36, 0, 0); // Set hours to 23 (11 PM), minutes to 59, seconds to 0, and milliseconds to 0
+    next24Hours.setHours(11, 59, 0, 0); // Set hours to 23 (11 PM), minutes to 59, seconds to 0, and milliseconds to 0
 
     const delay = next24Hours.getTime() - currentDate.getTime();
 

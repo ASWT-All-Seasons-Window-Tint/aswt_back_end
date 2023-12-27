@@ -189,6 +189,8 @@ class Customer {
 
     const accountNumber = await User.getNextAccountNumber();
 
+    const { Address } = PrimaryEmailAddr;
+
     if (Notes) {
       const validNote =
         "{'AlternativeEmails': ['test@example.com', 'test2@example.com']}";
@@ -214,14 +216,13 @@ class Customer {
       alternativeEmailsObject.AccountNumber = accountNumber;
 
       completeNotes = JSON.stringify(alternativeEmailsObject);
+
+      PrimaryEmailAddr.Address = `${
+        PrimaryEmailAddr.Address
+      }, ${alterNativeEmails.join(", ")}`;
+      // Create the customer in QuickBooks
     }
 
-    const { Address } = PrimaryEmailAddr;
-
-    PrimaryEmailAddr.Address = `${
-      PrimaryEmailAddr.Address
-    }, ${alterNativeEmails.join(", ")}`;
-    // Create the customer in QuickBooks
     const customerData = {
       DisplayName: DisplayName,
       PrimaryEmailAddr: PrimaryEmailAddr,
