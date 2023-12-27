@@ -149,7 +149,7 @@ class Customer {
     const updatedCustomer = await customerService.updateCustomerById(
       qbo,
       Id,
-      reqBody,
+      bodyToUpdate,
       SyncToken
     );
 
