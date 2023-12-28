@@ -158,7 +158,7 @@ router.get(
 router.get(
   "/role/:role",
   auth,
-  roleBaseAuth(["admin", "gm", "manager"]),
+  roleBaseAuth(["admin", "gm", "manager", "receptionist"]),
   validateroleMiddleware,
   asyncMiddleware(userController.getUsersByRole)
 );
