@@ -1054,7 +1054,9 @@ class EntryService {
 
     const carIndex = carDetails.findIndex((car) => {
       return vin
-        ? car.vin.toString() === vin.toString()
+        ? car.vin
+          ? car.vin.toString() === vin.toString()
+          : false
         : car._id.toString() === carId.toString();
     });
 
