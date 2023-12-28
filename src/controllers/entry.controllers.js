@@ -1020,7 +1020,7 @@ class EntryController {
   }
 
   //Update/edit entry data
-  async modifyCarDetails(req, res) {
+  modifyCarDetails = async (req, res) => {
     const { getMultipleServices } = serviceService;
     const { vin, id } = req.params;
 
@@ -1063,7 +1063,31 @@ class EntryController {
 
     const services = await getMultipleServices(carDoneByStaff.serviceIds);
 
-    entryService.recalculatePrices(req, entry, services, carDoneByStaff);
+    if (req.body.serviceIds || req.body.category) {
+      const serviceDetails = req.body.serviceIds.map((serviceId) => {
+        return { serviceId };
+      });
+
+      const { price, priceBreakdown, checkErr } =
+        await entryService.getPriceForService(
+          req.body.serviceIds,
+          entry.customerId,
+          req.body.category,
+          undefined,
+          serviceDetails
+        );
+
+      const checkDealershipPrice = this.checkDealershipPrice(
+        res,
+        priceBreakdown
+      );
+      if (checkDealershipPrice) return;
+
+      carDoneByStaff.price = price;
+      carDoneByStaff.priceBreakdown = priceBreakdown;
+
+      entry.invoice.totalPrice = entryService.getTotalprice(entry.invoice);
+    }
 
     entry.invoice.carDetails[carIndex] = carDoneByStaff;
 
@@ -1074,7 +1098,7 @@ class EntryController {
     delete carWithoutPrice.priceBreakdown;
 
     res.send(successMessage(MESSAGES.UPDATED, carWithoutPrice));
-  }
+  };
 
   async modifyPrice(req, res) {
     const { serviceId, price, vin, carId } = req.body;
