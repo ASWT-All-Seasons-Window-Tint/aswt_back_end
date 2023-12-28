@@ -1468,6 +1468,10 @@ class TakenTimeslotService {
     return TakenTimeslot.findOne({ date, staffId, clearOutForDealershipId });
   }
 
+  getTakenTimeSlotByDateAndStaffId({ date, staffId }) {
+    return TakenTimeslot.findOne({ date, staffId });
+  }
+
   getTakenTimeslotForDealerAndStaff(customerId, staffId) {
     return TakenTimeslot.find({
       clearOutForDealershipId: customerId,
@@ -1578,7 +1582,7 @@ class TakenTimeslotService {
       return time;
     });
 
-    date = upd.join("-");
+    return upd.join("-");
   }
 
   getAvailableDealershipStaffIds(dealershipId, staffIds, date) {

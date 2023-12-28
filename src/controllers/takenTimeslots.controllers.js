@@ -311,7 +311,7 @@ class TakenTimeslotControllers {
     let { date } = req.params;
     const { _id: staffId } = req.user;
 
-    takenTimeslotsServices.formatDate(date);
+    date = takenTimeslotsServices.formatDate(date);
 
     const takenTimeslotDate =
       takenTimeslotsServices.getTakenTimeSlotDateString(date);
@@ -336,6 +336,26 @@ class TakenTimeslotControllers {
         res,
         "You have either blockedout the date or there is appointment with this date"
       );
+
+    const doesDateExistForStaff =
+      await takenTimeslotsServices.getTakenTimeSlotByDateAndStaffId({
+        staffId,
+        date,
+      });
+
+    if (doesDateExistForStaff) {
+      doesDateExistForStaff.forDealership = true;
+      doesDateExistForStaff.clearOutForDealershipId = dealershipId;
+
+      await doesDateExistForStaff.save();
+
+      return res.send(
+        successMessage(
+          "Date is successfully blocked out",
+          doesDateExistForStaff
+        )
+      );
+    }
 
     const blockedDate = await takenTimeslotsServices.staffBlockOutsADate(
       staffId,
