@@ -21,9 +21,11 @@ const {
   sendInvoicePdf,
 } = require("../services/invoice.services");
 const getDateAndTimeUtils = require("../utils/getDateAndTime.utils");
+const axiosRequestUtils = require("../utils/axiosRequest.utils");
+const userServices = require("../services/user.services");
 
-const redisConnection = { url: process.env.redisUrl };
-const appointmentQueue = new Queue("reminders", redisConnection);
+// const redisConnection = { url: process.env.redisUrl };
+// const appointmentQueue = new Queue("reminders", redisConnection);
 
 class WebhookControllers {
   async webhook(req, res) {
@@ -188,20 +190,16 @@ class WebhookControllers {
               nowBody(date, time, customerName, smsService)
             );
 
-            appointmentQueue.add(
-              {
-                customerNumber,
-                body: reminderBody(
-                  date,
-                  time,
-                  customerName,
-                  process.env.customerContactNumber
-                ),
-              },
-              {
-                delay,
-              }
+            const token = await userServices.getToken();
+            const messageBody = reminderBody(
+              date,
+              time,
+              customerName,
+              process.env.customerContactNumber
             );
+            const params = { delay, customerNumber, messageBody, token };
+
+            await axiosRequestUtils(params, "sms");
 
             await appointmentServices.updateAppointmentPaymentDetails({
               appointmentId,

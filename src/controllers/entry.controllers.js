@@ -25,9 +25,6 @@ const invoiceControllers = require("./invoice.controllers");
 const userServices = require("../services/user.services");
 const axiosRequestUtils = require("../utils/axiosRequest.utils");
 
-const redisConnection = { url: process.env.redisUrl };
-const entryQueue = new Queue("auto-send-invoice", redisConnection);
-
 class EntryController {
   async getStatus(req, res) {
     res.status(200).send({ message: MESSAGES.DEFAULT, success: true });
@@ -92,22 +89,6 @@ class EntryController {
     entry = await entryService.addCarDetail(entry._id, carDetails);
 
     res.send(successMessage(MESSAGES.CREATED, entry));
-  }
-
-  async scheduleInvoice(req, res) {
-    const { entryId } = req.body;
-    const delay = this.getDelay();
-
-    entryQueue.add(
-      {
-        entryId,
-      },
-      {
-        delay,
-      }
-    );
-
-    res.send(successMessage(MESSAGES.CREATED, true));
   }
 
   addInvoice = async (req, res) => {
@@ -252,8 +233,12 @@ class EntryController {
 
       if (!entry.invoice.isAutoSentScheduled) {
         const token = await userServices.getToken();
+        const delay = this.getDelay();
+        const entryId = entry._id;
 
-        await axiosRequestUtils(token, entry._id);
+        const params = { token, delay, entryId };
+
+        const response = await axiosRequestUtils(params, "invoice");
 
         entry.invoice.isAutoSentScheduled = true;
       }
@@ -991,15 +976,10 @@ class EntryController {
 
       if (!entry.invoice.isAutoSentScheduled) {
         const delay = this.getDelay();
+        const token = await userServices.getToken();
+        const params = { token, delay, entryId };
 
-        entryQueue.add(
-          {
-            entryId,
-          },
-          {
-            delay,
-          }
-        );
+        const response = await axiosRequestUtils(params, "invoice");
 
         entry.invoice.isAutoSentScheduled = true;
       }
@@ -1185,10 +1165,6 @@ class EntryController {
     await entryService.deleteEntry(req.params.id);
 
     res.send(successMessage(MESSAGES.DELETED, entry));
-  }
-
-  exportEntryQueue() {
-    return entryQueue;
   }
 }
 
