@@ -236,6 +236,7 @@ entrySchema.pre("save", function (next) {
   const currentDate = new Date();
   const year = currentDate.getFullYear();
 
+  const invoiceNumberPattern = /^\d{5}-\d{3}$/;
   // Incrementing invoice number - adjust as needed
   const getNextInvoiceNumber = async () => {
     const lastInvoice = await this.constructor.findOne(
@@ -244,21 +245,19 @@ entrySchema.pre("save", function (next) {
       { sort: { _id: -1 } }
     );
 
-    const invoiceNumberPattern = /^INV-\d{4}-\d{4,}$/;
-
     if (lastInvoice) {
       const lastInvoiceNumber = lastInvoice.invoice.invoiceNumber;
       if (!invoiceNumberPattern.test(lastInvoice.invoice.invoiceNumber))
-        return `INV-${year}-0001`;
+        return `19715-01`;
 
-      let lastNumber = parseInt(lastInvoiceNumber.split("-")[2], 10);
+      const lastInvoiceNumberArray = lastInvoiceNumber.split("-");
+
+      let lastNumber = parseInt(lastInvoiceNumberArray[1], 10);
 
       let newInvoiceNumber;
       do {
         lastNumber++;
-        newInvoiceNumber = `INV-${year}-${lastNumber
-          .toString()
-          .padStart(4, "0")}`;
+        newInvoiceNumber = `19715-${lastNumber}`;
 
         // Check if the new invoice number is unique
         const isUnique =
@@ -272,13 +271,17 @@ entrySchema.pre("save", function (next) {
       } while (true);
     }
 
-    return `INV-${year}-0001`;
+    return `19715-001`;
   };
 
   getNextInvoiceNumber()
     .then((invoiceNumber) => {
-      this.invoice.invoiceNumber = invoiceNumber;
-      next();
+      if (invoiceNumberPattern.test(this.invoice.invoiceNumber)) {
+        next();
+      } else {
+        this.invoice.invoiceNumber = invoiceNumber;
+        next();
+      }
     })
     .catch((error) => {
       next(error);
