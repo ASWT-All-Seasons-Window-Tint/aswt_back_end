@@ -248,7 +248,7 @@ entrySchema.pre("save", function (next) {
     if (lastInvoice) {
       const lastInvoiceNumber = lastInvoice.invoice.invoiceNumber;
       if (!invoiceNumberPattern.test(lastInvoice.invoice.invoiceNumber))
-        return `19715-01`;
+        return `19715-1`;
 
       const lastInvoiceNumberArray = lastInvoiceNumber.split("-");
 
@@ -271,7 +271,7 @@ entrySchema.pre("save", function (next) {
       } while (true);
     }
 
-    return `19715-001`;
+    return `19715-1`;
   };
 
   getNextInvoiceNumber()
