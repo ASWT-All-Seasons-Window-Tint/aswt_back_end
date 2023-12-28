@@ -19,6 +19,7 @@ const {
   validateUpdateQuote,
   unavailableTimeslots,
   validateAppointmentForDealership,
+  validatePatch,
 } = joiValidators;
 
 router.post(
@@ -148,7 +149,7 @@ router.put(
   validateObjectId,
   auth,
   roleBaseAuthMiddleware(["receptionist", "admin"]),
-  validateMiddleware(validate),
+  validateMiddleware(validatePatch),
   asyncMiddleware(appointmentControllers.updateAppointment)
 );
 
