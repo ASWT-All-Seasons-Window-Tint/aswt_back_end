@@ -236,7 +236,7 @@ entrySchema.pre("save", function (next) {
   const currentDate = new Date();
   const year = currentDate.getFullYear();
 
-  const invoiceNumberPattern = /^\d{5}-\d{3}$/;
+  const invoiceNumberPattern = /^\d{5}-\d{2}$/;
   // Incrementing invoice number - adjust as needed
   const getNextInvoiceNumber = async () => {
     const lastInvoice = await this.constructor.findOne(
