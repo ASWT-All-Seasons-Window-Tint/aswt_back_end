@@ -14,7 +14,8 @@ module.exports = function (mongoDBInvoice, type) {
     BillEmail: {
       Address: mongoDBInvoice.customerEmail,
     },
-    DocNumber: mongoDBInvoice.invoice.invoiceNumber,
+    DocNumber:
+      type != "commercial" ? mongoDBInvoice.invoice.invoiceNumber : undefined,
     // Add other fields as needed
   };
 

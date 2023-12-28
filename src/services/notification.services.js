@@ -755,9 +755,36 @@ class NotificationService {
   }
 
   getLatestNotificationForStaff(staffId) {
-    return Notification.findOne({ concernedStaffIds: { $in: [staffId] } })
-      .select("-concernedStaffIds -isReadBy")
-      .sort({ _id: -1 });
+    return Notification.aggregate([
+      {
+        $unwind: "$concernedStaffIds",
+      },
+      {
+        $addFields: {
+          isRead: {
+            $in: [new mongoose.Types.ObjectId(staffId), "$isReadBy"],
+          },
+          id: "$_id",
+        },
+      },
+      {
+        $match: {
+          concernedStaffIds: new mongoose.Types.ObjectId(staffId),
+          isRead: false,
+          isDeleted: undefined,
+        },
+      },
+      {
+        $project: {
+          isReadBy: 0,
+        },
+      },
+      {
+        $sort: {
+          _id: -1,
+        },
+      },
+    ]);
   }
 
   getAllNotifications() {

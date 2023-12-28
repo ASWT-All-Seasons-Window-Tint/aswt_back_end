@@ -57,7 +57,7 @@ class NotificationController {
   async getLatestNotificationForStaff(req, res) {
     const { userId } = req.params;
 
-    const latestNotificationsForStaff =
+    const [latestNotificationsForStaff] =
       await notificationService.getLatestNotificationForStaff(userId);
 
     if (!latestNotificationsForStaff)
