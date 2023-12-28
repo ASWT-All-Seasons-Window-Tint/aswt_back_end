@@ -238,6 +238,12 @@ class UserController {
     res.send(successMessage(MESSAGES.FETCHED, staffsDetails));
   }
 
+  async getAllStaffEarnings(req, res) {
+    const staffEarnings = await userService.getAllStaffEarnings();
+
+    res.send(successMessage(MESSAGES.FETCHED, staffEarnings));
+  }
+
   async getDealershipsAssignedToStaff(req, res) {
     const { _id: staffId } = req.user;
 

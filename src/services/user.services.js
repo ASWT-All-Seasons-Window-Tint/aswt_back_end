@@ -145,6 +145,26 @@ class UserService {
       .sort({ _id: -1 });
   };
 
+  getAllStaffEarnings() {
+    return User.aggregate([
+      {
+        $match: {
+          role: "staff",
+        },
+      },
+      {
+        $project: {
+          firstName: 1,
+          lastName: 1,
+          email: 1,
+          role: 1,
+          totalEarnings: { $sum: "$staffDetails.earningHistory.amountEarned" },
+          earningHistory: "$staffDetails.earningHistory",
+        },
+      },
+    ]);
+  }
+
   query = (role, selectArg) =>
     User.find({ role, isDeleted: undefined })
       .select(selectArg)
