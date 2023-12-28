@@ -22,9 +22,8 @@ const { default: mongoose } = require("mongoose");
 const mongoTransactionUtils = require("../utils/mongoTransaction.utils");
 const entryServices = require("../services/entry.services");
 const invoiceControllers = require("./invoice.controllers");
-
-const redisConnection = { url: process.env.redisUrl };
-const entryQueue = new Queue("auto-send-invoice", redisConnection);
+const userServices = require("../services/user.services");
+const axiosRequestUtils = require("../utils/axiosRequest.utils");
 
 class EntryController {
   async getStatus(req, res) {
@@ -233,16 +232,13 @@ class EntryController {
       const id = entry._id;
 
       if (!entry.invoice.isAutoSentScheduled) {
+        const token = await userServices.getToken();
         const delay = this.getDelay();
+        const entryId = entry._id;
 
-        entryQueue.add(
-          {
-            entryId: entry._id,
-          },
-          {
-            delay,
-          }
-        );
+        const params = { token, delay, entryId };
+
+        const response = await axiosRequestUtils(params, "invoice");
 
         entry.invoice.isAutoSentScheduled = true;
       }
@@ -980,15 +976,10 @@ class EntryController {
 
       if (!entry.invoice.isAutoSentScheduled) {
         const delay = this.getDelay();
+        const token = await userServices.getToken();
+        const params = { token, delay, entryId };
 
-        entryQueue.add(
-          {
-            entryId,
-          },
-          {
-            delay,
-          }
-        );
+        const response = await axiosRequestUtils(params, "invoice");
 
         entry.invoice.isAutoSentScheduled = true;
       }
@@ -1174,10 +1165,6 @@ class EntryController {
     await entryService.deleteEntry(req.params.id);
 
     res.send(successMessage(MESSAGES.DELETED, entry));
-  }
-
-  exportEntryQueue() {
-    return entryQueue;
   }
 }
 

@@ -11,14 +11,8 @@ require("./startup/routes.startup")(app);
 require("./startup/database.startup")();
 require("./startup/validation.startup")();
 
-(async () => {
-  try {
-    await startAutoSendInvoiceQueue();
-    await startScheduleSmsQueue();
-  } catch (error) {
-    console.log(error);
-  }
-})();
+startAutoSendInvoiceQueue();
+startScheduleSmsQueue();
 
 startScheduledJob();
 // intializes port with the PORT environment variable if it exists, if not it assigns 3000 to it

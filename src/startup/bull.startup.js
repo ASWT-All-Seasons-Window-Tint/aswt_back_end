@@ -1,6 +1,8 @@
 require("dotenv").config();
-const { exportQueue } = require("../controllers/webhook.controllers");
-const { exportEntryQueue } = require("../controllers/entry.controllers");
+const {
+  exportQueue,
+  exportEntryQueue,
+} = require("../controllers/schedular.comtrollers");
 const sendTextMessageUtils = require("../utils/sendTextMessage.utils");
 const {
   createAndSendInvoice,
