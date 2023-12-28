@@ -308,8 +308,10 @@ class TakenTimeslotControllers {
 
   async staffBlockOutsADate(req, res) {
     const { dealershipId } = req.body;
-    const { date } = req.params;
+    let { date } = req.params;
     const { _id: staffId } = req.user;
+
+    takenTimeslotsServices.formatDate(date);
 
     const takenTimeslotDate =
       takenTimeslotsServices.getTakenTimeSlotDateString(date);

@@ -102,7 +102,7 @@ const carDetails = [
     },
     note: {
       type: String,
-      minlength: 5,
+      minlength: 1,
       maxlength: 512,
     },
     price: {
@@ -236,7 +236,7 @@ entrySchema.pre("save", function (next) {
   const currentDate = new Date();
   const year = currentDate.getFullYear();
 
-  const invoiceNumberPattern = /^\d{5}-\d{1}$/;
+  const invoiceNumberPattern = /^\d{6}-\d{1,}$/;
   // Incrementing invoice number - adjust as needed
   const getNextInvoiceNumber = async () => {
     const lastInvoice = await this.constructor.findOne(
@@ -278,7 +278,7 @@ entrySchema.pre("save", function (next) {
       } while (true);
     }
 
-    return `19715-1`;
+    return `197110-1`;
   };
 
   getNextInvoiceNumber()
@@ -445,7 +445,7 @@ function validateModifyPriceForSentInvoice(entry) {
 }
 function validateModifyServiceDone(entry) {
   const schema = Joi.object({
-    note: Joi.string(),
+    note: Joi.string().min(5).max(255),
     serviceId: Joi.objectId().required(),
     vin: Joi.string(),
   });

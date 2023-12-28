@@ -1569,6 +1569,18 @@ class TakenTimeslotService {
     return takenTimeslot.save(session ? { session } : undefined);
   }
 
+  formatDate(date) {
+    const dateArray = date.split("-");
+
+    const upd = dateArray.map((time) => {
+      if (time.length < 2) time = `0${time}`;
+
+      return time;
+    });
+
+    date = upd.join("-");
+  }
+
   getAvailableDealershipStaffIds(dealershipId, staffIds, date) {
     const agg = [
       {
