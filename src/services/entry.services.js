@@ -514,7 +514,6 @@ class EntryService {
 
     if (isFilmQualityRequired) {
       checkErr.message = "Film quality is required for installation services";
-      return { checkErr };
     }
 
     const price = this.calculateServicePriceDoneforCar(priceBreakdown);
