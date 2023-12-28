@@ -1,3 +1,4 @@
+require("dotenv").config();
 const _ = require("lodash");
 const Queue = require("bull");
 const { DistanceThreshold } = require("../model/distanceThreshold.model");
@@ -298,11 +299,11 @@ class EntryController {
 
     // Set the next 24 hours to 11:59 PM CST
     const next24Hours = new Date();
-    next24Hours.setHours(11, 59, 0, 0); // Set hours to 23 (11 PM), minutes to 59, seconds to 0, and milliseconds to 0
+    next24Hours.setHours(23, 59, 0, 0); // Set hours to 23 (11 PM), minutes to 59, seconds to 0, and milliseconds to 0
 
     const delay = next24Hours.getTime() - currentDate.getTime();
 
-    return delay;
+    return 120000;
   }
 
   async addCarGeoLocation(req, res) {
