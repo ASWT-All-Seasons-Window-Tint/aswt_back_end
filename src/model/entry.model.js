@@ -231,6 +231,60 @@ const entrySchema = new mongoose.Schema(
   { toObject: { virtuals: true } }
 );
 
+// Pre-save middleware to generate custom invoice number
+entrySchema.pre("save", function (next) {
+  const currentDate = new Date();
+  const year = currentDate.getFullYear();
+
+  // Incrementing invoice number - adjust as needed
+  const getNextInvoiceNumber = async () => {
+    const lastInvoice = await this.constructor.findOne(
+      {},
+      {},
+      { sort: { _id: -1 } }
+    );
+
+    const invoiceNumberPattern = /^INV-\d{4}-\d{4,}$/;
+
+    if (lastInvoice) {
+      const lastInvoiceNumber = lastInvoice.invoice.invoiceNumber;
+      if (!invoiceNumberPattern.test(lastInvoice.invoice.invoiceNumber))
+        return `INV-${year}-0001`;
+
+      let lastNumber = parseInt(lastInvoiceNumber.split("-")[2], 10);
+
+      let newInvoiceNumber;
+      do {
+        lastNumber++;
+        newInvoiceNumber = `INV-${year}-${lastNumber
+          .toString()
+          .padStart(4, "0")}`;
+
+        // Check if the new invoice number is unique
+        const isUnique =
+          (await this.constructor.findOne({
+            "invoce.invoiceNumber": newInvoiceNumber,
+          })) === null;
+
+        if (isUnique) {
+          return newInvoiceNumber;
+        }
+      } while (true);
+    }
+
+    return `INV-${year}-0001`;
+  };
+
+  getNextInvoiceNumber()
+    .then((invoiceNumber) => {
+      this.invoice.invoiceNumber = invoiceNumber;
+      next();
+    })
+    .catch((error) => {
+      next(error);
+    });
+});
+
 addVirtualIdUtils(entrySchema, "entryId");
 
 entrySchema.statics.getNextInvoiceNumber = async function () {

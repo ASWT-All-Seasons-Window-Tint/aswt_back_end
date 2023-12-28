@@ -21,7 +21,7 @@ router.post(
 );
 
 router.get(
-  "/sendInvoince/:entryId/:delay",
+  "/sendInvoice/:entryId/:delay",
   authMiddleware,
   adminMiddleware,
   qboAsyncMiddleware(schedularComtrollers.scheduleInvoice)
