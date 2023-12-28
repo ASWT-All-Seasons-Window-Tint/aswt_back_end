@@ -326,7 +326,7 @@ router.put(
 router.put(
   "/add-vin/:id",
   auth,
-  roleBaseAuth(["customer"]),
+  roleBaseAuth(["customer", "receptionist", "admin"]),
   validateMiddleware(validateAddVin),
   qboAsyncMiddleware(entryController.addVin)
 );

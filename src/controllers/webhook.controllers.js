@@ -237,6 +237,7 @@ class WebhookControllers {
                   appointment,
                   appointmentType
                 );
+              if (!invoiceReqBody.DocNumber) delete invoiceReqBody.DocNumber;
 
               invoiceReqBody.CustomerRef.value = qbId;
 

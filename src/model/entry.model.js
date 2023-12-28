@@ -250,14 +250,21 @@ entrySchema.pre("save", function (next) {
       if (!invoiceNumberPattern.test(lastInvoice.invoice.invoiceNumber))
         return `19715-1`;
 
-      const lastInvoiceNumberArray = lastInvoiceNumber.split("-");
+      let [firstString, lastString] = lastInvoiceNumber.split("-");
 
-      let lastNumber = parseInt(lastInvoiceNumberArray[1], 10);
+      let lastNumber = parseInt(lastString, 10);
+      let firstNumber = parseInt(firstString, 10);
 
       let newInvoiceNumber;
+
+      if (lastNumber == 99) {
+        lastNumber = 0;
+        firstNumber++;
+      }
+
       do {
         lastNumber++;
-        newInvoiceNumber = `19715-${lastNumber}`;
+        newInvoiceNumber = `${firstNumber}-${lastNumber}`;
 
         // Check if the new invoice number is unique
         const isUnique =
