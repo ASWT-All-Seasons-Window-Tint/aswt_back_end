@@ -126,6 +126,12 @@ router.get(
 );
 
 router.get(
+  "/staff-total-earnings",
+  auth,
+  roleBaseAuth(["gm", "admin"]),
+  asyncMiddleware(userController.getAllStaffEarnings)
+);
+router.get(
   "/staff-total-earning-per-date/start/:startDate/end/:endDate",
   auth,
   validDateParamsMiddleware(7, true),
