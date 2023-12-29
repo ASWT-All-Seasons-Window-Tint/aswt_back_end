@@ -271,6 +271,9 @@ class AppointmentController {
       dealershipId
     );
 
+    if (staffIds.length < 1)
+      return badReqResponse(res, "There is no staff asssigned to the dealer");
+
     // const { errorCode, errorMessage, unavailableDatesInTheCalendar, staffIds } =
     // await takenTimeslotsControllers.generateTakenTimeslotsForDealership(
     //     dealershipId,
