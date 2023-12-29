@@ -116,6 +116,22 @@ class TakenTimeslotService {
     const numberOfStaffsAvailableForAppointment = assignedStaffs.length;
 
     const agg = [
+      // {
+      //   $addFields: {
+      //     date: {
+      //       $cond: [
+      //         { $eq: [{ $type: "$date" }, "string"] },
+      //         "$date",
+      //         "$blockedOutDate",
+      //       ],
+      //     },
+      //   },
+      // },
+      // // {
+      // //   $project: {
+      // //     blockedOutDate: 0,
+      // //   },
+      // // },
       {
         $addFields: {
           dateTime: {
@@ -629,6 +645,18 @@ class TakenTimeslotService {
     timeOfCompletion
   ) {
     const agg = [
+      {
+        $addFields: {
+          date: {
+            $cond: [
+              { $eq: [{ $type: "$date" }, "string"] },
+              "$date",
+              "$blockedOutDate",
+            ],
+          },
+        },
+      },
+
       {
         $addFields: {
           timeslotsInDecimal: {
@@ -1282,6 +1310,18 @@ class TakenTimeslotService {
   ) {
     return TakenTimeslot.aggregate([
       {
+        $addFields: {
+          date: {
+            $cond: [
+              { $eq: [{ $type: "$date" }, "string"] },
+              "$date",
+              "$blockedOutDate",
+            ],
+          },
+        },
+      },
+
+      {
         $match: {
           forDealership: true,
         },
@@ -1346,6 +1386,18 @@ class TakenTimeslotService {
     const numberOfStaffAssignedTodealer = staffIds.length;
 
     return TakenTimeslot.aggregate([
+      {
+        $addFields: {
+          date: {
+            $cond: [
+              { $eq: [{ $type: "$date" }, "string"] },
+              "$date",
+              "$blockedOutDate",
+            ],
+          },
+        },
+      },
+
       {
         $match: {
           $or: [
@@ -1474,7 +1526,11 @@ class TakenTimeslotService {
     staffId,
     clearOutForDealershipId,
   }) {
-    return TakenTimeslot.findOne({ date, staffId, clearOutForDealershipId });
+    return TakenTimeslot.findOne({
+      date,
+      staffId,
+      clearOutForDealershipId,
+    });
   }
 
   getTakenTimeSlotsByDateAndStaffId2({
@@ -1490,7 +1546,7 @@ class TakenTimeslotService {
   }
 
   getTakenTimeSlotByDateAndStaffId({ date, staffId }) {
-    return TakenTimeslot.findOne({ date, staffId });
+    return TakenTimeslot.findOne({ date, staffId, blockedOutDate: undefined });
   }
 
   getTakenTimeslotForDealerAndStaff(customerId, staffId) {
@@ -1610,6 +1666,18 @@ class TakenTimeslotService {
 
   getAvailableDealershipStaffIds(dealershipId, staffIds, date) {
     const agg = [
+      {
+        $addFields: {
+          date: {
+            $cond: [
+              { $eq: [{ $type: "$date" }, "string"] },
+              "$date",
+              "$blockedOutDate",
+            ],
+          },
+        },
+      },
+
       {
         $match: {
           date,
