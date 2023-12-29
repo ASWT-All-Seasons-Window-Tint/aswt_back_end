@@ -274,8 +274,17 @@ class TakenTimeslotControllers {
         dealershipId,
         staffId
       );
+    const takenTimes = takenTimeslots.map((takenTime) => {
+      if (takenTime.blockedOutDate) {
+        takenTime.date = takenTime.blockedOutDate;
 
-    return res.send(successMessage(MESSAGES.FETCHED, takenTimeslots));
+        takenTime.blockedOutDate = undefined;
+      }
+
+      return takenTime;
+    });
+
+    return res.send(successMessage(MESSAGES.FETCHED, takenTimes));
   }
 
   async getUnavailableDatesInTheCalendarForStaff(req, res) {
