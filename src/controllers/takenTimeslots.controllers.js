@@ -89,6 +89,14 @@ class TakenTimeslotControllers {
     const staffIds = await userService.fetchIdsOfStaffsWhoCanTakeAppointments();
     const { formattedDate } = freeTimeSlotServices.getFormattedDate(date);
 
+    if (staffIds.length < 1)
+      return jsonResponse(
+        res,
+        400,
+        false,
+        "No staff is available to take an appointment"
+      );
+
     let takenTimeslots = await takenTimeslotsServices.getTakenTimeSlotsByDate({
       date: formattedDate,
     });
