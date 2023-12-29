@@ -102,7 +102,7 @@ class TakenTimeslotControllers {
     });
 
     for (const timeslot of takenTimeslots) {
-      if (timeslot.clearedOut)
+      if (timeslot.clearedOut && !timeslot.forDealership)
         return jsonResponse(
           res,
           400,
@@ -333,7 +333,7 @@ class TakenTimeslotControllers {
       return notFoundResponse(res, "This staff is not assigned to the dealer");
 
     const takenTimeslot =
-      await takenTimeslotsServices.getTakenTimeSlotsByDateAndStaffId({
+      await takenTimeslotsServices.getTakenTimeSlotsByDateAndStaffId2({
         date: takenTimeslotDate,
         staffId,
         clearOutForDealershipId: dealershipId,
@@ -345,31 +345,34 @@ class TakenTimeslotControllers {
         "The date is already blockedout for the dealer"
       );
 
-    const doesDateExistForStaff =
-      await takenTimeslotsServices.getTakenTimeSlotByDateAndStaffId({
-        staffId,
-        date,
-      });
+    // const doesDateExistForStaff =
+    //   await takenTimeslotsServices.getTakenTimeSlotByDateAndStaffId({
+    //     staffId,
+    //     date,
+    //   });
 
-    if (doesDateExistForStaff) {
-      doesDateExistForStaff.forDealership = true;
-      doesDateExistForStaff.clearOutForDealershipId = dealershipId;
+    // if (doesDateExistForStaff) {
+    //   doesDateExistForStaff.forDealership = true;
+    //   doesDateExistForStaff.clearOutForDealershipId = dealershipId;
 
-      await doesDateExistForStaff.save();
+    //   await doesDateExistForStaff.save();
 
-      return res.send(
-        successMessage(
-          "Date is successfully blocked out",
-          doesDateExistForStaff
-        )
-      );
-    }
+    //   return res.send(
+    //     successMessage(
+    //       "Date is successfully blocked out",
+    //       doesDateExistForStaff
+    //     )
+    //   );
+    // }
 
     const blockedDate = await takenTimeslotsServices.staffBlockOutsADate(
       staffId,
       dealershipId,
       date
     );
+
+    blockedDate.date = date;
+    blockedDate.blockedOutDate = undefined;
 
     res.send(successMessage("Date is successfully blocked out", blockedDate));
   }

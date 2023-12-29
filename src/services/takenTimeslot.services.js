@@ -843,7 +843,9 @@ class TakenTimeslotService {
   }
 
   getTakenTimeSlotsByDate({ date }) {
-    return TakenTimeslot.find({ date }).sort({ _id: -1 });
+    return TakenTimeslot.find({ date, forDealership: undefined }).sort({
+      _id: -1,
+    });
   }
 
   getUnavailableDatesInTheCalendar = (
@@ -852,6 +854,13 @@ class TakenTimeslotService {
     timeOfCompletion,
     numberOfStaffsAvailableForAppointment
   ) => {
+    console.log(
+      startDate,
+      endDate,
+      timeOfCompletion,
+      numberOfStaffsAvailableForAppointment
+    );
+
     return TakenTimeslot.aggregate([
       {
         $addFields: {
@@ -1468,6 +1477,18 @@ class TakenTimeslotService {
     return TakenTimeslot.findOne({ date, staffId, clearOutForDealershipId });
   }
 
+  getTakenTimeSlotsByDateAndStaffId2({
+    date,
+    staffId,
+    clearOutForDealershipId,
+  }) {
+    return TakenTimeslot.findOne({
+      blockedOutDate: date,
+      staffId,
+      clearOutForDealershipId,
+    });
+  }
+
   getTakenTimeSlotByDateAndStaffId({ date, staffId }) {
     return TakenTimeslot.findOne({ date, staffId });
   }
@@ -1517,9 +1538,9 @@ class TakenTimeslotService {
     existingTakenTimeslots,
     expectedTimeOfCompletion
   ) => {
-    const updatedStaffTimeSlots = existingTakenTimeslots.map((staff) =>
-      this.findUnavailableTimeSlots(staff, expectedTimeOfCompletion)
-    );
+    const updatedStaffTimeSlots = existingTakenTimeslots.map((staff) => {
+      return this.findUnavailableTimeSlots(staff, expectedTimeOfCompletion);
+    });
 
     const takenTimeslotsBeforeCloseOfBus = this.findCommonTimeSlots(
       updatedStaffTimeSlots
@@ -1564,7 +1585,8 @@ class TakenTimeslotService {
   ) {
     const takenTimeslot = new TakenTimeslot({
       staffId,
-      date,
+      date: new Date(),
+      blockedOutDate: date,
       clearOutForDealershipId,
       forDealership: true,
       clearedOut,
