@@ -483,13 +483,15 @@ class AppointmentService {
   // }
 
   getCustomerDetails(customer) {
-    const customerEmail = customer.PrimaryEmailAddr.Address;
+    const customerEmail = customer.PrimaryEmailAddr
+      ? customer.PrimaryEmailAddr.Address
+      : "N/A";
     const customerName = customer.DisplayName;
-    const customerNumber = customer.PrimaryPhone.FreeFormNumber;
-    const BillAddr = customer.BillAddr;
-    const customerAddress = customerService.formatAddress(BillAddr);
+    const customerNumber = customer.PrimaryPhone
+      ? customer.PrimaryPhone.FreeFormNumber
+      : "N/A";
 
-    return { customerEmail, customerName, customerNumber, customerAddress };
+    return { customerEmail, customerName, customerNumber };
   }
 
   async updateAppointmentById(id, appointment) {

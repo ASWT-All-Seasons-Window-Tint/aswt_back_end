@@ -216,7 +216,7 @@ class AppointmentController {
   };
 
   createAppointmentForDealership = async (req, res) => {
-    const { qbId } = req.user.customerDetails;
+    const { qbId, address: customerAddress, email } = req.user.customerDetails;
     const { startTime, isSubscribed, carDetails } = req.body;
     const { serviceDetails } = carDetails;
     const isUserDealershipStaff = req.user.role === "dealershipStaff";
@@ -259,7 +259,7 @@ class AppointmentController {
     if (error)
       return jsonResponse(res, 404, false, error.Fault.Error[0].Detail);
 
-    const { customerEmail, customerName, customerNumber, customerAddress } =
+    const { customerEmail, customerName, customerNumber } =
       appointmentService.getCustomerDetails(customer);
 
     const startDate =
@@ -324,7 +324,7 @@ class AppointmentController {
       appointmentType: "dealership",
       isSubscribed,
       isFromDealership: true,
-      customerEmail,
+      customerEmail: customerEmail === "N/A" ? email : customerEmail,
       customerName,
       customerName,
       customerNumber,
