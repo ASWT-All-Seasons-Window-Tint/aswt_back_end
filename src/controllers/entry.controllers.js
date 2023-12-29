@@ -24,6 +24,7 @@ const entryServices = require("../services/entry.services");
 const invoiceControllers = require("./invoice.controllers");
 const userServices = require("../services/user.services");
 const axiosRequestUtils = require("../utils/axiosRequest.utils");
+const initializeQbUtils = require("../utils/initializeQb.utils");
 
 class EntryController {
   async getStatus(req, res) {
@@ -953,7 +954,33 @@ class EntryController {
         };
 
         if (entry.invoice.sent) {
-          await invoiceControllers.sendInvoiceWithoutCreating(entry);
+          const qbo = await initializeQbUtils();
+
+          let { customerEmail, customerId } = entry;
+          const invoiceId = entry.invoice.qbId;
+
+          const customer = await userServices.findCustomerByQbId(customerId);
+
+          if (customer) {
+            const alterNativeEmails =
+              customer.customerDetails.alterNativeEmails;
+            const newEmail = customerEmail;
+            if (alterNativeEmails.length > 0)
+              for (const email of alterNativeEmails)
+                if (newEmail !== email) customerEmail += `, ${email}`;
+
+            while (customerEmail.length > 100) {
+              let emailArray = customerEmail.split(", ");
+
+              // Remove the last email
+              emailArray.pop();
+
+              // Join the array back into a string
+              customerEmail = emailArray.join(", ");
+            }
+          }
+
+          invoiceService.sendInvoicePdf(qbo, invoiceId, customerEmail);
         }
         if (entry.isFromAppointment) {
           entryService.addLineId(entry);

@@ -97,7 +97,9 @@ class InvoiceService {
     return new Promise((resolve, reject) => {
       qbo.sendInvoicePdf(invoiceId, emailAddr, (sendErr, sendResponse) => {
         if (sendErr) {
-          console.log(sendErr.Fault.Error[0]);
+          if (sendErr.Fault) {
+            console.log(sendErr.Fault.Error[0]);
+          }
           reject("Error sending invoice:", sendErr);
         } else {
           resolve(sendResponse);
