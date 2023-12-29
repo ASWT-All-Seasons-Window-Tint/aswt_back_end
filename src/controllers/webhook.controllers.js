@@ -230,6 +230,10 @@ class WebhookControllers {
               }
               if (Array.isArray(customer)) customer = customer[0];
 
+              const entry = await entryServices.createNewEntry(customer);
+              appointment.invoice = {};
+              appointment.invoice.invoiceNumber = entry.invoice.invoiceNumber;
+
               const { sessionId } = paymentDetails;
               const qbId = customer.Id;
               const { invoice: invoiceReqBody } =
@@ -237,6 +241,9 @@ class WebhookControllers {
                   appointment,
                   appointmentType
                 );
+
+              delete appointment.invoice;
+
               if (!invoiceReqBody.DocNumber) delete invoiceReqBody.DocNumber;
 
               invoiceReqBody.CustomerRef.value = qbId;
@@ -287,8 +294,6 @@ class WebhookControllers {
               const qbPaymentId = payment.Id;
 
               if (appointmentType === "auto") {
-                const entry = await entryServices.createNewEntry(customer);
-
                 const { serviceIds } =
                   appointmentServices.getServiceIdsAndfilmQualityIds(
                     appointment.carDetails.serviceDetails
