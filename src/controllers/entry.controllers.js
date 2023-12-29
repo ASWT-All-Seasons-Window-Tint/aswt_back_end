@@ -25,6 +25,7 @@ const invoiceControllers = require("./invoice.controllers");
 const userServices = require("../services/user.services");
 const axiosRequestUtils = require("../utils/axiosRequest.utils");
 const initializeQbUtils = require("../utils/initializeQb.utils");
+const invoiceServices = require("../services/invoice.services");
 
 class EntryController {
   async getStatus(req, res) {
@@ -980,7 +981,7 @@ class EntryController {
             }
           }
 
-          invoiceService.sendInvoicePdf(qbo, invoiceId, customerEmail);
+          invoiceServices.sendInvoicePdf(qbo, invoiceId, customerEmail);
         }
         if (entry.isFromAppointment) {
           entryService.addLineId(entry);
