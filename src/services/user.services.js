@@ -74,7 +74,7 @@ class UserService {
 
   async fetchIdsOfStaffsWhoCanTakeAppointments() {
     const staffsWhoCanTakeAppointments = await User.find({
-      "staffDetails.assignedDealerships": undefined,
+      "staffDetails.assignedDealerships": { $exists: false, $ne: [] },
       role: "staff",
       isDeleted: undefined,
     });
