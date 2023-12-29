@@ -13,7 +13,6 @@ const initializeQbUtils = require("../utils/initializeQb.utils");
 const userServices = require("../services/user.services");
 const serviceServices = require("../services/service.services");
 const { updateCache, getOrSetCache } = require("../utils/getOrSetCache.utils");
-const entryControllers = require("./entry.controllers");
 const estimateServices = require("../services/estimate.services");
 const getEstimatePdfUtils = require("../utils/getEstimatePdf.utils");
 const entryServices = require("../services/entry.services");
