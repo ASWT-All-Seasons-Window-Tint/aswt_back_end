@@ -310,6 +310,7 @@ class UserService {
   fetchStaffsAssignedToDealership(customerId) {
     return User.find({
       "staffDetails.assignedDealerships": customerId,
+      role: "staff",
     }).select("firstName lastName email");
   }
 
