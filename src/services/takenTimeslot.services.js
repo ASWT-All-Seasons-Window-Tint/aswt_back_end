@@ -116,22 +116,17 @@ class TakenTimeslotService {
     const numberOfStaffsAvailableForAppointment = assignedStaffs.length;
 
     const agg = [
-      // {
-      //   $addFields: {
-      //     date: {
-      //       $cond: [
-      //         { $eq: [{ $type: "$date" }, "string"] },
-      //         "$date",
-      //         "$blockedOutDate",
-      //       ],
-      //     },
-      //   },
-      // },
-      // // {
-      // //   $project: {
-      // //     blockedOutDate: 0,
-      // //   },
-      // // },
+      {
+        $addFields: {
+          date: {
+            $cond: [
+              { $eq: [{ $type: "$date" }, "string"] },
+              "$date",
+              "$blockedOutDate",
+            ],
+          },
+        },
+      },
       {
         $addFields: {
           dateTime: {
