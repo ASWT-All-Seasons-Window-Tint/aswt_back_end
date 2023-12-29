@@ -342,7 +342,7 @@ class TakenTimeslotControllers {
     if (takenTimeslot)
       return badReqResponse(
         res,
-        "You have either blockedout the date or there is appointment with this date"
+        "The date is already blockedout for the dealer"
       );
 
     const doesDateExistForStaff =

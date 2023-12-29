@@ -313,6 +313,7 @@ class UserService {
 
   async fetchStaffIdsAssignedToDealership(customerId) {
     const staffs = await User.find({
+      role: "staff",
       "staffDetails.assignedDealerships": customerId,
     });
 
