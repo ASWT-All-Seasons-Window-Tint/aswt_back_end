@@ -328,6 +328,10 @@ class TakenTimeslotControllers {
     let { date } = req.params;
     const { _id: staffId } = req.user;
 
+    const staff = await userService.getUserByRoleAndId(staffId, "staff");
+    if (!staff)
+      return notFoundResponse(res, "We can't locate a staff with provided ID");
+
     date = takenTimeslotsServices.formatDate(date);
 
     const takenTimeslotDate =
