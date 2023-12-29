@@ -18,8 +18,10 @@ const takenTimeslotSchema = new mongoose.Schema(
       default: false,
     },
     date: {
+      type: mongoose.Schema.Types.Mixed,
+    },
+    blockedOutDate: {
       type: String,
-      required: true,
     },
     forDealership: {
       type: Boolean,

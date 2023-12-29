@@ -84,6 +84,8 @@ class UserService {
 
   countStaffsWhoCanTakeAppointments() {
     return User.count({
+      isDeleted: undefined,
+      role: "staff",
       "staffDetails.assignedDealerships": undefined,
     });
   }

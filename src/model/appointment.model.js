@@ -404,11 +404,13 @@ function validateGetTakenTimeslots(appointment) {
   const schema = Joi.object({
     date: Joi.date().required(),
     appointmentType: Joi.string().valid("auto", "commercial"),
-    serviceIds: Joi.array().items(Joi.objectId()).when("appointmentType", {
-      is: "commercial",
-      then: Joi.forbidden(),
-      otherwise: Joi.required(),
-    }),
+    serviceIds: Joi.array()
+      .items(Joi.objectId().required())
+      .when("appointmentType", {
+        is: "commercial",
+        then: Joi.forbidden(),
+        otherwise: Joi.required(),
+      }),
   });
 
   return schema.validate(appointment);
@@ -417,11 +419,13 @@ function validateGetTakenTimeslots(appointment) {
 function unavailableTimeslots(appointment) {
   const schema = Joi.object({
     appointmentType: Joi.string().valid("auto", "commercial"),
-    serviceIds: Joi.array().items(Joi.objectId()).when("appointmentType", {
-      is: "commercial",
-      then: Joi.forbidden(),
-      otherwise: Joi.required(),
-    }),
+    serviceIds: Joi.array()
+      .items(Joi.objectId().required())
+      .when("appointmentType", {
+        is: "commercial",
+        then: Joi.forbidden(),
+        otherwise: Joi.required(),
+      }),
   });
 
   return schema.validate(appointment);
