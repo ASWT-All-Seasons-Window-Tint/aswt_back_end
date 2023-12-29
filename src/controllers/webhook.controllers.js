@@ -231,8 +231,7 @@ class WebhookControllers {
               if (Array.isArray(customer)) customer = customer[0];
 
               const entry = await entryServices.createNewEntry(customer);
-              appointment.invoice = {};
-              appointment.invoice.invoiceNumber = entry.invoice.invoiceNumber;
+              appointment.invoiceNumber = entry.invoice.invoiceNumber;
 
               const { sessionId } = paymentDetails;
               const qbId = customer.Id;
@@ -242,7 +241,7 @@ class WebhookControllers {
                   appointmentType
                 );
 
-              delete appointment.invoice;
+              delete appointment.invoiceNumber;
 
               if (!invoiceReqBody.DocNumber) delete invoiceReqBody.DocNumber;
 

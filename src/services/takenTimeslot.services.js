@@ -1480,6 +1480,7 @@ class TakenTimeslotService {
   }
 
   getTakenTimeslotForStaff(updatedStaffTimeSlots) {
+    console.log(updatedStaffTimeSlots);
     const numberOfStaffWithFreeTimeslots = updatedStaffTimeSlots.length;
 
     const randomNumber = Math.floor(
