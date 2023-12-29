@@ -877,13 +877,6 @@ class TakenTimeslotService {
     timeOfCompletion,
     numberOfStaffsAvailableForAppointment
   ) => {
-    console.log(
-      startDate,
-      endDate,
-      timeOfCompletion,
-      numberOfStaffsAvailableForAppointment
-    );
-
     return TakenTimeslot.aggregate([
       {
         $addFields: {
@@ -1552,7 +1545,6 @@ class TakenTimeslotService {
   }
 
   getTakenTimeslotForStaff(updatedStaffTimeSlots) {
-    console.log(updatedStaffTimeSlots);
     const numberOfStaffWithFreeTimeslots = updatedStaffTimeSlots.length;
 
     const randomNumber = Math.floor(
