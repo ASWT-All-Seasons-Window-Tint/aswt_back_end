@@ -238,7 +238,7 @@ class EntryController {
 
         const params = { token, delay, entryId };
 
-        const response = await axiosRequestUtils(params, "invoice");
+        await axiosRequestUtils(params, "invoice");
 
         entry.invoice.isAutoSentScheduled = true;
       }
@@ -298,7 +298,7 @@ class EntryController {
 
     const delay = next24Hours.getTime() - currentDate.getTime();
 
-    return delay;
+    return 120000;
   }
 
   async addCarGeoLocation(req, res) {
