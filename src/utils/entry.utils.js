@@ -424,7 +424,7 @@ class EntryUtils {
     carId,
   }) {
     const { today, tomorrow } = getTodayAndTomorrowUtils();
-    const { endDate: thirtyDaysBeforeNow, startDate: endOfToday } =
+    const { endDate: endOfToday, startDate: thirtyDaysBeforeNow } =
       getStartDateAndEndDateInARangeUtils(30);
 
     const staffFilter = {
