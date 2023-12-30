@@ -49,6 +49,32 @@ class AppointmentService {
     return Appointment.find({ "refundDetails.refunded": false });
   }
 
+  async fetchAllAppointments2() {
+    return Appointment.aggregate([
+      {
+        $lookup: {
+          from: "services",
+          localField: "carDetails.serviceDetails.serviceId",
+          pipeline: [
+            {
+              $project: {
+                name: "$name",
+                type: "$type",
+              },
+            },
+          ],
+          foreignField: "_id",
+          as: "carDetails.serviceNames",
+        },
+      },
+      {
+        $match: {
+          "refundDetails.refunded": false,
+        },
+      },
+    ]);
+  }
+
   updateAppointmentSessionId(appointmentId, sessionId) {
     return Appointment.findByIdAndUpdate(appointmentId, {
       $set: { "paymentDetails.sessionId": sessionId },
