@@ -46,10 +46,6 @@ class AppointmentService {
   }
 
   async fetchAllAppointments() {
-    return Appointment.find({ "refundDetails.refunded": false });
-  }
-
-  async fetchAllAppointments2() {
     return Appointment.aggregate([
       {
         $lookup: {
