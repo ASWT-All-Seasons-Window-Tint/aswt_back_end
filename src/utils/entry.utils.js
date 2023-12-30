@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const { days, validMonthNames, DATE } = require("../common/constants.common");
 const getTodayAndTomorrowUtils = require("./getTodayAndTomorrow.utils");
+const getStartDateAndEndDateInARangeUtils = require("./getStartDateAndEndDateInARange.utils");
 const { carDetailsProperties, entryProperties } =
   require("../model/entry.model").joiValidator;
 
@@ -423,6 +424,8 @@ class EntryUtils {
     carId,
   }) {
     const { today, tomorrow } = getTodayAndTomorrowUtils();
+    const { endDate: thirtyDaysBeforeNow, startDate: endOfToday } =
+      getStartDateAndEndDateInARangeUtils(30);
 
     const staffFilter = {
       $eq: ["$$car.staffId", new mongoose.Types.ObjectId(staffId)],
@@ -436,10 +439,10 @@ class EntryUtils {
     const waitingListFilter = {
       $and: [
         {
-          $gte: ["$entryDate", today],
+          $gte: ["$entryDate", thirtyDaysBeforeNow],
         },
         {
-          $lt: ["$entryDate", tomorrow],
+          $lt: ["$entryDate", endOfToday],
         },
         {
           $eq: ["$$car.waitingList", waitingList],
