@@ -768,11 +768,10 @@ class EntryController {
     const { vin, carId } = req.params;
     const { serviceId, vin: reqBodyVin } = req.body;
     const staffId = req.user._id;
+    const vinTocheck = vin ? vin : reqBodyVin;
 
     const [entry, service] = await Promise.all([
-      vin
-        ? entryService.getEntryByVin(vin, undefined, true)
-        : entryService.getEntryByCarId(carId),
+      entryService.getEntryByCarId(carId),
       serviceService.getServiceById(serviceId),
     ]);
 
@@ -781,14 +780,20 @@ class EntryController {
 
     const { carIndex, carWithVin } = entryService.getCarByVin({
       entry,
-      vin,
       carId,
     });
 
-    if (reqBodyVin) carWithVin.vin = reqBodyVin;
+    if (reqBodyVin && !carWithVin.vin) carWithVin.vin = reqBodyVin;
 
-    if (Array.isArray(carWithVin) && carWithVin.length < 1)
-      return jsonResponse(res, 404, false, "We can't find car with vin");
+    if (carWithVin.vin !== vinTocheck)
+      return badReqResponse(
+        res,
+        "The VIN provided is not linked to the vehicle you are currently scanning."
+      );
+
+    if (carWithVin)
+      if (Array.isArray(carWithVin) && carWithVin.length < 1)
+        return jsonResponse(res, 404, false, "We can't find car with vin");
 
     if (!carWithVin.serviceIds.includes(serviceId))
       return jsonResponse(

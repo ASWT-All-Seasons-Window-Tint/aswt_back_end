@@ -303,9 +303,10 @@ router.put(
 );
 
 router.put(
-  "/update-car-service/:vin",
+  "/update-car-service/:vin/:carId",
   [
     auth,
+    validateObjectIdWithXArgMiddleware(["carId"]),
     roleBaseAuth(["staff"]),
     validateMiddleware(validateModifyServiceDone),
   ],
