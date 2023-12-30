@@ -1049,16 +1049,12 @@ class EntryService {
     ]);
   };
 
-  getCarByVin({ entry, vin, carId }) {
+  getCarByVin({ entry, carId }) {
     const { carDetails } = entry.invoice;
 
-    const carIndex = carDetails.findIndex((car) => {
-      return vin
-        ? car.vin
-          ? car.vin.toString() === vin.toString()
-          : false
-        : car._id.toString() === carId.toString();
-    });
+    const carIndex = carDetails.findIndex(
+      (car) => car._id.toString() === carId.toString()
+    );
 
     const carWithVin = carDetails[carIndex];
 

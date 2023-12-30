@@ -74,7 +74,10 @@ class UserService {
 
   async fetchIdsOfStaffsWhoCanTakeAppointments() {
     const staffsWhoCanTakeAppointments = await User.find({
-      "staffDetails.assignedDealerships": { $exists: false, $ne: [] },
+      $or: [
+        { "staffDetails.assignedDealerships": undefined },
+        { "staffDetails.assignedDealerships": { $eq: [] } },
+      ],
       role: "staff",
       isDeleted: undefined,
     });
@@ -86,7 +89,10 @@ class UserService {
     return User.count({
       isDeleted: undefined,
       role: "staff",
-      "staffDetails.assignedDealerships": undefined,
+      $or: [
+        { "staffDetails.assignedDealerships": undefined },
+        { "staffDetails.assignedDealerships": { $eq: [] } },
+      ],
     });
   }
 
