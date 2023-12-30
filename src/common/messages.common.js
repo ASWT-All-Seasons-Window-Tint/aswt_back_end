@@ -252,7 +252,7 @@ const EMAIL = {
 const SMS = {
   nowBody: (date, time, customerName, serviceName) => `Dear ${customerName},
 
-  Congratulations on securing your appointment with All Seasons Tint & Graphic Designs for ${serviceName} on ${date} at ${time} CST. To cancel or for inquiries, ${process.env.customerAddress}.
+  You have scheduled an appointment with All Seasons Tint & Graphic Designs for ${serviceName} on ${date} at ${time} CST. For inquiries, kindly call at ${process.env.customerAddress}.
 
 
   Best regards,
@@ -264,8 +264,7 @@ const SMS = {
     contactNumber
   ) => `Dear ${customerName}, 
 
-  This is a friendly reminder of your upcoming appointment with All Seasons Tint & Graphic Designs scheduled for ${date} at ${time}. We look forward to assisting you. If you have any questions or need to reschedule, please contact us at ${contactNumber}. 
-  
+  This is a reminder of your upcoming appointment with All Seasons Tint & Graphic Designs scheduled for ${date} at ${time}. We look forward to assisting you. For inquires or need to reschedule, please contact us at ${contactNumber}. 
   Thank you for choosing All Seasons Tint & Graphic Designs. 
   
   Best regards,
