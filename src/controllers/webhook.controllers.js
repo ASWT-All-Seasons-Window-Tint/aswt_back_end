@@ -211,23 +211,15 @@ class WebhookControllers {
             });
 
             if (!appointment.paymentDetails.invoiceId) {
-              let { error, customer } = await getCustomerByNameOrEmail({
-                qbo,
-                email: customerEmail,
-              });
+              const qbCustomerId = appointment.customerId;
+              let { data: customer, error } =
+                await customerService.getOrSetCustomerOnCache(qbCustomerId);
 
               if (error) {
-                if (error.toLowerCase() === "data not found") {
-                  customer =
-                    await customerService.createCustomerFromAppointmentDetails(
-                      qbo,
-                      appointment
-                    );
-                } else {
-                  console.log(error);
-                  return;
-                }
+                console.log(error);
+                return;
               }
+
               if (Array.isArray(customer)) customer = customer[0];
 
               const entry = await entryServices.createNewEntry(customer);

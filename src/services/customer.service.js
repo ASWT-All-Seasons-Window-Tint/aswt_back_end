@@ -25,6 +25,71 @@ class CustomerService {
       });
     });
   }
+  createCustomerForRetailers = async (appointment) => {
+    const qbo = await initializeQbUtils();
+    const DisplayName = appointment.customerName;
+    const emailTocheck = appointment.customerEmail.toLowerCase();
+    const expiryTimeInSecs = 1800;
+
+    let customer;
+    //Check if customer exist with the customerName provided
+    let { data: customers, error } = await getOrSetCache(
+      `customers?displayName${DisplayName.toLowerCase()}`,
+      1800,
+      this.fetchCustomerByDisplayName,
+      [qbo, DisplayName.toLowerCase()]
+    );
+
+    //If customer doesn't with the name exist create a new one
+    if (error) {
+      if (error.toLowerCase() === "data not found") {
+        customer = await this.createCustomerFromAppointmentDetails(
+          qbo,
+          appointment
+        );
+        return customer;
+      }
+    }
+    //if customer exists with name, check if their email matches the email the email on quickbooks -worked
+    if (customers.length > 0) {
+      customer = this.getCustomerWhichExistOnQB(emailTocheck, customers);
+
+      if (customer) return customer;
+    }
+
+    const customerData = await this.fetchCustomerByName(
+      qbo,
+      DisplayName.toLowerCase()
+    );
+
+    customers = customerData;
+    if (customers.length > 0) {
+      customer = this.getCustomerWhichExistOnQB(emailTocheck, customers);
+
+      if (customer) return customer;
+
+      customer = await this.createCustomerFromAppointmentDetails(
+        qbo,
+        appointment
+      );
+
+      return customer;
+    }
+
+    return;
+  };
+
+  getCustomerWhichExistOnQB(emailTocheck, customers) {
+    const customer = customers.find((cust) => {
+      if (cust.PrimaryEmailAddr && cust.PrimaryEmailAddr.Address) {
+        return cust.PrimaryEmailAddr.Address.toLowerCase().includes(
+          emailTocheck
+        );
+      } else return false;
+    });
+
+    return customer;
+  }
 
   getOrSetCustomerOnCache = async (id, qbo) => {
     if (!qbo) qbo = await initializeQbUtils();

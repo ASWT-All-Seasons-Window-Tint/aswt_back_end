@@ -247,7 +247,7 @@ class Customer {
     const expiryTimeInSecs = 1800;
 
     const { data: customer, error } = await getOrSetCache(
-      `customers?name${DisplayName.toLowerCase()}`,
+      `customers?displayName${DisplayName.toLowerCase()}`,
       expiryTimeInSecs,
       customerService.fetchCustomerByDisplayName,
       [qbo, DisplayName.toLowerCase()]

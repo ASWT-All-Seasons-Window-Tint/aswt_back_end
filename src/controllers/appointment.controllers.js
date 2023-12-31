@@ -7,6 +7,7 @@ const {
   SMS,
   badReqResponse,
   notFoundResponse,
+  serverErrResponse,
 } = require("../common/messages.common");
 const { MESSAGES } = require("../common/constants.common");
 const freeTimeSlotServices = require("../services/freeTimeSlot.services");
@@ -148,6 +149,14 @@ class AppointmentController {
         timeOfCompletion
       );
       req.body.endTime = endTime;
+
+      let customer = await customerService.createCustomerForRetailers(req.body);
+      if (!customer) return serverErrResponse(res);
+
+      if (Array.isArray(customer)) customer = customer[0];
+
+      req.body.customerId = customer.Id;
+      req.body.customerName = customer.DisplayName;
 
       appointment = await appointmentService.createAppointment({
         body: req.body,
