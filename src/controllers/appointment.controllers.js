@@ -29,6 +29,8 @@ const { default: mongoose } = require("mongoose");
 const notificationServices = require("../services/notification.services");
 const userServices = require("../services/user.services");
 const entryServices = require("../services/entry.services");
+const getDateAndTimeUtils = require("../utils/getDateAndTime.utils");
+const stripeServices = require("../services/stripe.services");
 const { carDetailsProperties } = require("../model/entry.model").joiValidator;
 
 const redisConnection = { url: process.env.redisUrl };
@@ -135,6 +137,8 @@ class AppointmentController {
     }
 
     let appointment;
+    let appointmentDate;
+    let appointmentLink;
 
     if (startTime) {
       const takenTimeSlotForStaff = await this.checkAndUpdateTakenTimeSlot(
@@ -157,11 +161,25 @@ class AppointmentController {
 
       req.body.customerId = customer.Id;
       req.body.customerName = customer.DisplayName;
+      const _id = new mongoose.Types.ObjectId();
+      req.body._id = _id;
+
+      const appointmentTime = new Date(startTime);
+      const { date, time } = getDateAndTimeUtils(appointmentTime);
+      appointmentDate = `${date} at ${time}`;
+
+      const session = await stripeServices.createStripeSession(
+        req.body,
+        _id.toString()
+      );
 
       appointment = await appointmentService.createAppointment({
         body: req.body,
         staffId: takenTimeSlotForStaff.staffId,
+        sessionId: session.id,
       });
+
+      appointmentLink = session.url;
     } else {
       appointment = await appointmentService.createAppointment({
         body: req.body,
@@ -174,8 +192,12 @@ class AppointmentController {
       appointment._id,
       emailService,
       appointmentType.toLowerCase(),
-      totalAmount
+      totalAmount,
+      appointmentDate,
+      appointmentLink
     );
+
+    if (startTime) appointment.paymentDetails.sessionId = undefined;
 
     res.send(successMessage(MESSAGES.CREATED, appointment));
   };
@@ -710,6 +732,9 @@ class AppointmentController {
     }
 
     if (startTime) {
+      if (!appointment.startTime)
+        return badReqResponse(res, "There's no start time for this appoitment");
+
       const { serviceIds } = appointmentService.getServiceIdsAndfilmQualityIds(
         appointment.carDetails.serviceDetails
       );

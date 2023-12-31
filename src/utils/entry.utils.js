@@ -444,9 +444,9 @@ class EntryUtils {
         {
           $lt: ["$entryDate", endOfToday],
         },
-        {
-          $eq: ["$$car.waitingList", waitingList],
-        },
+        // {
+        //   $eq: ["$$car.waitingList", waitingList],
+        // },
         {
           $eq: ["$$car.porterId", new mongoose.Types.ObjectId(porterId)],
         },

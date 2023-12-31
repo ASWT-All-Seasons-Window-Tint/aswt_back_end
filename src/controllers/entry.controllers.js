@@ -61,6 +61,9 @@ class EntryController {
     const { carDetails } = req.body;
     const date = new Date();
     const vinsArray = carDetails.map((car) => {
+      if (car.vin && typeof car.vin === "string")
+        car.vin = car.vin.toUpperCase();
+
       car.entryDate = date;
 
       return car.vin;
@@ -94,8 +97,11 @@ class EntryController {
   addInvoice = async (req, res) => {
     const { id: customerId } = req.params;
     const { carDetails } = req.body;
-    const { category, serviceDetails, vin } = carDetails;
+    let { category, serviceDetails, vin } = carDetails;
     const role = req.user.role;
+    const dateOfCreation = new Date();
+
+    if (vin && typeof vin === "string") carDetails.vin = vin.toUpperCase();
 
     const serviceIds = serviceDetails.map((service) => service.serviceId);
 
@@ -174,7 +180,8 @@ class EntryController {
       priceBreakdown,
       staffId,
       carExist,
-      porterId
+      porterId,
+      dateOfCreation
     );
 
     if (!updateCarDetailsResult)
@@ -219,13 +226,15 @@ class EntryController {
             staffId,
             req.user,
             totalEarnings,
-            1
+            1,
+            dateOfCreation
           );
         if (!updatedStaffEarningByIncentives)
           await userService.updateStaffTotalEarnings(
             req.user,
             mongoSession,
-            totalEarnings
+            totalEarnings,
+            dateOfCreation
           );
       }
 
@@ -302,7 +311,9 @@ class EntryController {
   }
 
   async addCarGeoLocation(req, res) {
-    const { vin, locationType } = req.params;
+    let { vin, locationType } = req.params;
+
+    if (vin && typeof vin === "string") vin = vin.toUpperCase();
 
     req.body.geoLocation.locationType = locationType;
 
@@ -557,7 +568,8 @@ class EntryController {
   }
 
   async getCarThatIsStillInShopByVin(req, res) {
-    const { vin } = req.params;
+    let { vin } = req.params;
+    if (vin && typeof vin === "string") vin = vin.toUpperCase();
 
     const [entryWithVin, [carThatIsStillInShop]] = await Promise.all([
       entryService.getEntryByVin(vin, undefined, true),
@@ -765,8 +777,12 @@ class EntryController {
   }
 
   updateCarDoneByStaff = async (req, res) => {
-    const { vin, carId } = req.params;
-    const { serviceId, vin: reqBodyVin } = req.body;
+    let { vin, carId } = req.params;
+    let { serviceId, vin: reqBodyVin } = req.body;
+    if (vin && typeof vin === "string") vin = vin.toUpperCase();
+    if (reqBodyVin && typeof reqBodyVin === "string")
+      reqBodyVin = reqBodyVin.toUpperCase();
+
     const staffId = req.user._id;
     const vinTocheck = vin ? vin : reqBodyVin;
 
@@ -1003,7 +1019,8 @@ class EntryController {
   };
 
   async getCarByVin(req, res) {
-    const { vin } = req.params;
+    let { vin } = req.params;
+    if (vin && typeof vin === "string") vin = vin.toUpperCase();
 
     const entry = await entryService.getEntryByVin(vin, true);
     if (!entry) return res.status(404).send(errorMessage("entry"));
@@ -1026,8 +1043,10 @@ class EntryController {
 
   //Update/edit entry data
   modifyCarDetails = async (req, res) => {
-    const { getMultipleServices } = serviceService;
-    const { vin, id } = req.params;
+    let { vin, id } = req.params;
+    if (vin && typeof vin === "string") vin = vin.toUpperCase();
+    const dateOfCreation = new Date();
+    let staff;
 
     const [entry] = await entryService.getEntries({ entryId: id });
     if (!entry) return res.status(404).send(errorMessage("entry"));
@@ -1066,9 +1085,13 @@ class EntryController {
 
     entryService.updateCarProperties(req, carDoneByStaff);
 
-    const services = await getMultipleServices(carDoneByStaff.serviceIds);
-
     if (req.body.serviceIds || req.body.category) {
+      if (entry.isFromAppointment)
+        return badReqResponse(
+          res,
+          "You are not allowed to modify the service for appointment entry"
+        );
+
       const serviceDetails = req.body.serviceIds.map((serviceId) => {
         return { serviceId };
       });
@@ -1082,6 +1105,60 @@ class EntryController {
           serviceDetails
         );
 
+      if (carDoneByStaff.servicesDone.length > 0) {
+        const { code, message, totalEarnings } =
+          await entryService.getTotalEarningRatesForStaff(
+            req.body.serviceIds,
+            req.user._id
+          );
+
+        if (message) return jsonResponse(res, code, false, message);
+
+        if (req.user.role === "staff") {
+          carDoneByStaff.servicesDone = req.body.serviceIds.map((serviceId) => {
+            return {
+              serviceId,
+              staffId: req.user._id,
+            };
+          });
+
+          staff = await userService.getUserById(req.user._id);
+          if (!staff)
+            return notFoundResponse(
+              res,
+              "We can't locate staff with the given ID"
+            );
+
+          if (
+            staff.staffDetails &&
+            staff.staffDetails.earningHistory &&
+            staff.staffDetails.earningHistory.length > 0
+          ) {
+            const staffIndex = staff.staffDetails.earningHistory.findIndex(
+              (hist) =>
+                hist.timestamp.toString() ===
+                carDoneByStaff.entryDate.toString()
+            );
+
+            if (staffIndex > -1) {
+              const { amountEarned } =
+                staff.staffDetails.earningHistory[staffIndex];
+
+              staff.staffDetails.totalEarning =
+                staff.staffDetails.totalEarning - amountEarned;
+
+              staff.staffDetails.totalEarning =
+                staff.staffDetails.totalEarning + totalEarnings;
+
+              staff.staffDetails.earningHistory[staffIndex] = {
+                timestamp: dateOfCreation,
+                amountEarned: totalEarnings,
+              };
+            }
+          }
+        }
+      }
+
       const checkDealershipPrice = this.checkDealershipPrice(
         res,
         priceBreakdown
@@ -1089,14 +1166,32 @@ class EntryController {
       if (checkDealershipPrice) return;
 
       carDoneByStaff.price = price;
-      carDoneByStaff.priceBreakdown = priceBreakdown;
+
+      if (req.user.role === "staff")
+        carDoneByStaff.priceBreakdown = priceBreakdown;
 
       entry.invoice.totalPrice = entryService.getTotalprice(entry.invoice);
     }
 
+    carDoneByStaff.entryDate = dateOfCreation;
+
     entry.invoice.carDetails[carIndex] = carDoneByStaff;
 
-    await entryService.updateEntryById(id, entry);
+    const mongoSession = await mongoose.startSession();
+
+    const results = await mongoTransactionUtils(mongoSession, async () => {
+      if (staff) {
+        await userService.updateUserByIdFromMod(
+          req.user._id,
+          staff,
+          mongoSession
+        );
+      }
+
+      await entryService.updateEntryById(id, entry, mongoSession);
+    });
+
+    if (results) return jsonResponse(res, 500, false, "Something failed");
 
     const carWithoutPrice = _.cloneDeep(carDoneByStaff);
     delete carWithoutPrice.price;
@@ -1106,7 +1201,8 @@ class EntryController {
   };
 
   async modifyPrice(req, res) {
-    const { serviceId, price, vin, carId } = req.body;
+    let { serviceId, price, vin, carId } = req.body;
+    if (vin && typeof vin === "string") vin = vin.toUpperCase();
 
     if ([serviceId, price, carId].includes(undefined) && !fromInvoice)
       return badReqResponse(

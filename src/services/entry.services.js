@@ -6,6 +6,7 @@ const { getNewAccessToken } = require("../utils/getNewAccessToken.utils");
 const getWebhookDataUtils = require("../utils/getWebhookData.utils");
 const { pipeline } = require("../utils/entry.utils");
 const getArrayDifference = require("../utils/getArrayDifference.utils");
+const userServices = require("./user.services");
 const { carDetailsProperties, invoiceProperties, entryProperties } =
   require("../model/entry.model").joiValidator;
 
@@ -659,7 +660,7 @@ class EntryService {
     const { carDetails } = entry.invoice;
 
     const carIndex = carDetails.findIndex((car) => {
-      return car.vin.toString() === vin.toString();
+      return car.vin.toLowerCase().toString() === vin.toLowerCase().toString();
     });
 
     const carAddedByCustomer = carDetails[carIndex];
@@ -1055,7 +1056,7 @@ class EntryService {
     const carIndex = carDetails.findIndex((car) => {
       return vin
         ? car.vin
-          ? car.vin.toString() === vin.toString()
+          ? car.vin.toLowerCase().toString() === vin.toLowerCase().toString()
           : false
         : car._id.toString() === carId.toString();
     });
@@ -1063,6 +1064,17 @@ class EntryService {
     const carWithVin = carDetails[carIndex];
 
     return { carIndex, carWithVin };
+  }
+
+  getServiceDone(servicesDone, serviceId) {
+    const serviceDoneIndex = servicesDone.findIndex(
+      (serviceDone) => serviceDone.serviceId.toString() === serviceId.toString()
+    );
+    let serviceDone;
+
+    if (serviceDoneIndex > -1) serviceDone = servicesDone[serviceDoneIndex];
+
+    return { serviceDone, serviceDoneIndex };
   }
 
   async getSentInvoices() {
@@ -1508,18 +1520,8 @@ class EntryService {
   }
 
   checkDuplicateEntryForMultipleVins(customerId, vinsArray) {
-    const { today, tomorrow } = this.getTodayAndTomorrow();
     return Entry.find({
-      $and: [
-        { customerId },
-        { "invoice.carDetails.vin": { $in: vinsArray } },
-        {
-          entryDate: {
-            $gte: today,
-            $lte: tomorrow,
-          },
-        },
-      ],
+      $and: [{ customerId }, { "invoice.carDetails.vin": { $in: vinsArray } }],
     });
   }
 
@@ -1632,7 +1634,8 @@ class EntryService {
     priceBreakdown,
     staffId,
     carExist,
-    porterId
+    porterId,
+    date
   ) => {
     const newDate = new Date();
 
@@ -1670,9 +1673,12 @@ class EntryService {
         carAddedByCustomer,
         carDetails
       );
+      combinedCardetail.entryDate = date;
 
       entry.invoice.carDetails[carIndex] = combinedCardetail;
     } else {
+      carDetails.entryDate = date;
+
       entry.invoice.carDetails.push(carDetails);
     }
 
@@ -1710,6 +1716,39 @@ class EntryService {
     }
 
     return mergedCar;
+  }
+
+  async getTotalEarningRatesForStaff(serviceIds, staffId) {
+    const resultsError = {};
+
+    const [servicesWithoutEarningRateAndTotalEarnings] =
+      await userServices.getServicesWithoutEarningRateAndTotalEarnings(
+        [...new Set(serviceIds)],
+        staffId
+      );
+
+    if (!servicesWithoutEarningRateAndTotalEarnings) {
+      resultsError.message = "We can't find staff with given ID";
+      resultsError.code = 404;
+
+      return resultsError;
+    }
+
+    const { servicesWithoutEarningRate, totalEarnings } =
+      servicesWithoutEarningRateAndTotalEarnings;
+
+    if (servicesWithoutEarningRate.length > 0) {
+      resultsError.message = `You do not have a rate for the following services (${servicesWithoutEarningRate.join(
+        ", "
+      )})`;
+      resultsError.code = 400;
+
+      return resultsError;
+    }
+
+    resultsError.totalEarnings = totalEarnings;
+
+    return resultsError;
   }
 
   carWasAddedRecently = (car) => {

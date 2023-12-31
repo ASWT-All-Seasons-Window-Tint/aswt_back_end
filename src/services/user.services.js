@@ -417,6 +417,11 @@ class UserService {
       { new: true }
     );
   }
+
+  updateUserByIdFromMod(id, user, session) {
+    return User.findByIdAndUpdate(id, { $set: user }, { session });
+  }
+
   async updateCustomerByQbId(id, user) {
     return await User.findOneAndUpdate(
       { "customerDetails.qbId": id },
@@ -537,8 +542,8 @@ class UserService {
     ).select("-password");
   }
 
-  updateStaffTotalEarnings = async (staff, session, amountToBeAdded) => {
-    const date = new Date();
+  updateStaffTotalEarnings = async (staff, session, amountToBeAdded, date) => {
+    if (!date) date = new Date();
 
     const earningHistory = {
       timestamp: date,
@@ -684,7 +689,8 @@ class UserService {
     staffId,
     user,
     amountEarned,
-    numberOfVehicleToAdd
+    numberOfVehicleToAdd,
+    date
   ) => {
     let activeIncentive = await isIncentiveActive();
 
@@ -716,7 +722,8 @@ class UserService {
         await this.updateStaffTotalEarnings(
           user,
           mongoSession,
-          totalAmountEarned
+          totalAmountEarned,
+          date
         );
 
         let retryCount = 0;
