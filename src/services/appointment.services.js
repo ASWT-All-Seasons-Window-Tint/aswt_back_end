@@ -15,7 +15,7 @@ const customerService = require("./customer.service");
 
 class AppointmentService {
   //Create new appointment
-  async createAppointment({ body, staffId, session }) {
+  async createAppointment({ body, staffId, session, sessionId }) {
     let { startTime, endTime } = body;
 
     if (startTime) {
@@ -26,6 +26,7 @@ class AppointmentService {
     const appointment = new Appointment({
       staffId,
       ...body,
+      "paymentDetails.sessionId": sessionId,
     });
 
     return await appointment.save(session ? { session } : undefined);
@@ -97,13 +98,15 @@ class AppointmentService {
     }
   }
 
-  sendEmailQuotaion(
+  async sendEmailQuotaion(
     receiversEmail,
     firstName,
     appointmentId,
     service,
     appointmentType,
-    totalAmount
+    totalAmount,
+    date,
+    appointmentLink
   ) {
     // const subject = `Quotation and Appointment Booking Details for Selected Services`;
     // const emailIntro = EMAIL.appointmentIntro(service);
@@ -115,7 +118,7 @@ class AppointmentService {
       ? appointmentUrl.auto
       : appointmentUrl.commercial;
 
-    const link = `${url}/${appointmentId}`;
+    const link = date ? appointmentLink : `${url}/${appointmentId}`;
     const customerNeeds = autoAppointmentType ? "vehicle" : "home";
 
     transporter(true).sendMail(
@@ -125,7 +128,8 @@ class AppointmentService {
         service,
         totalAmount,
         link,
-        firstName
+        firstName,
+        date
       ),
       (error, info) => {
         if (error) {
