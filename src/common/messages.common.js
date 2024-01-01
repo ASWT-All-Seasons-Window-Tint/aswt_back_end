@@ -191,7 +191,7 @@ const EMAIL = {
     
         <p>${aswtDetails.FullName}</p>
         <p>${aswtDetails.Position}</p>
-        <p>${aswtDetails.ContactInformation}</p>
+        <p>${aswtDetails.ContactInformationReversed}</p>
         <p>${aswtDetails.CompanyName}</p>
   
       </body>
