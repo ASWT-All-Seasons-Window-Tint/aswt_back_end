@@ -158,7 +158,7 @@ class AppointmentController {
 
       totalAmount = price;
 
-      req.body.residentialDetails.priceBreakdown = priceBreakdownArray;
+      req.body.re9sidentialDetails.priceBreakdown = priceBreakdownArray;
       req.body.residentialDetails.price = price;
       req.body.appointmentType = req.body.appointmentType.toLowerCase(); // Auto
     }
@@ -187,6 +187,31 @@ class AppointmentController {
       const appointmentTime = new Date(startTime);
       const { date, time } = getDateAndTimeUtils(appointmentTime);
       appointmentDate = `${date} at ${time}`;
+
+      if (appointmentType === "auto") {
+        const entry = await entryServices.createNewEntry(customer);
+
+        const serviceIds = carDetails.serviceDetails.map(
+          (service) => service.serviceId
+        );
+
+        const carDetail = {};
+        for (const property of carDetailsProperties) {
+          if (property === "serviceIds") {
+            carDetail[property] = serviceIds;
+          } else {
+            carDetail[property] = carDetails[property];
+          }
+        }
+        carDetail.entryDate = new Date();
+
+        entry.invoice.carDetails = [carDetail];
+        entry.isFromAppointment = true;
+        entry.numberOfCarsAdded = 1;
+
+        req.body.entryId = entry._id;
+        await entry.save();
+      }
 
       const session = await stripeServices.createStripeSession(
         req.body,

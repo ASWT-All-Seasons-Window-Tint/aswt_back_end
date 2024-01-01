@@ -217,12 +217,20 @@ class WebhookControllers {
 
               if (error) {
                 console.log(error);
+                if (error.Fault) {
+                  if (error.Fault.Error) {
+                    error.Fault.Error.map((error) => console.log(error));
+                  }
+                }
                 return;
               }
 
               if (Array.isArray(customer)) customer = customer[0];
 
-              const entry = await entryServices.createNewEntry(customer);
+              const entry = appointment.entryId
+                ? await entryServices.getEntryById(appointment.entryId)
+                : await entryServices.createNewEntry(customer);
+
               appointment.invoiceNumber = entry.invoice.invoiceNumber;
 
               const { sessionId } = paymentDetails;
@@ -290,15 +298,17 @@ class WebhookControllers {
                     appointment.carDetails.serviceDetails
                   );
 
-                const carDetails = {};
-                for (const property of carDetailsProperties) {
-                  if (property === "serviceIds") {
-                    carDetails[property] = serviceIds;
-                  } else {
-                    carDetails[property] = appointment.carDetails[property];
+                if (!appointment.entryId) {
+                  const carDetails = {};
+                  for (const property of carDetailsProperties) {
+                    if (property === "serviceIds") {
+                      carDetails[property] = serviceIds;
+                    } else {
+                      carDetails[property] = appointment.carDetails[property];
+                    }
                   }
+                  carDetails.entryDate = new Date();
                 }
-                carDetails.entryDate = new Date();
 
                 entry.invoice.carDetails = [carDetails];
 

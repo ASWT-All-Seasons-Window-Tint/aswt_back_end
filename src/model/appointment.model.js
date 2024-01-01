@@ -232,6 +232,10 @@ const appointmentSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: User,
   },
+  entryId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: User,
+  },
   startTime: {
     type: Date,
   },
