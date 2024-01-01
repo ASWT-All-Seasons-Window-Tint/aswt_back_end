@@ -189,7 +189,12 @@ class AppointmentController {
       appointmentDate = `${date} at ${time}`;
 
       if (appointmentType === "auto") {
-        const entry = await entryServices.createNewEntry(customer);
+        const entryNewDate = new Date(startTime);
+        const entry = await entryServices.createNewEntry(
+          customer,
+          undefined,
+          entryNewDate
+        );
 
         const serviceIds = carDetails.serviceDetails.map(
           (service) => service.serviceId
@@ -203,7 +208,7 @@ class AppointmentController {
             carDetail[property] = carDetails[property];
           }
         }
-        carDetail.entryDate = new Date();
+        carDetail.entryDate = entryNewDate;
 
         entry.invoice.carDetails = [carDetail];
         entry.isFromAppointment = true;
