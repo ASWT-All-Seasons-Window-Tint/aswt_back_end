@@ -12,6 +12,7 @@ const {
 const entryServices = require("./entry.services");
 const { isIncentiveActive } = require("./incentive.services");
 const { default: mongoose } = require("mongoose");
+const incentiveServices = require("./incentive.services");
 
 const { customerDefaultPassword } = process.env;
 
@@ -755,6 +756,39 @@ class UserService {
         }
       }
     }
+  };
+
+  getTotalEarningRatesForStaff = async (serviceIds, staffId) => {
+    const resultsError = {};
+
+    const [servicesWithoutEarningRateAndTotalEarnings] =
+      await this.getServicesWithoutEarningRateAndTotalEarnings(
+        [...new Set(serviceIds)],
+        staffId
+      );
+
+    if (!servicesWithoutEarningRateAndTotalEarnings) {
+      resultsError.message = "We can't find staff with given ID";
+      resultsError.code = 404;
+
+      return resultsError;
+    }
+
+    const { servicesWithoutEarningRate, totalEarnings } =
+      servicesWithoutEarningRateAndTotalEarnings;
+
+    if (servicesWithoutEarningRate.length > 0) {
+      resultsError.message = `You do not have a rate for the following services (${servicesWithoutEarningRate.join(
+        ", "
+      )})`;
+      resultsError.code = 400;
+
+      return resultsError;
+    }
+
+    resultsError.totalEarnings = totalEarnings;
+
+    return resultsError;
   };
 
   updatePorterCurrentLocation = async (porter, session, geoLocation) => {

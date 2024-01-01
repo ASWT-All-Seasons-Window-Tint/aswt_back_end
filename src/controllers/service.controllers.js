@@ -40,12 +40,16 @@ class ServiceController {
 
     name = name.replace(/\s+/g, " ").trim();
     if (type === "removal") name = `${name} (Strip)`;
+    if (isFull === "false") isFull = false;
+    if (isForDealership === "false") isForDealership = false;
 
     const lowercaseName = convertToLowerCaseAndRemoveNonAlphanumericUtils(name);
     const sunRoof = serviceService.containsSunroof(lowercaseName);
     const doesServiceNameExist = await serviceService.getServiceByName(name);
 
-    if (doesServiceNameExist)
+    console.log(doesServiceNameExist);
+
+    if (doesServiceNameExist && !isForDealership)
       return badReqResponse(res, "Service already exist with name");
 
     if (type === "installation") {
@@ -77,9 +81,6 @@ class ServiceController {
         );
       }
     }
-
-    if (isFull === "false") isFull = false;
-    if (isForDealership === "false") isForDealership = false;
 
     // if (isFull) {
     //   const categoryNames = filmQualityOrVehicleCategoryAmount.map(
@@ -118,28 +119,33 @@ class ServiceController {
       type = "dealership";
     }
 
-    const qbo = await initializeQuickBooks();
-    const expiryTimeInSecs = 1800;
-
-    const { data: qbService, error } = await getOrSetCache(
-      `services?name${name.toLowerCase()}`,
-      expiryTimeInSecs,
-      serviceService.fetchItemByName,
-      [qbo, name.toLowerCase()]
-    );
-
     let qbId;
-    if (error) {
-      const { serviceOnQb, error } = await this.createQbService(name);
 
-      if (error)
-        return jsonResponse(res, 400, false, error.Fault.Error[0].Detail);
-      qbId = serviceOnQb.Id;
+    if (!doesServiceNameExist) {
+      const qbo = await initializeQuickBooks();
+      const expiryTimeInSecs = 1800;
+
+      const { data: qbService, error } = await getOrSetCache(
+        `services?name${name.toLowerCase()}`,
+        expiryTimeInSecs,
+        serviceService.fetchItemByName,
+        [qbo, name.toLowerCase()]
+      );
+
+      if (error) {
+        const { serviceOnQb, error } = await this.createQbService(name);
+
+        if (error)
+          return jsonResponse(res, 400, false, error.Fault.Error[0].Detail);
+        qbId = serviceOnQb.Id;
+      } else {
+        qbId = qbService[0].Id;
+      }
     } else {
-      qbId = qbService[0].Id;
+      if (doesServiceNameExist.isForDealership)
+        return badReqResponse(res, "Service already exist with name");
+      qbId = doesServiceNameExist.qbId;
     }
-
-    // defaultPrices = serviceService.defaultPricesInArray(defaultPrices);
 
     let service = new Service({
       type,
