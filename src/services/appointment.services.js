@@ -70,7 +70,9 @@ class AppointmentService {
         },
       },
       {
-        $sort: -1,
+        $sort: {
+          _id: -1,
+        },
       },
     ]);
   }
