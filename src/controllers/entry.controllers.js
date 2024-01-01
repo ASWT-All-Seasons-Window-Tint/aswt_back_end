@@ -1107,7 +1107,7 @@ class EntryController {
 
       if (carDoneByStaff.servicesDone.length > 0) {
         const { code, message, totalEarnings } =
-          await entryService.getTotalEarningRatesForStaff(
+          await userService.getTotalEarningRatesForStaff(
             req.body.serviceIds,
             req.user._id
           );

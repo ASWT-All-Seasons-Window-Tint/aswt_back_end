@@ -298,6 +298,7 @@ class WebhookControllers {
                     carDetails[property] = appointment.carDetails[property];
                   }
                 }
+                carDetails.entryDate = new Date();
 
                 entry.invoice.carDetails = [carDetails];
 
