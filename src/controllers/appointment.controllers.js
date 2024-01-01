@@ -31,6 +31,7 @@ const userServices = require("../services/user.services");
 const entryServices = require("../services/entry.services");
 const getDateAndTimeUtils = require("../utils/getDateAndTime.utils");
 const stripeServices = require("../services/stripe.services");
+const { updateCache } = require("../utils/getOrSetCache.utils");
 const { carDetailsProperties } = require("../model/entry.model").joiValidator;
 
 const redisConnection = { url: process.env.redisUrl };
@@ -43,6 +44,7 @@ class AppointmentController {
 
   //Create a new appointment
   createAppointment = async (req, res) => {
+    const qbo = await initializeQbUtils();
     const {
       startTime,
       customerEmail,
@@ -154,13 +156,22 @@ class AppointmentController {
       );
       req.body.endTime = endTime;
 
-      let customer = await customerService.createCustomerForRetailers(req.body);
+      let customer = await customerService.createCustomerForRetailers(
+        req.body,
+        qbo
+      );
       if (!customer) return serverErrResponse(res);
 
       if (Array.isArray(customer)) customer = customer[0];
 
       req.body.customerId = customer.Id;
       req.body.customerName = customer.DisplayName;
+
+      const customers = await customerService.fetchAllCustomers(qbo);
+
+      updateCache(`customers?Id=${customer.Id}`, 1800, customer);
+      updateCache(`customers`, 1800, customers);
+
       const _id = new mongoose.Types.ObjectId();
       req.body._id = _id;
 

@@ -69,6 +69,9 @@ class AppointmentService {
           "refundDetails.refunded": false,
         },
       },
+      {
+        $sort: -1,
+      },
     ]);
   }
 
