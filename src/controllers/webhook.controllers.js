@@ -229,7 +229,11 @@ class WebhookControllers {
 
               const entry = appointment.entryId
                 ? await entryServices.getEntryById(appointment.entryId)
-                : await entryServices.createNewEntry(customer);
+                : await entryServices.createNewEntry(
+                    customer,
+                    undefined,
+                    appointment.startTime
+                  );
 
               appointment.invoiceNumber = entry.invoice.invoiceNumber;
 
@@ -307,7 +311,7 @@ class WebhookControllers {
                       carDetails[property] = appointment.carDetails[property];
                     }
                   }
-                  carDetails.entryDate = new Date();
+                  carDetails.entryDate = appointment.startTime;
                 }
 
                 entry.invoice.carDetails = [carDetails];

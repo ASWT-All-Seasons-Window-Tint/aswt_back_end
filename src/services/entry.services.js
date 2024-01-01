@@ -1320,7 +1320,7 @@ class EntryService {
     return await entry.save();
   }
 
-  createNewEntry = async (customer, numberOfVehicles) => {
+  createNewEntry = async (customer, numberOfVehicles, date) => {
     const customerId = customer.Id;
     const customerName = customer.DisplayName;
     const customerEmail = customer.PrimaryEmailAddr.Address;
@@ -1331,7 +1331,7 @@ class EntryService {
       customerEmail,
       isActive: true,
       numberOfVehicles,
-      entryDate: new Date(),
+      entryDate: date ? date : new Date(),
     });
 
     const invoiceNumber = await Entry.getNextInvoiceNumber();
