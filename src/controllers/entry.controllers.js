@@ -973,9 +973,10 @@ class EntryController {
           entryId,
         };
 
-        if (entry.invoice.sent) {
-          await invoiceControllers.sendInvoiceWithoutCreating(entry);
-        }
+        // if (entry.invoice.sent) {
+        //   await invoiceControllers.sendInvoiceWithoutCreating(entry);
+        // }
+
         if (entry.isFromAppointment) {
           entryService.addLineId(entry);
 
@@ -1085,7 +1086,7 @@ class EntryController {
 
     entryService.updateCarProperties(req, carDoneByStaff);
 
-    if (req.body.serviceIds || req.body.category) {
+    if (req.body.serviceIds) {
       if (entry.isFromAppointment)
         return badReqResponse(
           res,
