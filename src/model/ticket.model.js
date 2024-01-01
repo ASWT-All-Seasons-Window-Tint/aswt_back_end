@@ -26,7 +26,6 @@ const ticketSchema = new mongoose.Schema(
     },
     raisedTime: {
       type: Date,
-      default: new Date(),
     },
     responseTime: {
       type: Date,

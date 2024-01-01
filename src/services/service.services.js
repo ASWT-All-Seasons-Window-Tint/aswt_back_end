@@ -71,12 +71,18 @@ class ServiceService {
   }
 
   async getServiceByName(name) {
-    const caseInsensitiveName = new RegExp(name, "i");
+    function escapeRegExp(string) {
+      return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    }
+
+    const escapedPattern = `^${escapeRegExp(name)}$`;
+
+    const caseInsensitiveName = new RegExp(escapedPattern, "i");
 
     return Service.findOne({
       name: { $regex: caseInsensitiveName },
       isDeleted: undefined,
-    });
+    }).sort({ _id: -1 });
   }
 
   containsSunroof = (text) => {

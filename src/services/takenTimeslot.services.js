@@ -128,6 +128,11 @@ class TakenTimeslotService {
         },
       },
       {
+        $match: {
+          date: { $ne: "Invalid Date" },
+        },
+      },
+      {
         $addFields: {
           dateTime: {
             $toDate: "$date",
@@ -651,7 +656,11 @@ class TakenTimeslotService {
           },
         },
       },
-
+      {
+        $match: {
+          date: { $ne: "Invalid Date" },
+        },
+      },
       {
         $addFields: {
           timeslotsInDecimal: {
@@ -878,6 +887,11 @@ class TakenTimeslotService {
     numberOfStaffsAvailableForAppointment
   ) => {
     return TakenTimeslot.aggregate([
+      {
+        $match: {
+          date: { $ne: "Invalid Date" },
+        },
+      },
       {
         $addFields: {
           dateTime: {
@@ -1308,7 +1322,11 @@ class TakenTimeslotService {
           },
         },
       },
-
+      {
+        $match: {
+          date: { $ne: "Invalid Date" },
+        },
+      },
       {
         $match: {
           forDealership: true,
@@ -1385,7 +1403,11 @@ class TakenTimeslotService {
           },
         },
       },
-
+      {
+        $match: {
+          date: { $ne: "Invalid Date" },
+        },
+      },
       {
         $match: {
           $or: [
@@ -1482,6 +1504,11 @@ class TakenTimeslotService {
 
   getAvailableStafsIdsForDealership(date, staffIds) {
     return TakenTimeslot.aggregate([
+      {
+        $match: {
+          date: { $ne: "Invalid Date" },
+        },
+      },
       {
         $match: {
           date,

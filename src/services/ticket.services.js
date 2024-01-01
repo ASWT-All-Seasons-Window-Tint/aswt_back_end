@@ -10,6 +10,7 @@ class TicketService {
       message,
       imageURL,
       customerId,
+      raisedTime: new Date(),
     });
 
     return ticket.save();
