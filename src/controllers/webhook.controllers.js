@@ -362,6 +362,12 @@ class WebhookControllers {
       res.json({ received: true });
     } catch (err) {
       console.log(err);
+      if (err.Fault) {
+        if (err.Fault.Error) {
+          err.Fault.Error.map((err) => console.log(err));
+        }
+      }
+
       res.status(400).send(`Webhook error: ${err.message}`);
     }
   };
