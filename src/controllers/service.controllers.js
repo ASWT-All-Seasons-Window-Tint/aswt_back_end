@@ -39,7 +39,7 @@ class ServiceController {
     } = req.body;
 
     name = name.replace(/\s+/g, " ").trim();
-    if (type === "removal") name = `${name} (R)`;
+    if (type === "removal") name = `${name} (Strip)`;
 
     const lowercaseName = convertToLowerCaseAndRemoveNonAlphanumericUtils(name);
     const sunRoof = serviceService.containsSunroof(lowercaseName);

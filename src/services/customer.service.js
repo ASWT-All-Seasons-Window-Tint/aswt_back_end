@@ -25,8 +25,8 @@ class CustomerService {
       });
     });
   }
-  createCustomerForRetailers = async (appointment) => {
-    const qbo = await initializeQbUtils();
+  createCustomerForRetailers = async (appointment, qbo) => {
+    if (!qbo) qbo = await initializeQbUtils();
     const DisplayName = appointment.customerName;
     const emailTocheck = appointment.customerEmail.toLowerCase();
     const expiryTimeInSecs = 1800;
