@@ -6,7 +6,6 @@ const { getNewAccessToken } = require("../utils/getNewAccessToken.utils");
 const getWebhookDataUtils = require("../utils/getWebhookData.utils");
 const { pipeline } = require("../utils/entry.utils");
 const getArrayDifference = require("../utils/getArrayDifference.utils");
-const userServices = require("./user.services");
 const { carDetailsProperties, invoiceProperties, entryProperties } =
   require("../model/entry.model").joiValidator;
 
@@ -59,6 +58,7 @@ class EntryService {
       ? query.populate("invoice.carDetails.serviceIds", "name").lean()
       : query;
   };
+
   getEntryByCarId = async (carId) => {
     return Entry.findOne({
       "invoice.carDetails": {
@@ -1716,39 +1716,6 @@ class EntryService {
     }
 
     return mergedCar;
-  }
-
-  async getTotalEarningRatesForStaff(serviceIds, staffId) {
-    const resultsError = {};
-
-    const [servicesWithoutEarningRateAndTotalEarnings] =
-      await userServices.getServicesWithoutEarningRateAndTotalEarnings(
-        [...new Set(serviceIds)],
-        staffId
-      );
-
-    if (!servicesWithoutEarningRateAndTotalEarnings) {
-      resultsError.message = "We can't find staff with given ID";
-      resultsError.code = 404;
-
-      return resultsError;
-    }
-
-    const { servicesWithoutEarningRate, totalEarnings } =
-      servicesWithoutEarningRateAndTotalEarnings;
-
-    if (servicesWithoutEarningRate.length > 0) {
-      resultsError.message = `You do not have a rate for the following services (${servicesWithoutEarningRate.join(
-        ", "
-      )})`;
-      resultsError.code = 400;
-
-      return resultsError;
-    }
-
-    resultsError.totalEarnings = totalEarnings;
-
-    return resultsError;
   }
 
   carWasAddedRecently = (car) => {
