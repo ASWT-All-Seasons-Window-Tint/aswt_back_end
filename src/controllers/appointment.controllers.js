@@ -58,6 +58,31 @@ class AppointmentController {
     let emailService = "measurement enquiry";
     let totalAmount;
 
+    let customer = await customerService.createCustomerForRetailers(
+      req.body,
+      qbo
+    );
+
+    if (Array.isArray(customer)) customer = customer[0];
+
+    if (!customer) return serverErrResponse(res);
+
+    if (!customer.Active)
+      customer = await customerService.createCustomerFromAppointmentDetails(
+        qbo,
+        req.body
+      );
+
+    if (Array.isArray(customer)) customer = customer[0];
+
+    req.body.customerId = customer.Id;
+    req.body.customerName = customer.DisplayName;
+
+    const customers = await customerService.fetchAllCustomers(qbo);
+
+    updateCache(`customers?Id=${customer.Id}`, 1800, customer);
+    updateCache(`customers`, 1800, customers);
+
     if (appointmentType.toLowerCase() === "auto") {
       const { serviceDetails, category } = carDetails;
 
@@ -155,22 +180,6 @@ class AppointmentController {
         timeOfCompletion
       );
       req.body.endTime = endTime;
-
-      let customer = await customerService.createCustomerForRetailers(
-        req.body,
-        qbo
-      );
-      if (!customer) return serverErrResponse(res);
-
-      if (Array.isArray(customer)) customer = customer[0];
-
-      req.body.customerId = customer.Id;
-      req.body.customerName = customer.DisplayName;
-
-      const customers = await customerService.fetchAllCustomers(qbo);
-
-      updateCache(`customers?Id=${customer.Id}`, 1800, customer);
-      updateCache(`customers`, 1800, customers);
 
       const _id = new mongoose.Types.ObjectId();
       req.body._id = _id;
