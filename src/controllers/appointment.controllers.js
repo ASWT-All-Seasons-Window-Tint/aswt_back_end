@@ -158,7 +158,7 @@ class AppointmentController {
 
       totalAmount = price;
 
-      req.body.re9sidentialDetails.priceBreakdown = priceBreakdownArray;
+      req.body.residentialDetails.priceBreakdown = priceBreakdownArray;
       req.body.residentialDetails.price = price;
       req.body.appointmentType = req.body.appointmentType.toLowerCase(); // Auto
     }
