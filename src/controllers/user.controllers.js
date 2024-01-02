@@ -118,6 +118,10 @@ class UserController {
         MESSAGES.INVALID(invalidIds, "departments")
       );
 
+    if (role === "gm") {
+      req.body.departments = [];
+    }
+
     const userWithAvatar = await createUserWithAvatar(req, user, departments);
 
     const userFullName = customer
