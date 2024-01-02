@@ -60,7 +60,7 @@ const serviceSchema = new mongoose.Schema(
     isResidential: Boolean,
     isForDealership: Boolean,
     isDeleted: Boolean,
-    windshield: Boolean,
+    isWindshield: Boolean,
   },
   { toJSON: { virtuals: true } },
   { toObject: { virtuals: true } }
@@ -100,6 +100,7 @@ function validateWithObj(service) {
         then: Joi.valid(...validCarTypes),
       }),
     isFull: Joi.boolean(),
+    isWindshield: Joi.boolean(),
     isForDealership: Joi.boolean(),
     type: Joi.string()
       .valid("installation", "removal")
