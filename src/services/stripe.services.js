@@ -43,7 +43,6 @@ class StripeService {
   }
 
   createStripeSession = async (appointment, appointmentId) => {
-    console.log(appointmentId);
     const appointmentType = appointment.appointmentType;
     const autoAppointmentType = appointmentType === "auto";
     let customerMeasurementAwareness = true;
@@ -106,9 +105,9 @@ class StripeService {
             quantity: 1,
           };
         }),
-        automatic_tax: {
-          enabled: true,
-        },
+        // automatic_tax: {
+        //   enabled: true,
+        // },
         invoice_creation: {
           enabled: true,
         },

@@ -843,6 +843,18 @@ class AppointmentController {
         timeOfCompletion,
         date
       );
+      if (appointment.entryId) {
+        let entry = await entryServices.getEntryById(appointment.entryId);
+
+        entry.entryDate = startTime;
+        if (entry.invoice.carDetails.length > 0) {
+          for (const car of entry.invoice.carDetails) {
+            car.entryDate = startTime;
+          }
+        }
+
+        await entry.save();
+      }
     }
 
     let updatedAppointment = req.body;
