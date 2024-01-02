@@ -23,6 +23,7 @@ const filmQualitySchema = new mongoose.Schema(
       enum: filmQualityType,
       required: true,
     },
+    isWinshield: Boolean,
     pricePerSqFt: {
       type: Number,
       validate: {

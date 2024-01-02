@@ -36,6 +36,7 @@ class ServiceController {
       isResidential,
       customerTime,
       isForDealership,
+      isWindshield,
     } = req.body;
 
     name = name.replace(/\s+/g, " ").trim();
@@ -47,8 +48,6 @@ class ServiceController {
     const sunRoof = serviceService.containsSunroof(lowercaseName);
     const doesServiceNameExist = await serviceService.getServiceByName(name);
 
-    console.log(doesServiceNameExist);
-
     if (doesServiceNameExist && !isForDealership)
       return badReqResponse(res, "Service already exist with name");
 
@@ -58,9 +57,16 @@ class ServiceController {
       );
 
       const [filmQualitiesNotInArray, missingIds] = await Promise.all([
-        filmQualityServices.findFilmQualitiesNotInArray(filmQualityIds),
-        filmQualityServices.validateFilmQualityIds(filmQualityIds),
+        filmQualityServices.findFilmQualitiesNotInArray(
+          filmQualityIds,
+          isWindshield
+        ),
+        filmQualityServices.validateFilmQualityIds(
+          filmQualityIds,
+          isWindshield
+        ),
       ]);
+      console.log(filmQualitiesNotInArray);
 
       if (missingIds.length > 0)
         return notFoundResponse(

@@ -10,9 +10,12 @@ class FilmQualityService {
     return await FilmQuality.findById(filmQualityId);
   }
 
-  async validateFilmQualityIds(filmQualityIds) {
+  async validateFilmQualityIds(filmQualityIds, isWindshield) {
     const filmQualities = await FilmQuality.find({
       _id: { $in: filmQualityIds },
+      ...(isWindshield
+        ? { isWindshield }
+        : { type: "auto", isWindshield: undefined }),
     });
 
     const foundIds = filmQualities.map((d) => d._id.toString());
@@ -22,10 +25,12 @@ class FilmQualityService {
     return missingIds;
   }
 
-  findFilmQualitiesNotInArray(filmQualityIds) {
+  findFilmQualitiesNotInArray(filmQualityIds, isWindshield) {
     return FilmQuality.find({
       _id: { $nin: filmQualityIds },
-      type: "auto",
+      ...(isWindshield
+        ? { isWindshield }
+        : { type: "auto", isWindshield: undefined }),
     });
   }
 
