@@ -150,6 +150,7 @@ router.put(
   auth,
   roleBaseAuthMiddleware(["receptionist", "admin"]),
   validateMiddleware(validatePatch),
+  validateTimeslotsMiddleware,
   asyncMiddleware(appointmentControllers.updateAppointment)
 );
 
