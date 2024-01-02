@@ -152,6 +152,107 @@ class EntryUtils {
 
     if (date || startDate) pipeline.push(addFields);
 
+    const isFromAppointmentAgg = [
+      {
+        $lookup: {
+          from: "filmqualities",
+          localField: "invoice.carDetails.serviceDetails.filmQualityId",
+          foreignField: "_id",
+          as: "filmQuality",
+        },
+      },
+      {
+        $lookup: {
+          from: "services",
+          localField: "invoice.carDetails.serviceDetails.serviceId",
+          foreignField: "_id",
+          as: "serviceDetailsServices",
+        },
+      },
+      {
+        $unwind: "$invoice.carDetails",
+      },
+      {
+        $addFields: {
+          "invoice.carDetails.serviceDetails": {
+            $map: {
+              input: "$invoice.carDetails.serviceDetails",
+              as: "serviceDetail",
+              in: {
+                serviceId: "$$serviceDetail.serviceId",
+                serviceName: {
+                  $first: {
+                    $map: {
+                      input: {
+                        $filter: {
+                          input: "$serviceDetailsServices",
+                          cond: {
+                            $eq: ["$$this._id", "$$serviceDetail.serviceId"],
+                          },
+                        },
+                      },
+                      in: "$$this.name",
+                    },
+                  },
+                },
+                filmQualityId: "$$serviceDetail.filmQualityId",
+                filmQualityName: {
+                  $first: {
+                    $map: {
+                      input: {
+                        $filter: {
+                          input: "$filmQuality",
+                          as: "film",
+                          cond: {
+                            $eq: [
+                              "$$serviceDetail.filmQualityId",
+                              "$$film._id",
+                            ],
+                          },
+                        },
+                      },
+                      in: "$$this.name",
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      {
+        $group: {
+          _id: "$_id",
+          customerId: { $first: "$customerId" },
+          customerName: { $first: "$customerName" },
+          entryDate: { $first: "$entryDate" },
+          customerEmail: { $first: "$customerEmail" },
+          isActive: { $first: "$isActive" },
+          numberOfCarsAdded: { $first: "$numberOfCarsAdded" },
+          numberOfVehicles: { $first: "$numberOfVehicles" },
+          isFromAppointment: { $first: "$isFromAppointment" },
+          invoice: { $first: "$invoice" },
+          carDetails: { $push: "$invoice.carDetails" },
+        },
+      },
+      {
+        $addFields: {
+          invoice: {
+            name: "$invoice.name",
+            carDetails: "$carDetails",
+          },
+          carDetails: "$$REMOVE",
+        },
+      },
+      {
+        $match: {
+          isFromAppointment: true,
+        },
+      },
+    ];
+
+    if (isFromAppointment) return [...pipeline, ...isFromAppointmentAgg];
+
     return pipeline;
   };
 
