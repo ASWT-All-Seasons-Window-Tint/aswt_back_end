@@ -60,6 +60,7 @@ const serviceSchema = new mongoose.Schema(
     isResidential: Boolean,
     isForDealership: Boolean,
     isDeleted: Boolean,
+    windshield: Boolean,
   },
   { toJSON: { virtuals: true } },
   { toObject: { virtuals: true } }
