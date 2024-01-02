@@ -334,6 +334,7 @@ class WebhookControllers {
               appointment.paymentDetails.customerDisplayName =
                 customer.DisplayName;
               appointment.customerId = customer.Id;
+              appointment.entryId = entry._id;
 
               await appointmentServices.updateAppointmentInvoiceDetails({
                 invoiceId,
