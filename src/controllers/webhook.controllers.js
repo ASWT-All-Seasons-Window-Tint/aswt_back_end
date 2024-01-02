@@ -312,9 +312,8 @@ class WebhookControllers {
                     }
                   }
                   carDetails.entryDate = appointment.startTime;
+                  entry.invoice.carDetails = [carDetails];
                 }
-
-                entry.invoice.carDetails = [carDetails];
 
                 entry.invoice.qbId = invoiceId;
                 entry.numberOfCarsAdded = 1;
