@@ -240,17 +240,17 @@ class EntryController {
 
       const id = entry._id;
 
-      if (!entry.invoice.isAutoSentScheduled) {
-        const token = await userServices.getToken();
-        const delay = this.getDelay();
-        const entryId = entry._id;
+      // if (!entry.invoice.isAutoSentScheduled) {
+      //   const token = await userServices.getToken();
+      //   const delay = this.getDelay();
+      //   const entryId = entry._id;
 
-        const params = { token, delay, entryId };
+      //   const params = { token, delay, entryId };
 
-        await axiosRequestUtils(params, "invoice");
+      //   await axiosRequestUtils(params, "invoice");
 
-        entry.invoice.isAutoSentScheduled = true;
-      }
+      //   entry.invoice.isAutoSentScheduled = true;
+      // }
 
       const updatedEntry = await entryService.updateEntryById(
         id,
@@ -873,7 +873,7 @@ class EntryController {
       entry.invoice.totalPrice = totalPrice;
     }
 
-    if (checkErr.message) return badReqResponse(res, checkErr.message);
+    //if (checkErr.message) return badReqResponse(res, checkErr.message);
 
     carWithVin.priceBreakdown = totalPriceBreakdown;
 
@@ -996,15 +996,15 @@ class EntryController {
         await notificationService.createNotification(body, mongoSession);
       }
 
-      if (!entry.invoice.isAutoSentScheduled) {
-        const delay = this.getDelay();
-        const token = await userServices.getToken();
-        const params = { token, delay, entryId };
+      // if (!entry.invoice.isAutoSentScheduled) {
+      //   const delay = this.getDelay();
+      //   const token = await userServices.getToken();
+      //   const params = { token, delay, entryId };
 
-        const response = await axiosRequestUtils(params, "invoice");
+      //   const response = await axiosRequestUtils(params, "invoice");
 
-        entry.invoice.isAutoSentScheduled = true;
-      }
+      //   entry.invoice.isAutoSentScheduled = true;
+      // }
 
       await entryService.updateEntryById(entryId, entry, mongoSession);
     });

@@ -1519,6 +1519,67 @@ class EntryService {
     }).sort({ _id: -1 });
   }
 
+  getAllDealerEntriesInThePast24Hrs(date) {
+    const twentyFourHrsAgo = date;
+
+    twentyFourHrsAgo.setHours(twentyFourHrsAgo.getHours() - 24);
+
+    return Entry.aggregate([
+      {
+        $unwind: "$invoice.carDetails",
+      },
+      {
+        $match: {
+          "invoice.carDetails.entryDate": {
+            $gte: twentyFourHrsAgo,
+          },
+          "invoice.sent": { $ne: true },
+        },
+      },
+      {
+        $match: {
+          "invoice.carDetails.priceBreakdown": { $ne: [] },
+        },
+      },
+      {
+        $match: {
+          $or: [
+            { $and: [{ isFromAppointment: true }, { isFromDealership: true }] },
+            { isFromAppointment: undefined },
+          ],
+        },
+      },
+      {
+        $group: {
+          _id: "$_id",
+          customerId: {
+            $first: "$customerId",
+          },
+          customerName: { $first: "$customerName" },
+          customerEmail: { $first: "$customerEmail" },
+          entryDate: { $first: "$entryDate" },
+          isActive: { $first: "$isActive" },
+          numberOfCarsAdded: { $first: "$numberOfCarsAdded" },
+          numberOfVehicles: { $first: "$numberOfVehicles" },
+          invoice: { $first: "$invoice" },
+          carDetails: { $push: "$invoice.carDetails" },
+        },
+      },
+      {
+        $addFields: {
+          invoice: {
+            name: "$invoice.name",
+            carDetails: "$carDetails",
+          },
+          carDetails: "$$REMOVE",
+        },
+      },
+      {
+        $sort: { _id: -1 },
+      },
+    ]);
+  }
+
   checkDuplicateEntryForMultipleVins(customerId, vinsArray) {
     return Entry.find({
       $and: [{ customerId }, { "invoice.carDetails.vin": { $in: vinsArray } }],
