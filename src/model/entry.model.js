@@ -295,7 +295,7 @@ entrySchema.pre("save", function (next) {
     });
 });
 
-addVirtualIdUtils(entrySchema, "entryId");
+addVirtualIdUtils(entrySchema);
 
 entrySchema.statics.getNextInvoiceNumber = async function () {
   // Get the last entry
