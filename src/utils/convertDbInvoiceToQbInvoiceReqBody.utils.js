@@ -1,4 +1,16 @@
 module.exports = function (mongoDBInvoice, type) {
+  // Get the current date
+  let currentDate = new Date();
+
+  // Add 30 days to the current date
+  currentDate.setDate(currentDate.getDate() + 30);
+
+  if (mongoDBInvoice.invoice) {
+    if (mongoDBInvoice.isFromAppointment && !mongoDBInvoice.isFromDealership) {
+      currentDate = new Date();
+    }
+  }
+
   const qboInvoice = {
     Line: [],
     CustomerRef: {
@@ -9,8 +21,8 @@ module.exports = function (mongoDBInvoice, type) {
     AllowOnlinePayment: true,
     AllowOnlineCreditCardPayment: true,
     AllowOnlineACHPayment: true,
-    TxnDate: new Date().toISOString().split("T")[0], // Current date
-    DueDate: new Date().toISOString().split("T")[0], // Same as TxnDate by default
+    TxnDate: currentDate.toISOString().split("T")[0], // Current date
+    DueDate: currentDate.toISOString().split("T")[0], // Same as TxnDate by default
     BillEmail: {
       Address: mongoDBInvoice.customerEmail,
     },
