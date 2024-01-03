@@ -615,6 +615,10 @@ class UserController {
       reqBody
     );
 
+    // To make sure the staff is in the DB
+    if (!updatedStaff)
+      return notFoundResponse(res, "We can't find staff with the give ID");
+
     res.send(successMessage(MESSAGES.UPDATED, updatedStaff));
   }
 

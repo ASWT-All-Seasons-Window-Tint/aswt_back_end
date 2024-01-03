@@ -300,26 +300,55 @@ const EMAIL = {
       <p>Best regards,<br>
           All Seasons Tint & Graphic Designs Support Team</p>`
         : `
-      <p>Dear ${customerName},</p>
+        <!DOCTYPE html>
+      <html lang="en">
+      
+      <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>[Dealer's Name] All Seasons Tint & Graphic Designs - Invitation</title>
+          <style>
+              .invitation-button {
+                  display: inline-block;
+                  padding: 10px 20px;
+                  font-size: 16px;
+                  text-align: center;
+                  text-decoration: none;
+                  cursor: pointer;
+                  background-color: #4CAF50;
+                  color: #ffffff;
+                  border: none;
+                  border-radius: 5px;
+              }
+          </style>
+      </head>
+      
+      <body>
+        <p>Dear ${customerName},</p>
 
-      <p>We are pleased to inform you that your All Seasons Tint & Graphic Designs dealer account has been successfully
-          created. Below are your login credentials:</p>
-  
-      <ul>
-          <li><strong>Username:</strong> ${customerEmail}</li>
-          <li><strong>Password:</strong> ${password}</li>
-      </ul>
-  
-      <p>Please use the following URL to access your account: <a href="${loginURL}">${loginURL}</a></p>
-  
-      <p>We recommend changing your password upon first login for security purposes. If you encounter any issues or have
-          questions, feel free to contact our support team at <a href="mailto:${aswtDetails.supportEmail}">${aswtDetails.supportEmail}</a>.</p>
-  
-      <p>We appreciate your partnership with All Seasons Tint & Graphic Designs and look forward to a successful
-          collaboration.</p>
-  
-      <p>Best regards,<br>
-        All Seasons Tint & Graphic Designs Support Team</p>
+        <p>We are pleased to inform you that your All Seasons Tint & Graphic Designs dealer account has been successfully
+            created. Below are your login credentials:</p>
+    
+        <ul>
+            <li><strong>Username:</strong> ${customerEmail}</li>
+            <li><strong>Password:</strong> ${password}</li>
+        </ul>
+    
+        <p>Please click on the button below to access your account: <br><br>
+
+          <a href="${loginURL}" class="invitation-button">Login</a>
+    
+        <p>We recommend changing your password upon first login for security purposes. If you encounter any issues or have
+            questions, feel free to contact our support team at <a href="mailto:${aswtDetails.supportEmail}">${aswtDetails.supportEmail}</a>.</p>
+    
+        <p>We appreciate your partnership with All Seasons Tint & Graphic Designs and look forward to a successful
+            collaboration.</p>
+    
+        <p>Best regards,<br>
+          All Seasons Tint & Graphic Designs Support Team</p>
+      </body>
+      
+      </html>
     `,
     };
   },
