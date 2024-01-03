@@ -101,7 +101,10 @@ class EntryController {
     const role = req.user.role;
     const dateOfCreation = new Date();
 
-    if (vin && typeof vin === "string") carDetails.vin = vin.toUpperCase();
+    if (vin && typeof vin === "string") {
+      carDetails.vin = vin.toUpperCase();
+      vin = vin.toUpperCase();
+    }
 
     const serviceIds = serviceDetails.map((service) => service.serviceId);
 
