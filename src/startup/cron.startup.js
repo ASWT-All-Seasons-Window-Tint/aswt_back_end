@@ -5,7 +5,7 @@ const entryService = require("../services/entry.services");
 function startScheduledJob() {
   // Schedule the function to run on the last day of each month at a specific time (e.g., 00:00)
   cron.schedule(
-    "05 17 * * *",
+    "10 17 * * *",
     async () => {
       const currentDate = new Date();
       try {
