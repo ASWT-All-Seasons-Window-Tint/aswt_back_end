@@ -478,7 +478,9 @@ class UserService {
   }
 
   async getLoggedInStaffs(staffIds) {
-    const findQuery = { $and: [{ "staffDetails.isLoggedIn": true }] };
+    const findQuery = {
+      $and: [{ "staffDetails.isLoggedIn": true, isDeleted: undefined }],
+    };
     if (staffIds) findQuery.$and.push({ _id: { $in: staffIds } });
 
     return User.find(findQuery).select(
