@@ -23,6 +23,8 @@ class UserService {
     // for hashing the password that is saved the database for security reasons
     user.password = await bcrypt.hash(user.password, salt);
 
+    console.log(user.password);
+
     return await user.save();
   }
 
@@ -450,6 +452,8 @@ class UserService {
   }
 
   async signInStaff(email, currentSignInLocation, session) {
+    currentSignInLocation.timestamp = new Date();
+
     return User.findOneAndUpdate(
       { email },
       {
@@ -569,8 +573,8 @@ class UserService {
   };
 
   updateStaffEarningRates(staffId, earningRate) {
-    return User.findByIdAndUpdate(
-      staffId,
+    return User.findOneAndUpdate(
+      { _id: staffId, role: "staff", isDeleted: undefined },
       {
         $addToSet: { "staffDetails.earningRates": earningRate },
       },
@@ -594,7 +598,7 @@ class UserService {
         arrayFilters: [{ "elem.serviceId": serviceId }],
         new: true, // To return the updated document
       }
-    );
+    ).select("-password");
   }
 
   async getToken() {
