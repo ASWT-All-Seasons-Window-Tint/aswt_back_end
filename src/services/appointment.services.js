@@ -302,9 +302,20 @@ class AppointmentService {
         (result) => result.needsFilmQuality
       );
 
+      const isFilmQualityNotSame = priceBreakdownArray.some(
+        (result) => !result.isFilmQualitySame
+      );
+
       if (isFilmQualityRequired && !dealershipId) {
         results.error.message =
           "Film quality is required for installation services";
+        return results;
+      }
+
+      if (isFilmQualityNotSame) {
+        results.error.message =
+          "Please provide the right film quality for this service";
+
         return results;
       }
 
