@@ -139,20 +139,7 @@ class EntryService {
         $match: {
           $and: [
             {
-              "invoice.carDetails.geoLocations": {
-                $elemMatch: {
-                  locationType: "TakenToShop",
-                },
-              },
-            },
-            {
-              "invoice.carDetails.geoLocations": {
-                $not: {
-                  $elemMatch: {
-                    locationType: "TakenFromShop",
-                  },
-                },
-              },
+              "invoice.carDetails.geoLocations.locationType": "TakenToShop",
             },
           ],
         },
