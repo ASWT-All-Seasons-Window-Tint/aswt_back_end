@@ -664,12 +664,6 @@ class UserController {
 
     if (!user) return notFoundResponse(res, "Credentials not found");
 
-    if (user._id.toString() !== req.user._id)
-      return forbiddenResponse(
-        res,
-        "You are not allowed to submit this request on behalf of someone else."
-      );
-
     return jsonResponse(
       res,
       200,

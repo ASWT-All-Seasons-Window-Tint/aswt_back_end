@@ -45,7 +45,6 @@ router.post(
 
 router.post(
   "/request-for-account-deletion",
-  auth,
   validateMiddleware(validateRequestResetPassword),
   asyncMiddleware(userController.requestForAccountDeletion)
 );
