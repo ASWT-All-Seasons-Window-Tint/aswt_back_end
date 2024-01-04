@@ -658,6 +658,26 @@ class UserController {
     res.send(successMessage(MESSAGES.UPDATED, staffWithUpdatedRate));
   }
 
+  async requestForAccountDeletion(req, res) {
+    const { email } = req.body;
+    const user = await userService.getUserByEmail(email);
+
+    if (!user) return notFoundResponse(res, "Credentials not found");
+
+    if (user._id.toString() !== req.user._id)
+      return forbiddenResponse(
+        res,
+        "You are not allowed to submit this request on behalf of someone else."
+      );
+
+    return jsonResponse(
+      res,
+      200,
+      true,
+      "Deletion of your account has been successfully initiated."
+    );
+  }
+
   //Delete user account entirely from the database
   async deleteUserAccount(req, res) {
     let user = await userService.getUserById(req.params.id);
