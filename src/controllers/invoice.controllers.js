@@ -98,6 +98,8 @@ class DepartmentController {
       customerEmail
     );
 
+    entry = await entryServices.getEntryById(entry._id);
+
     entry.invoice.qbId = invoice.Id;
     entry.isActive = false;
     entry.invoice.invoiceNumber = invoice.DocNumber;
