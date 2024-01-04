@@ -66,7 +66,6 @@ class ServiceController {
           isWindshield
         ),
       ]);
-      console.log(filmQualitiesNotInArray);
 
       if (missingIds.length > 0)
         return notFoundResponse(
@@ -166,6 +165,7 @@ class ServiceController {
       sunRoof: sunRoof ? sunRoof : undefined,
       customerTime,
       isForDealership,
+      isWindshield,
     });
 
     service = await serviceService.createService(service);
