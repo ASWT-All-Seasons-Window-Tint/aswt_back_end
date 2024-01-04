@@ -333,6 +333,29 @@ class ServiceService {
               },
             },
           },
+          isFilmQualitySame: {
+            $cond: {
+              if: { $ne: [{ $first: "$filmquality.type" }, "auto"] },
+              then: false,
+              else: {
+                $cond: [
+                  { $eq: ["$type", "removal"] },
+                  true,
+                  {
+                    $eq: [
+                      {
+                        $ifNull: [
+                          { $first: "$filmquality.isWindshield" },
+                          false,
+                        ],
+                      },
+                      { $ifNull: ["$isWindshield", false] },
+                    ],
+                  },
+                ],
+              },
+            },
+          },
         },
       },
       {
@@ -362,6 +385,7 @@ class ServiceService {
           serviceType: "$type",
           qbId: "$qbId",
           needsFilmQuality: 1,
+          isFilmQualitySame: 1,
         },
       },
     ];

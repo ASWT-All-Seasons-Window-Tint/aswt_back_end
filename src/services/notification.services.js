@@ -354,6 +354,22 @@ class NotificationService {
       },
       {
         $lookup: {
+          from: "services",
+          localField: "carDetails.serviceDetails.serviceId",
+          foreignField: "_id",
+          as: "qServices",
+        },
+      },
+      {
+        $lookup: {
+          from: "filmqualities",
+          localField: "carDetails.serviceDetails.filmQualityId",
+          foreignField: "_id",
+          as: "qFilmQualities",
+        },
+      },
+      {
+        $lookup: {
           from: "notifications",
           localField: "_id",
           foreignField: "_id",
@@ -437,6 +453,52 @@ class NotificationService {
               as: "car",
               in: {
                 ...entryUtils.getCarDetailsField("$$car"),
+                serviceDetails: {
+                  $map: {
+                    input: "$$car.serviceDetails",
+                    as: "serviceDetail",
+                    in: {
+                      serviceId: "$$serviceDetail.serviceId",
+                      filmQualityId: "$$serviceDetail.filmQualityId",
+                      filmQualityName: {
+                        $first: {
+                          $map: {
+                            input: {
+                              $filter: {
+                                input: "$qFilmQualities",
+                                cond: {
+                                  $eq: [
+                                    "$$serviceDetail.filmQualityId",
+                                    "$$this._id",
+                                  ],
+                                },
+                              },
+                            },
+                            in: "$$this.name",
+                          },
+                        },
+                      },
+                      serviceName: {
+                        $first: {
+                          $map: {
+                            input: {
+                              $filter: {
+                                input: "$qServices",
+                                cond: {
+                                  $eq: [
+                                    "$$serviceDetail.serviceId",
+                                    "$$this._id",
+                                  ],
+                                },
+                              },
+                            },
+                            in: "$$this.name",
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
                 serviceNames: entryUtils.serviceNames,
                 serviceDoneIds: { $first: "$carDetails.serviceDoneIds" },
                 customerId: { $first: "$carEntry.customerId" },
