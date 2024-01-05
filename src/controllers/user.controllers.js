@@ -19,6 +19,7 @@ const {
   jsonResponse,
   badReqResponse,
   forbiddenResponse,
+  loginError,
 } = require("../common/messages.common");
 const serviceServices = require("../services/service.services");
 const { EMAIL } = require("../common/messages.common");
@@ -659,10 +660,21 @@ class UserController {
   }
 
   async requestForAccountDeletion(req, res) {
-    const { email } = req.body;
+    const { email, password } = req.body;
     const user = await userService.getUserByEmail(email);
 
     if (!user) return notFoundResponse(res, "Credentials not found");
+
+    const validPassword = await bcrypt.compare(password, user.password);
+    if (!validPassword)
+      return badReqResponse(res, "Your email and password does not match");
+
+    if (user.hasResquestedToBeDeleted)
+      return badReqResponse(res, "This request has already been made by you");
+
+    user.hasResquestedToBeDeleted = true;
+
+    await user.save();
 
     return jsonResponse(
       res,

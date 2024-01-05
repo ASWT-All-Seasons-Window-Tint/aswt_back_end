@@ -26,6 +26,7 @@ const {
   validateUpdatePassword,
   validateResetPassword,
   validateRequestResetPassword,
+  validateRequestAccountDeletion,
 } = user;
 
 // This is used for registering a new user.
@@ -45,7 +46,7 @@ router.post(
 
 router.post(
   "/request-for-account-deletion",
-  validateMiddleware(validateRequestResetPassword),
+  validateMiddleware(validateRequestAccountDeletion),
   asyncMiddleware(userController.requestForAccountDeletion)
 );
 
