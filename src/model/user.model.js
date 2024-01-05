@@ -203,6 +203,7 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: undefined,
     },
+    hasResquestedToBeDeleted: Boolean,
   },
   { toJSON: { virtuals: true } },
   { toObject: { virtuals: true } }
@@ -391,6 +392,15 @@ function validateRequestResetPassword(user) {
   return schema.validate(user);
 }
 
+function validateRequestAccountDeletion(user) {
+  const schema = Joi.object({
+    email: Joi.string().email().min(5).max(255).required(),
+    password: Joi.string().min(5).max(255).required(),
+  });
+
+  return schema.validate(user);
+}
+
 function addEarningRate(user) {
   const schema = Joi.object({
     serviceId: Joi.objectId().required(),
@@ -406,6 +416,7 @@ exports.user = {
   validateResetPassword,
   validateUpdatePassword,
   validateRequestResetPassword,
+  validateRequestAccountDeletion,
   updateManagerPermission,
   validateAssignDealer,
   addEarningRate,
