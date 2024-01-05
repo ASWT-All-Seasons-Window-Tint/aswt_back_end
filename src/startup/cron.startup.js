@@ -21,6 +21,10 @@ function startScheduledJob() {
         }
       } catch (error) {
         console.error("Error executing scheduled task:", error);
+        if (error.Fault) {
+          if (error.Fault.Error)
+            error.Fault.Error.map((err) => console.log(err));
+        }
       }
     },
     {
