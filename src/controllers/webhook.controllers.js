@@ -262,17 +262,6 @@ class WebhookControllers {
 
                 invoiceReqBody.Line.push(DiscountLineDetail);
               }
-
-              const { invoice } = await createInvoiceOnQuickBooks(
-                qbo,
-                invoiceReqBody,
-                customerEmail,
-                false
-              );
-
-              const invoiceId = invoice.Id;
-              const invoiceNumber = invoice.DocNumber;
-
               let netAmount;
               if (carDetails) netAmount = (carDetails.price * 30) / 100;
               else if (residentialDetails) {
@@ -281,20 +270,81 @@ class WebhookControllers {
                   : residentialDetails.price;
               }
 
-              const paymentData = paymentServices.getPaymentReqBody(
-                customer,
-                netAmount,
-                invoiceId
-              );
+              // const { invoice } = await createInvoiceOnQuickBooks(
+              //   qbo,
+              //   invoiceReqBody,
+              //   customerEmail,
+              //   false
+              // );
 
-              const payment = await paymentServices.createPayment(
-                qbo,
-                paymentData
-              );
+              // const invoiceId = invoice.Id;
+              // const invoiceNumber = invoice.DocNumber;
 
-              await sendInvoicePdf(qbo, invoiceId, customerEmail);
+              // const paymentData = paymentServices.getPaymentReqBody(
+              //   customer,
+              //   netAmount,
+              //   invoiceId
+              // );
 
-              const qbPaymentId = payment.Id;
+              // const payment = await paymentServices.createPayment(
+              //   qbo,
+              //   paymentData
+              // );
+
+              // await sendInvoicePdf(qbo, invoiceId, customerEmail);
+
+              // const qbPaymentId = payment.Id;
+              let invoiceId, qbPaymentId, invoiceNumber;
+              try {
+                const result = await this.createInvoiceAndPayment(
+                  qbo,
+                  invoiceReqBody,
+                  customerEmail,
+                  netAmount
+                );
+
+                invoiceId = result.invoiceId;
+                qbPaymentId = result.qbPaymentId;
+                invoiceNumber = result.invoiceNumber;
+              } catch (error) {
+                if (error.code === "6140") {
+                  let retries = 0;
+
+                  while (retries < 6) {
+                    retries++;
+
+                    const twentyFourHrsAgo = new Date();
+                    twentyFourHrsAgo.setHours(twentyFourHrsAgo.getHours() - 24);
+
+                    const entryForInvoice = await entryServices.createNewEntry(
+                      customer,
+                      undefined,
+                      twentyFourHrsAgo
+                    );
+                    const newInvoiceNumber =
+                      entryForInvoice.invoice.invoiceNumber;
+
+                    invoiceReqBody.DocNumber = newInvoiceNumber;
+
+                    const result = await this.createInvoiceAndPayment(
+                      qbo,
+                      invoiceReqBody,
+                      customerEmail,
+                      netAmount
+                    );
+
+                    invoiceId = result.invoiceId;
+                    qbPaymentId = result.qbPaymentId;
+                    invoiceNumber = result.invoiceNumber;
+                  }
+                } else if (error.Fault) {
+                  if (error.Fault.Error) {
+                    error.Fault.Error.map((error) => console.log(error));
+                  }
+                } else {
+                  console.log(error);
+                }
+              }
 
               if (appointmentType === "auto") {
                 const { serviceIds } =
@@ -385,6 +435,39 @@ class WebhookControllers {
       res.status(400).send(`Webhook error: ${err.message}`);
     }
   };
+
+  async createInvoiceAndPayment(qbo, invoiceReqBody, customerEmail, netAmount) {
+    const { invoice } = await createInvoiceOnQuickBooks(
+      qbo,
+      invoiceReqBody,
+      customerEmail,
+      false
+    );
+
+    const invoiceId = invoice.Id;
+    const invoiceNumber = invoice.DocNumber;
+
+    const paymentData = paymentServices.getPaymentReqBody(
+      customer,
+      netAmount,
+      invoiceId
+    );
+
+    const payment = await paymentServices.createPayment(qbo, paymentData);
+
+    await sendInvoicePdf(qbo, invoiceId, customerEmail);
+
+    const qbPaymentId = payment.Id;
+
+    return {
+      invoiceId,
+      paymentData,
+      invoice,
+      payment,
+      qbPaymentId,
+      invoiceNumber,
+    };
+  }
 
   getDelay(startTime) {
     const currentDate = newDateUtils();

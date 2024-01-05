@@ -21,11 +21,14 @@ module.exports = function (mongoDBInvoice, type) {
     AllowOnlinePayment: true,
     AllowOnlineCreditCardPayment: true,
     AllowOnlineACHPayment: true,
-    TxnDate: currentDate.toISOString().split("T")[0], // Current date
+    TxnDate: new Date().toISOString().split("T")[0], // Current date
     DueDate: currentDate.toISOString().split("T")[0], // Same as TxnDate by default
     BillEmail: {
       Address: mongoDBInvoice.customerEmail,
     },
+    // SalesTermRef: {
+    //   value: "3",
+    // },
     DocNumber: type
       ? mongoDBInvoice.invoiceNumber
       : mongoDBInvoice.invoice.invoiceNumber,

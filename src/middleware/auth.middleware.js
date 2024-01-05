@@ -35,6 +35,13 @@ module.exports = async function (req, res, next) {
       return res
         .status(401)
         .send({ success: false, message: "Invalid Web Token" });
+
+    if (user.role !== req.user.role)
+      return res.status(401).send({
+        success: false,
+        message: "Your role has been updated please logout and re-login",
+      });
+
     next();
   } catch (ex) {
     // it throws an error which is caught and sent to the client as response.
