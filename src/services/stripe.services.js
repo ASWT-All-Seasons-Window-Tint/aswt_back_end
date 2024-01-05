@@ -119,7 +119,7 @@ class StripeService {
           },
         },
         success_url: process.env.stripeSuccessUrl,
-        cancel_url: `${process.env.apiUrl}/client/cancel.html`,
+        cancel_url: process.env.cancelUrl,
       }
       // {
       //   stripeAccount,
