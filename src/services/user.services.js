@@ -23,8 +23,6 @@ class UserService {
     // for hashing the password that is saved the database for security reasons
     user.password = await bcrypt.hash(user.password, salt);
 
-    console.log(user.password);
-
     return await user.save();
   }
 
