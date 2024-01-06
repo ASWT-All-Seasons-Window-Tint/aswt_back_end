@@ -188,8 +188,10 @@ class Customer {
 
   createCustomer = async (req, res) => {
     const qbo = await initializeQbUtils();
-    const { DisplayName, PrimaryEmailAddr, PrimaryPhone, BillAddr, Notes } =
+    let { DisplayName, PrimaryEmailAddr, PrimaryPhone, BillAddr, Notes } =
       req.body;
+
+    DisplayName = DisplayName.replace(/\s+/g, " ").trim();
 
     const isUserInDb = await userServices.getUserByEmail(
       PrimaryEmailAddr.Address
