@@ -115,7 +115,12 @@ class InvoiceService {
         const description = priceLine.Description;
         const vin = car.vin;
 
-        const newDescription = `${description} with VIN: ${vin}`;
+        const newDescription =
+          description &&
+          typeof description === "string" &&
+          !description.includes(vin)
+            ? `${description} with VIN: ${vin}`
+            : description;
 
         priceLine.Description = newDescription;
       });

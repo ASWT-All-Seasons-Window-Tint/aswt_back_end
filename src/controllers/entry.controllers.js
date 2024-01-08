@@ -976,9 +976,17 @@ class EntryController {
           entryId,
         };
 
+        let invoice;
         if (entry.isFromAppointment && !entry.isFromDealership) {
           if (!entry.invoice.sent) {
-            await invoiceControllers.createAndSendInvoice(entry);
+            invoice = await invoiceControllers.createAndSendInvoice(
+              entry,
+              true
+            );
+
+            entry.invoice.sent = true;
+            entry.isActive = false;
+            entry.invoice.qbId = invoice.Id;
           } else {
             await invoiceControllers.sendInvoiceWithoutCreating(entry);
           }
@@ -990,7 +998,7 @@ class EntryController {
         if (entry.isFromAppointment) {
           entryService.addLineId(entry);
 
-          if (entry.invoice.sent) {
+          if (entry.invoice.sent && !invoice) {
             const { statusCode, message } =
               await invoiceControllers.updateInvoiceById(undefined, entry);
 
