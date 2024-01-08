@@ -7,6 +7,7 @@ const asyncMiddleware = require("../middleware/async.middleware");
 const validateObjectId = require("../middleware/validateObjectId.middleware");
 const qboAsyncMiddleware = require("../middleware/qboAsync.middleware");
 const validateMiddleware = require("../middleware/validate.middleware");
+const roleBaseAuth = require("../middleware/roleBaseAuth.middleware.");
 
 const router = express.Router();
 const { validateModifyPriceForSentInvoice } = joiValidator;
@@ -31,7 +32,7 @@ router.post(
   "/:id",
   validateObjectId,
   auth,
-  adminOrManager,
+  roleBaseAuth(["admin", "gm", "receptionist"]),
   qboAsyncMiddleware(invoiceController.sendInvoice)
 );
 
@@ -39,7 +40,7 @@ router.post(
   "/resend-invoice/:id",
   validateObjectId,
   auth,
-  adminOrManager,
+  roleBaseAuth(["admin", "gm", "receptionist"]),
   qboAsyncMiddleware(invoiceController.resendInvoice)
 );
 
