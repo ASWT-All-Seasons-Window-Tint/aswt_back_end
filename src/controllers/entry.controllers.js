@@ -976,6 +976,13 @@ class EntryController {
           entryId,
         };
 
+        if (entry.isFromAppointment && !entry.isFromDealership) {
+          if (!entry.invoice.sent) {
+            await invoiceControllers.createAndSendInvoice(entry);
+          } else {
+            await invoiceControllers.sendInvoiceWithoutCreating(entry);
+          }
+        }
         // if (entry.invoice.sent) {
         //   await invoiceControllers.sendInvoiceWithoutCreating(entry);
         // }
