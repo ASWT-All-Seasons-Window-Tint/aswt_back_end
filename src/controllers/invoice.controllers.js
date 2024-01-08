@@ -77,7 +77,7 @@ class DepartmentController {
     );
   };
 
-  async createAndSendInvoice(entry) {
+  async createAndSendInvoice(entry, doNotUpdate) {
     const { invoice: invoiceData } = convertEntryQbInvoiceReqBody(entry);
     const qbo = await initializeQbUtils();
     let { customerEmail, customerId } = entry;
@@ -105,7 +105,7 @@ class DepartmentController {
     entry.invoice.invoiceNumber = invoice.DocNumber;
     entry.invoice.sent = true;
 
-    await updateEntryById(entry._id, entry);
+    if (!doNotUpdate) await updateEntryById(entry._id, entry);
 
     return invoice;
   }
