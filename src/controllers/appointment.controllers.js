@@ -430,6 +430,7 @@ class AppointmentController {
           carDetail[property] = carDetails[property];
         }
       }
+      carDetail.waitingList = true;
 
       entry.invoice.carDetails = [carDetail];
 

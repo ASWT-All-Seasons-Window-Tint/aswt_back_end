@@ -1330,6 +1330,94 @@ class EntryService {
     return entry;
   };
 
+  getNotSentInvoice = async (entry) => {
+    const newCarDetails = entry.invoice.carDetails.filter(
+      (car) => car.waitingList !== true
+    );
+
+    entry.invoice.carDetails = newCarDetails;
+
+    const notSentCarDetails = entry.invoice.carDetails.filter(
+      (car) => !car.priceBreakdown.some((price) => price.lineId)
+    );
+
+    if (notSentCarDetails.length < 1) return false;
+
+    const customer = {
+      Id: entry.customerId,
+      DisplayName: entry.customerName,
+      PrimaryEmailAddr: {
+        Address: entry.customerEmail,
+      },
+    };
+
+    const newEntryForInvoice = await this.createNewEntry(customer);
+    newEntryForInvoice.invoice.carDetails = notSentCarDetails;
+
+    const totalPrice = this.getTotalprice(newEntryForInvoice.invoice);
+    newEntryForInvoice.invoice.totalPrice = totalPrice;
+    newEntryForInvoice.numberOfCarsAdded =
+      newEntryForInvoice.invoice.carDetails.length;
+
+    newEntryForInvoice.invoice.createdBy = entry.invoice.createdBy;
+
+    await newEntryForInvoice.save();
+
+    return newEntryForInvoice;
+  };
+
+  filterOutNotSentInvoice(notSentIds, entryId) {
+    const entryGrouping = {};
+    for (const prop of entryProperties) {
+      entryGrouping[prop] = { $first: `$${prop}` };
+    }
+
+    return Entry.aggregate([
+      {
+        $match: { _id: entryId },
+      },
+      {
+        $unwind: {
+          path: "$invoice.carDetails",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $match: {
+          "invoice.carDetails._id": {
+            $nin: notSentIds,
+          },
+        },
+      },
+      {
+        $group: {
+          _id: "$_id",
+          ...entryGrouping,
+          totalPrice: {
+            $sum: "$invoice.carDetails.price",
+          },
+          carDetails: {
+            $push: "$invoice.carDetails",
+          },
+        },
+      },
+      {
+        $addFields: {
+          "invoice.carDetails": "$carDetails",
+          "invoice.totalPrice": "$totalPrice",
+          totalPrice: "$$REMOVE",
+          carDetails: "$$REMOVE",
+          isFromAppointment: {
+            $ifNull: ["$isFromAppointment", "$$REMOVE"],
+          },
+          isFromDealership: {
+            $ifNull: ["$isFromDealership", "$$REMOVE"],
+          },
+        },
+      },
+    ]);
+  }
+
   updateEntryInvoicePaymentDetails = async ({
     entry,
     currency,
@@ -1520,7 +1608,7 @@ class EntryService {
           "invoice.carDetails.entryDate": {
             $gte: twentyFourHrsAgo,
           },
-          "invoice.sent": { $ne: true },
+          // "invoice.sent": { $ne: true },
         },
       },
       {
@@ -1764,6 +1852,28 @@ class EntryService {
     }
 
     return mergedCar;
+  }
+
+  filterCompletedEntriesAndAddLineId(entry, dontModifyCarDetails) {
+    const newCarDetails = entry.invoice.carDetails.filter(
+      (car) => car.waitingList !== true
+    );
+
+    if (!dontModifyCarDetails) entry.invoice.carDetails = newCarDetails;
+
+    let lineId = 0;
+    for (const vehicle of entry.invoice.carDetails) {
+      if (vehicle.waitingList === undefined || vehicle.isCompleted) {
+        if (vehicle.priceBreakdown.length > 0) {
+          vehicle.priceBreakdown.forEach((price) => {
+            lineId++;
+            price.lineId = `${lineId}`;
+          });
+        }
+      }
+    }
+
+    return entry;
   }
 
   carWasAddedRecently = (car) => {

@@ -195,7 +195,7 @@ class EntryController {
     const mongoSession = await mongoose.startSession();
     const resultsError = {};
 
-    entryService.addLineId(entry);
+    // entryService.addLineId(entry);
 
     const results = await mongoTransactionUtils(mongoSession, async () => {
       if (staffId) {
@@ -981,7 +981,7 @@ class EntryController {
         // }
 
         if (entry.isFromAppointment) {
-          entryService.addLineId(entry);
+          // entryService.addLineId(entry);
 
           if (entry.invoice.sent) {
             const { statusCode, message } =
@@ -1232,9 +1232,9 @@ class EntryController {
       return notFoundResponse(res, errorResponse);
     }
 
-    if (!carWithVin.priceBreakdown[0].lineId) {
-      entryService.addLineId(entry);
-    }
+    // if (!carWithVin.priceBreakdown[0].lineId) {
+    //   // entryService.addLineId(entry);
+    // }
 
     const validServiceIds = entryService.getCompleteServiceIds(carWithVin);
 
@@ -1260,14 +1260,16 @@ class EntryController {
     );
 
     if (entry.invoice.sent) {
-      const { statusCode, message } =
-        await invoiceControllers.updateInvoiceById(
-          price,
-          entry,
-          servicePrice.lineId
-        );
+      if (servicePrice.lineId) {
+        const { statusCode, message } =
+          await invoiceControllers.updateInvoiceById(
+            price,
+            entry,
+            servicePrice.lineId
+          );
 
-      if (statusCode) return jsonResponse(res, statusCode, false, message);
+        if (statusCode) return jsonResponse(res, statusCode, false, message);
+      }
     }
 
     entry.invoice.carDetails[carIndex] = carWithVin;
