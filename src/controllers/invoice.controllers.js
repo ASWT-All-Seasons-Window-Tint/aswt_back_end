@@ -90,6 +90,16 @@ class DepartmentController {
       if (alterNativeEmails.length > 0)
         for (const email of alterNativeEmails)
           if (newEmail !== email) customerEmail += `, ${email}`;
+
+      while (customerEmail.length > 100) {
+        let emailArray = customerEmail.split(", ");
+
+        // Remove the last email
+        emailArray.pop();
+
+        // Join the array back into a string
+        customerEmail = emailArray.join(", ");
+      }
     }
 
     const { invoice } = await invoiceService.createInvoiceOnQuickBooks(
